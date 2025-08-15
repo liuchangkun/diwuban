@@ -14,4 +14,3 @@
 ## 3. 报告与审计
 - 每阶段输出质量报告：输入范围、缺失率、离群数、异常摘要、告警。
 - 日志包含 run_id/version/station/device/metric/time_range/row_count。
-

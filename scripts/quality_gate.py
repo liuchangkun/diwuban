@@ -58,7 +58,9 @@ def main() -> int:
                 return fail(f"设备 '{device}' 的值应为对象（metric 映射）")
             for metric, files in metrics.items():
                 if not isinstance(files, list):
-                    return fail(f"metric '{station}/{device}/{metric}' 的值应为文件路径数组")
+                    return fail(
+                        f"metric '{station}/{device}/{metric}' 的值应为文件路径数组"
+                    )
                 # 路径检查：必须位于 data/ 目录（不真正读取文件，仅检查前缀）
                 for f in files:
                     if not isinstance(f, str) or not f.startswith("data/"):
@@ -66,9 +68,13 @@ def main() -> int:
     ok("data_mapping.json 结构与路径前缀检查通过")
 
     # 补充建议：若存在压力/流量单位，提醒核对与 rules.yml 一致
-    units_cfg = (ROOT / "rules" / "rules.yml").read_text(encoding="utf-8", errors="ignore")
-    if "pressure: \"kPa\"" not in units_cfg and "pressure: 'kPa'" not in units_cfg:
-        print("[QUALITY_GATE][WARN] 建议将压力单位设为 kPa（或在 PROJECT_RULES.md 中注明差异与换算）")
+    units_cfg = (ROOT / "rules" / "rules.yml").read_text(
+        encoding="utf-8", errors="ignore"
+    )
+    if 'pressure: "kPa"' not in units_cfg and "pressure: 'kPa'" not in units_cfg:
+        print(
+            "[QUALITY_GATE][WARN] 建议将压力单位设为 kPa（或在 PROJECT_RULES.md 中注明差异与换算）"
+        )
 
     # 安全检查：避免访问 venv/.venv（仅提示，真正访问由调用方控制）
     for banned in ("venv", ".venv", "env"):
@@ -134,4 +140,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-

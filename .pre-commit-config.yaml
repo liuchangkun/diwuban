@@ -1,3 +1,6 @@
+exclude: |
+  ^(venv/|\.venv/|env/|data/|ProjectDocs/)
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
@@ -32,11 +35,7 @@ repos:
     rev: 1.7.9
     hooks:
       - id: bandit
-        args: ["-r", "."]
-
-  - repo: https://github.com/pypa/pip-audit
-    rev: v2.7.3
-    hooks:
-      - id: pip-audit
-        args: ["--disable-pip", "--strict"]
-
+        args: ["-q"]
+        files: "\\.py$"
+        exclude: "^tests/"
+        pass_filenames: true

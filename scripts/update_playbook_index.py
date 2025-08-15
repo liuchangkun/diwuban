@@ -6,7 +6,11 @@ ROOT = Path(__file__).resolve().parents[1]
 PLAYBOOKS = ROOT / "docs" / "PLAYBOOKS"
 INDEX = PLAYBOOKS / "INDEX.md"
 
-FRONT_RE = re.compile(r"^---\s*$|^id:\s*(.*)$|^date:\s*(.*)$|^module:\s*(.*)$|^severity:\s*(.*)$|^impact:\s*(.*)$|^tags:\s*\[(.*)\]\s*$", re.IGNORECASE)
+FRONT_RE = re.compile(
+    r"^---\s*$|^id:\s*(.*)$|^date:\s*(.*)$|^module:\s*(.*)$|^severity:\s*(.*)$|^impact:\s*(.*)$|^tags:\s*\[(.*)\]\s*$",
+    re.IGNORECASE,
+)
+
 
 def parse_entries(md_path: Path):
     text = md_path.read_text(encoding="utf-8", errors="ignore").splitlines()
@@ -35,7 +39,12 @@ def main():
         if front:
             entries.append((name, front))
 
-    lines = ["# PLAYBOOKS INDEX", "", "> 该索引基于条目中的 Front Matter 粗略生成（可人工调整）", ""]
+    lines = [
+        "# PLAYBOOKS INDEX",
+        "",
+        "> 该索引基于条目中的 Front Matter 粗略生成（可人工调整）",
+        "",
+    ]
     for name, front in entries:
         ident = front.get("id", "").strip()
         date = front.get("date", "").strip()
@@ -50,4 +59,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-

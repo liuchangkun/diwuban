@@ -39,4 +39,3 @@ tags: [ 'perf', 'chunksize', 'bulk-insert' ]
 - 验证方式：对同一数据集前后对比性能测试
 - 影响范围：ingest、SCHEMA_AND_DB
 - 参考链接：docs/SCHEMA_AND_DB.md
-

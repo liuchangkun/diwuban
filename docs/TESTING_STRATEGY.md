@@ -13,4 +13,3 @@
 
 ## 4. 工具
 - pytest + hypothesis（可选）+ coverage；CI 中与 quality_gate 一起运行。
-

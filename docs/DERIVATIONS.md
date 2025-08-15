@@ -14,4 +14,3 @@
 
 ## 4. 输出
 - 列：station_id, device_id, metric, ts_local, ts_utc, value, formula, version。
-

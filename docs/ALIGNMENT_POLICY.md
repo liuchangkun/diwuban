@@ -17,4 +17,3 @@
 
 ## 5. 输出要求
 - 对齐输出列：station_id, device_id, metric, ts_local, ts_utc, value, grid, version。
-

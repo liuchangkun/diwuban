@@ -9,4 +9,3 @@
 - 效率（Efficiency, η）：输出/输入能量比值。
 - 系统曲线（System Curve）：管网阻力与流量关系曲线。
 - 相似定律（Affinity Laws）：Q∝n，H∝n²，P∝n³ 等关系。
-

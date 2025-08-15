@@ -8,12 +8,16 @@ PLAYBOOKS = ROOT / "docs" / "PLAYBOOKS"
 DIGEST_DIR = PLAYBOOKS / "DIGEST"
 DIGEST_DIR.mkdir(parents=True, exist_ok=True)
 
-FRONT_RE = re.compile(r"^---\s*$|^id:\s*(.*)$|^date:\s*(.*)$|^module:\s*(.*)$|^severity:\s*(.*)$|^impact:\s*(.*)$|^tags:\s*\[(.*)\]\s*$", re.IGNORECASE)
+FRONT_RE = re.compile(
+    r"^---\s*$|^id:\s*(.*)$|^date:\s*(.*)$|^module:\s*(.*)$|^severity:\s*(.*)$|^impact:\s*(.*)$|^tags:\s*\[(.*)\]\s*$",
+    re.IGNORECASE,
+)
+
 
 def parse_entries(md_path: Path):
     text = md_path.read_text(encoding="utf-8", errors="ignore").splitlines()
-    entries = []
-    block = []
+    entries: list[list[str]] = []
+    block: list[str] = []
     inside = False
     for line in text:
         if line.strip() == "---":
@@ -59,4 +63,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-

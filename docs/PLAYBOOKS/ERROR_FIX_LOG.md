@@ -43,4 +43,3 @@ tags: [ 'encoding', 'csv', 'ingest' ]
 - 修复方案：加入编码探测与 GBK 回退；增加质量闸校验
 - 预防措施：DATA_SPEC 明确编码策略；在单测覆盖该场景
 - 参考链接：docs/DATA_SPEC.md, scripts/quality_gate.py
-

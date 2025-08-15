@@ -18,7 +18,10 @@ def test_mapping_structure_and_paths():
         for device, metrics in devices.items():
             assert isinstance(metrics, dict), f"device '{device}' must map to an object"
             for metric, files in metrics.items():
-                assert isinstance(files, list), f"metric '{station}/{device}/{metric}' must be a list of paths"
+                assert isinstance(
+                    files, list
+                ), f"metric '{station}/{device}/{metric}' must be a list of paths"
                 for f in files:
-                    assert isinstance(f, str) and f.startswith("data/"), f"path must start with 'data/': {f}"
-
+                    assert isinstance(f, str) and f.startswith(
+                        "data/"
+                    ), f"path must start with 'data/': {f}"

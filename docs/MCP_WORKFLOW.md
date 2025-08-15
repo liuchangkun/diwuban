@@ -101,4 +101,3 @@ flowchart TD
 - [ ] 是否遵守包管理规则？
 - [ ] 是否使用 augment_code_snippet 展示代码？
 - [ ] 是否在 PR 模板中勾选 MCP_WORKFLOW？
-
