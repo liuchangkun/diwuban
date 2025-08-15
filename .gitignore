@@ -3,3 +3,9 @@ venv/
 .venv/
 env/
 
+
+# Ignore data directory (user requested)
+data/
+
+# Ignore ProjectDocs directory (user requested)
+ProjectDocs/

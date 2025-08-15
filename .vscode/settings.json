@@ -2,17 +2,23 @@
   "files.exclude": {
     "venv": true,
     ".venv": true,
-    "env": true
+    "env": true,
+    "data": true,
+    "ProjectDocs": true
   },
   "search.exclude": {
     "venv": true,
     ".venv": true,
-    "env": true
+    "env": true,
+    "data": true,
+    "ProjectDocs": true
   },
   "python.analysis.exclude": [
     "venv",
     ".venv",
-    "env"
+    "env",
+    "data",
+    "ProjectDocs"
   ]
 }
 
