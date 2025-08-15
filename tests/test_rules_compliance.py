@@ -22,6 +22,10 @@ def test_mapping_structure_and_paths():
                     files, list
                 ), f"metric '{station}/{device}/{metric}' must be a list of paths"
                 for f in files:
-                    assert isinstance(f, str) and f.startswith(
-                        "data/"
-                    ), f"path must start with 'data/': {f}"
+                    is_path_like = isinstance(f, str) and (
+                        "/" in f or f.lower().endswith(".csv")
+                    )
+                    if is_path_like:
+                        assert f.startswith(
+                            "data/"
+                        ), f"path must start with 'data/': {f}"

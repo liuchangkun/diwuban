@@ -9,3 +9,28 @@ data/
 
 # Ignore ProjectDocs directory (user requested)
 ProjectDocs/
+
+# Ignore Python bytecode caches
+__pycache__/
+**/__pycache__/
+
+# Ignore Python compiled files
+*.pyc
+
+# OS & IDE junk
+.DS_Store
+Thumbs.db
+.idea/
+
+# Test / tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.cache/
+.ipynb_checkpoints/
+
+# Coverage reports
+.coverage
+.coverage.*
+htmlcov/

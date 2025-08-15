@@ -4,20 +4,47 @@
     ".venv": true,
     "env": true,
     "data": true,
-    "ProjectDocs": true
+    "ProjectDocs": true,
+    "**/__pycache__": true,
+    "**/*.pyc": true,
+    ".pytest_cache": true,
+    ".mypy_cache": true,
+    ".ruff_cache": true,
+    ".tox": true,
+    ".cache": true,
+    ".ipynb_checkpoints": true,
+    "htmlcov": true
   },
   "search.exclude": {
     "venv": true,
     ".venv": true,
     "env": true,
     "data": true,
-    "ProjectDocs": true
+    "ProjectDocs": true,
+    "**/__pycache__": true,
+    "**/*.pyc": true,
+    ".pytest_cache": true,
+    ".mypy_cache": true,
+    ".ruff_cache": true,
+    ".tox": true,
+    ".cache": true,
+    ".ipynb_checkpoints": true,
+    "htmlcov": true
   },
   "python.analysis.exclude": [
     "venv",
     ".venv",
     "env",
     "data",
-    "ProjectDocs"
+    "ProjectDocs",
+    "**/__pycache__",
+    "**/*.pyc",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".tox",
+    ".cache",
+    ".ipynb_checkpoints",
+    "htmlcov"
   ]
 }

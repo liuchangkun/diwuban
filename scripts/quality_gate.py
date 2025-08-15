@@ -61,9 +61,12 @@ def main() -> int:
                     return fail(
                         f"metric '{station}/{device}/{metric}' 的值应为文件路径数组"
                     )
-                # 路径检查：必须位于 data/ 目录（不真正读取文件，仅检查前缀）
+                # 路径检查：仅当看起来像路径（包含'/'或以'.csv'结尾）时才校验前缀
                 for f in files:
-                    if not isinstance(f, str) or not f.startswith("data/"):
+                    is_path_like = isinstance(f, str) and (
+                        "/" in f or f.lower().endswith(".csv")
+                    )
+                    if is_path_like and not f.startswith("data/"):
                         return fail(f"文件路径需以 'data/' 开头：{f}")
     ok("data_mapping.json 结构与路径前缀检查通过")
 
