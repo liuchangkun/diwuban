@@ -1,0 +1,43 @@
+# 机读规则配置（与 PROJECT_RULES.md 对应）
+# 注意：仅包含关键可参数化的条目，其余以文档规则为准
+
+project:
+  timezone: "Asia/Shanghai"   # R3.1 默认时区
+  storage_time_basis: "UTC"   # 入库基准时间
+
+alignment:
+  default_grid: "auto"         # auto | 1s | 5s | 1min
+  nearest_tolerance_ratio: 0.5 # 最近邻容差=0.5*grid
+  interpolate_instantaneous: false # 瞬时量默认不插值
+  interpolate_cumulative: false    # 累计量禁插值（强制）
+  lag_compensation_seconds: 0      # 站内滞后补偿（秒），可按 metric 覆盖
+
+units:
+  pressure: "kPa"
+  flow_rate: "m3/h"
+  voltage: "V"
+  current: "A"
+  power: "kW"
+  energy: "kWh"
+  frequency: "Hz"
+
+quality:
+  missing_ratio_threshold: 0.3   # 缺失率阈值（≥ 则警告/剔除）
+  outlier:
+    method: "zscore"            # zscore | mad | iqr
+    zscore_threshold: 4.0
+
+persistence:
+  versioning: true               # 对齐/派生/拟合结果版本化
+  upsert_key: ["device_id", "metric_id", "ts_utc"]
+
+safety:
+  ignore_dirs: ["venv", ".venv", "env"]  # 工具与脚本必须忽略
+
+# 可按 metric 覆盖策略示例（将来扩展）
+# overrides:
+#   cumulative_flow:
+#     interpolate: false
+#   power:
+#     grid: "1s"
+

@@ -1,0 +1,18 @@
+{
+  "files.exclude": {
+    "venv": true,
+    ".venv": true,
+    "env": true
+  },
+  "search.exclude": {
+    "venv": true,
+    ".venv": true,
+    "env": true
+  },
+  "python.analysis.exclude": [
+    "venv",
+    ".venv",
+    "env"
+  ]
+}
+
