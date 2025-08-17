@@ -217,12 +217,8 @@ def _parse_index_rows(text: str) -> List[Tuple[str, str, str, str]]:
 
 
 def write_index_md(entries: List[Tuple[str, str, str]], path: str) -> None:
-    lines = [
-        "# PLAYBOOKS 索引（自动生成）",
-        "",
-        "| 日期 | 类型 | 编号 | 摘要 |",
-        "|---|---|---|---|",
-    ]
+    # 构造期望的记录行（语义级比较以避免与 mdformat 互相改写）
+    want_rows: List[Tuple[str, str, str, str]] = []
     for id_val, date_val, summary in entries:
         m = ID_RE.match(id_val)
         if m:
@@ -230,18 +226,32 @@ def write_index_md(entries: List[Tuple[str, str, str]], path: str) -> None:
             seq = m.group(3)
         else:
             type_code, seq = "UNK", id_val
-        lines.append(f"| {date_val} | {type_code} | {seq} | {summary} |")
-    content = "\n".join(lines) + "\n"
-    old = None
+        want_rows.append((date_val, type_code, str(seq), summary))
+
+    # 若旧文件存在且语义等价，则保留旧格式（不写入）
     if os.path.exists(path):
         try:
             with open(path, "r", encoding="utf-8") as fp:
-                old = fp.read()
+                old_text = fp.read()
+            old_rows = _parse_index_rows(old_text)
+            if old_rows == want_rows:
+                log(
+                    f"索引未变化（保留现有排版）：{os.path.relpath(path, ROOT)}（{len(entries)} 条）"
+                )
+                return
         except Exception:
-            old = None
-    if old == content:
-        log(f"索引未变化：{os.path.relpath(path, ROOT)}（{len(entries)} 条）")
-        return
+            pass
+
+    # 否则按标准模板输出（mdformat 会按需美化表格对齐）
+    lines = [
+        "# PLAYBOOKS 索引（自动生成）",
+        "",
+        "| 日期 | 类型 | 编号 | 摘要 |",
+        "|---|---|---|---|",
+    ]
+    for date_val, type_code, seq, summary in want_rows:
+        lines.append(f"| {date_val} | {type_code} | {seq} | {summary} |")
+    content = "\n".join(lines) + "\n"
     with open(path, "w", encoding="utf-8", newline="\n") as fp:
         fp.write(content)
     log(f"已生成索引文件：{os.path.relpath(path, ROOT)}（{len(entries)} 条）")
