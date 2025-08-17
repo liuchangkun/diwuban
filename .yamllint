@@ -1,3 +1,5 @@
+---
+
 extends: default
 
 rules:
@@ -9,4 +11,3 @@ rules:
     type: unix
   document-start: enable
   truthy: enable
-

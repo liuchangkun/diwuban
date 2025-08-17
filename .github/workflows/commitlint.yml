@@ -1,6 +1,6 @@
 ---
 name: Commitlint
-on:
+'on':
   pull_request:
     types:
       - opened
