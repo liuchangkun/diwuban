@@ -49,10 +49,6 @@ repos:
       - id: mdformat
         additional_dependencies: [mdformat-gfm]
 
-  - repo: https://github.com/adrienverge/yamllint
-    rev: v1.35.1
-    hooks:
-      - id: yamllint
 
   - repo: https://github.com/PyCQA/pydocstyle
     rev: 6.3.0
