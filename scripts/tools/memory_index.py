@@ -53,7 +53,9 @@ END_MARK = "<!-- memory_index:END -->"
 
 
 def log(msg: str) -> None:
-    print(f"[memory_index] {msg}")
+    # 避免控制台编码问题，日志仅使用 ASCII 字符
+    safe = msg.encode("ascii", "ignore").decode("ascii")
+    print(f"[memory_index] {safe}")
 
 
 def parse_front_matter(block: str) -> Optional[Tuple[str, str, str]]:

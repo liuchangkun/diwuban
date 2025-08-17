@@ -2,7 +2,10 @@
 name: Commitlint
 on:
   pull_request:
-    types: [opened, synchronize, edited]
+    types:
+      - opened
+      - synchronize
+      - edited
 
 jobs:
   lint:
@@ -13,12 +16,12 @@ jobs:
         with:
           node-version: '20'
       - name: Install commitlint
+        shell: bash
         run: npm install --global @commitlint/cli @commitlint/config-conventional
-        shell: bash
       - name: Write commitlint config
-        run: |
-          echo "module.exports = {extends: ['@commitlint/config-conventional']};" > commitlint.config.js
         shell: bash
+        run: |
+          printf '%s' "module.exports = { extends: ['@commitlint/config-conventional'] };" > commitlint.config.js
       - name: Lint PR commits
         uses: wagoid/commitlint-github-action@v6
         with:
