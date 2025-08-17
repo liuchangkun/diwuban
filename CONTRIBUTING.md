@@ -1,53 +1,49 @@
-# CONTRIBUTING
+# 贡献指南（CONTRIBUTING）
 
-> 快速上手与文档索引
->
-> - MCP 快速上手（1 页）：docs/MCP_WORKFLOW_QUICKSTART.md
-> - MCP 全文规范：docs/MCP_WORKFLOW.md（含流程图）
-> - 总纲与索引：PROJECT_RULES.md
-> - 子文档：
->   - 数据文件规范：docs/DATA_SPEC.md
->   - 表结构与数据库：docs/SCHEMA_AND_DB.md
->   - 时间与网格对齐策略：docs/ALIGNMENT_POLICY.md
->   - 数据质量与校验：docs/QUALITY_VALIDATION.md
->   - 派生量与公式：docs/DERIVATIONS.md
->   - 特性曲线拟合：docs/FITTING_MODELS.md
->   - 泵组优化：docs/OPTIMIZATION.md
->   - 可视化规范：docs/VIZ_SPEC.md
->   - 工程与编码规范：docs/ENGINEERING_STANDARDS.md
->   - 运行手册：docs/RUNBOOK.md
->   - 测试策略：docs/TESTING_STRATEGY.md
->   - 术语表：docs/GLOSSARY.md
+感谢贡献！本指南与 PROJECT_RULES.md（总纲）共同构成贡献者的必读文档，所有流程与工具以当前仓库实际配置为准。
 
-感谢贡献！为确保质量与一致性，请遵循以下要求。
+## 1. 开发前准备
 
-## 工作流程
+- 阅读 PROJECT_RULES.md 与 docs/文档地图与导航.md（中文入口）。
+- 安装 VSCode 扩展：ms-python.black-formatter、charliermarsh.ruff、emeraldwalk.runonsave。
+- 本地启用 pre-commit：`pre-commit install`。
 
-1. 阅读 `PROJECT_RULES.md` 并确认适用范围。
-1. 创建任务：Investigate → Plan → Implement → Validate → Report。
-1. 在 PR 中填写 `.github/PULL_REQUEST_TEMPLATE.md` 的“规则合规清单”。
-1. 提交前运行：
-   - `python scripts/quality_gate.py`
-   - （可选）`pytest -q`
+## 2. 日常开发（保存即自动）
 
-## 规则遵循（强制）
+- 保存 .py：Black + Ruff 自动格式化/修复/整理 imports。
+- 保存 .md：mdformat 自动规范。
+- 修改 PLAYBOOKS 或导航：自动运行 memory_index，仅在内容变化时写入“最近变更”和 INDEX。
 
-- R1.1：数据来源只能通过 `config/data_mapping.json`，严禁硬编码 `data/` 路径。
-- R3：时间对齐遵循“站内优先、最近邻+容差、累计量禁插值”的策略；默认时区 Asia/Shanghai，入库以 UTC。
-- R5：必须执行数据质量检查（范围/非递减/离群/交叉校验），不通过不得进入后续阶段。
-- R10：所有步骤可重跑且可追溯，必要时增加 `version`。
+## 3. 提交前（必须全绿）
 
-## 代码规范
+- 运行：`pre-commit run --all-files`
+- 必须全部通过：ruff、black、mypy（仅 app/|src/）、bandit（仅 app/）、check-yaml、mixed-line-ending、mdformat、memory-check、memory-index。
+- 若 mdformat/black 自动修改，请一并提交。
 
-- Python 版本 ≥ 3.9。
-- 目录结构：后续实现会提供 `src/`、`tests/`、`scripts/` 等标准布局。
-- 日志：使用结构化日志（json 或 key=value），记录输入参数、时间范围、版本与统计指标。
+## 4. Pull Request（PR 门禁）
 
-## 本地开发建议
+- 提交 PR 后，CI 会先运行“pre-commit 全绿检查 Job”：
+  - PR 会收到机器人评论，包含完整的 pre-commit 报告；
+  - Actions 的 Summary 面板会显示结果摘要；
+  - 也可下载 pre-commit-report.txt 工件查看全文。
+- 只有 pre-commit Job 通过，后续 build-test 才会运行测试/覆盖率/安全审计。
 
-- 使用虚拟环境（但仓库与工具不会读取 venv/.venv）。
-- 使用 `rules/rules.yml` 管理机读规则参数。
+## 5. PLAYBOOKS（记忆三步）
 
-## 联系
+- 记录类型：决策记录、配置变更记录、改进与优化记录、经验教训、性能基准（docs/PLAYBOOKS/）。
+- 触发词：记录变更/更新 PLAYBOOKS/保存记忆/按照 PLAYBOOKS 流程完成/记忆和文档都更新了吗？/PLAYBOOKS。
+- 工具：memory-check（提示缺失类型，仅警告）、memory-index（刷新索引与“最近变更”，仅在内容变化时写入）。
 
-- 对 RULES 有疑问或需要豁免，请先在 PR 里说明并标注对应条目（例如 R3.2）。
+## 6. 约束与边界
+
+- 禁止读取与提交：venv/.venv、data/、明文凭据。
+- 不引入 Docker/Kafka 等非必要中间件。
+- 新依赖、长任务、数据库结构变更、部署操作需事前说明并征求确认。
+
+## 7. 常用命令
+
+- 本地全量体检：`pre-commit run --all-files`
+- 刷新记忆索引：`python scripts/tools/memory_index.py`
+- 运行测试：`pytest -q`（如允许长任务）
+
+—— 本指南持续与仓库自动化保持一致。若发现不一致，请以实际 pre-commit/CI 行为为准并提交修正。
