@@ -50,12 +50,37 @@ ID_RE = re.compile(r"^([A-Z]+)-(\d{8})-(\d+)$")
 DATE_FMT = "%Y-%m-%d"
 BEGIN_MARK = "<!-- memory_index:BEGIN -->"
 END_MARK = "<!-- memory_index:END -->"
+# 兼容 mdformat 等工具生成的表头分隔线（允许空格与多横线）
+HEADER_SEP_RE = re.compile(r"^\|\s*-+\s*\|\s*-+\s*\|\s*-+\s*\|\s*-+\s*\|")
+
+
+def _supports_utf8() -> bool:
+    try:
+        enc = (sys.stdout.encoding or "").lower()
+        if "utf" in enc:
+            return True
+    except Exception:
+        pass
+    if os.environ.get("PYTHONUTF8") == "1":
+        return True
+    try:
+        import locale
+
+        loc = (locale.getpreferredencoding(False) or "").lower()
+        if "utf" in loc:
+            return True
+    except Exception:
+        pass
+    return False
 
 
 def log(msg: str) -> None:
-    # 避免控制台编码问题，日志仅使用 ASCII 字符
-    safe = msg.encode("ascii", "ignore").decode("ascii")
-    print(f"[memory_index] {safe}")
+    # 自动探测 UTF-8 支持：支持则输出中文，否则回退 ASCII
+    if _supports_utf8():
+        print(f"[memory_index] {msg}")
+    else:
+        safe = msg.encode("ascii", "ignore").decode("ascii")
+        print(f"[memory_index] {safe}")
 
 
 def parse_front_matter(block: str) -> Optional[Tuple[str, str, str]]:
@@ -169,6 +194,20 @@ def format_line(entry: Tuple[str, str, str]) -> str:
     return f"- {date_val} [{type_code}-{seq}] {summary}"
 
 
+def _normalize_nav_lines(seg: str) -> List[str]:
+    lines: List[str] = []
+    for line in seg.splitlines():
+        s = line.strip()
+        if not s or not s.startswith("-"):
+            continue
+        # 去除转义差异与多空白差异
+        s = s.replace(r"\_", "_")
+        s = s.replace(r"\[", "[").replace(r"\]", "]")
+        s = re.sub(r"\s+", " ", s)
+        lines.append(s)
+    return lines
+
+
 def update_nav(latest_lines: List[str]) -> None:
     # 读取导航文件
     if not os.path.exists(NAV_PATH):
@@ -179,14 +218,17 @@ def update_nav(latest_lines: List[str]) -> None:
     e = nav_text.find(END_MARK)
     if b == -1 or e == -1 or e < b:
         raise RuntimeError("未找到 memory_index 标记区，或标记顺序错误。")
-    # 计算替换区域（保留标记本身）
+    # 现有片段（不含标记）
+    current_seg = nav_text[b + len(BEGIN_MARK) : e]
+    want_seg = "\n" + "\n".join(latest_lines) + "\n"
+    # 语义级比较（忽略转义与空白差异）
+    if _normalize_nav_lines(current_seg) == _normalize_nav_lines(want_seg):
+        log("导航文件无变更（语义一致），跳过写入。")
+        return
+    # 计算替换区域（保留标记本身），采用稳定的换行约定
     before = nav_text[: b + len(BEGIN_MARK)]
     after = nav_text[e:]
-    middle = "\n" + "\n".join(latest_lines) + "\n"
-    new_text = before + middle + after
-    if new_text == nav_text:
-        log("导航文件无变更，跳过写入。")
-        return
+    new_text = before + want_seg + after
     with open(NAV_PATH, "w", encoding="utf-8", newline="\n") as fp:
         fp.write(new_text)
     log(
@@ -201,7 +243,8 @@ def _parse_index_rows(text: str) -> List[Tuple[str, str, str, str]]:
     for line in text.splitlines():
         s = line.strip()
         if not started:
-            if s.startswith("|---"):
+            # 识别表头分隔线：兼容 "|---|---|" 以及 "| ----- | --- |" 等样式
+            if s.startswith("|---") or HEADER_SEP_RE.match(s):
                 started = True
             continue
         if not s.startswith("|"):
@@ -212,10 +255,20 @@ def _parse_index_rows(text: str) -> List[Tuple[str, str, str, str]]:
         if len(parts) < 4:
             continue
         date_val, type_code, seq, summary = parts[0], parts[1], parts[2], parts[3]
-        # 反向转义，恢复语义（与写入时的转义对应）
-        summary = summary.replace(r"\|", "|").replace(r"\_", "_")
+        # 反向转义，恢复语义（与写入时的转义对应）；宽松处理多重反斜杠
+        summary = re.sub(r"\\+\|", "|", summary)
+        summary = re.sub(r"\\+_", "_", summary)
         rows.append((date_val, type_code, seq, summary))
     return rows
+
+
+def _normalize_summary_for_compare(s: str) -> str:
+    # 比较时将转义的下划线与管道恢复为语义等价形式，避免不同格式器来回改写
+    s2 = re.sub(r"\\+_", "_", s)
+    s2 = re.sub(r"\\+\|", "|", s2)
+    # 归一化空白
+    s2 = re.sub(r"\s+", " ", s2).strip()
+    return s2
 
 
 def write_index_md(entries: List[Tuple[str, str, str]], path: str) -> None:
@@ -236,7 +289,12 @@ def write_index_md(entries: List[Tuple[str, str, str]], path: str) -> None:
             with open(path, "r", encoding="utf-8") as fp:
                 old_text = fp.read()
             old_rows = _parse_index_rows(old_text)
-            if old_rows == want_rows:
+            # 归一化目标行用于比较（去除下划线与管道的转义差异）
+            want_rows_cmp = [
+                (d, t, s, _normalize_summary_for_compare(sumy))
+                for (d, t, s, sumy) in want_rows
+            ]
+            if old_rows == want_rows_cmp:
                 log(
                     f"索引未变化（保留现有排版）：{os.path.relpath(path, ROOT)}（{len(entries)} 条）"
                 )
@@ -252,8 +310,8 @@ def write_index_md(entries: List[Tuple[str, str, str]], path: str) -> None:
         "|---|---|---|---|",
     ]
     for date_val, type_code, seq, summary in want_rows:
-        # 转义 Markdown 表格敏感字符，避免 mdformat/解析器误处理
-        esc = summary.replace("|", r"\|").replace("_", r"\_")
+        # 仅转义管道符，避免与 mdformat 在下划线转义上互相改写
+        esc = summary.replace("|", r"\|")
         lines.append(f"| {date_val} | {type_code} | {seq} | {esc} |")
     content = "\n".join(lines) + "\n"
     with open(path, "w", encoding="utf-8", newline="\n") as fp:

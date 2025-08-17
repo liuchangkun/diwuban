@@ -53,8 +53,8 @@
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter",
     "editor.codeActionsOnSave": {
-      "source.fixAll.ruff": true,
-      "source.organizeImports.ruff": true
+      "source.fixAll.ruff": "explicit",
+      "source.organizeImports.ruff": "explicit"
     }
   },
   // 保存 Markdown 时尽量交给 mdformat（需安装 emeraldwalk.runonsave 扩展）
