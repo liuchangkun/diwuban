@@ -1,0 +1,1951 @@
+monitoring|ab_test_results|run_id|bigint|YES||
+monitoring|ab_test_results|phase|text|YES||
+monitoring|ab_test_results|rows_count|bigint|YES||
+monitoring|ab_test_results|duration_ms|double precision|YES||
+monitoring|ab_test_results|created_at|timestamp with time zone|NO|now()|
+monitoring|ab_test_runs|id|bigint|NO|nextval('monitoring.ab_test_runs_id_seq'::regclass)|
+monitoring|ab_test_runs|run_time|timestamp with time zone|NO|now()|
+monitoring|ab_test_runs|station_id|bigint|YES||
+monitoring|ab_test_runs|start_ts|timestamp with time zone|YES||
+monitoring|ab_test_runs|end_ts|timestamp with time zone|YES||
+monitoring|ab_test_runs|metric_ids|bigint[]|YES||
+monitoring|pgss_snapshot|snapshot_time|timestamp with time zone|NO|now()|
+monitoring|pgss_snapshot|dbname|text|YES||
+monitoring|pgss_snapshot|userid|oid|YES||
+monitoring|pgss_snapshot|queryid|bigint|YES||
+monitoring|pgss_snapshot|calls|bigint|YES||
+monitoring|pgss_snapshot|rows|bigint|YES||
+monitoring|pgss_snapshot|blk_read_time|double precision|YES||
+monitoring|pgss_snapshot|blk_write_time|double precision|YES||
+monitoring|pgss_snapshot|temp_blks_read|bigint|YES||
+monitoring|pgss_snapshot|temp_blks_written|bigint|YES||
+public|device_rated_params|id|bigint|NO|nextval('device_rated_params_id_seq'::regclass)|主键
+public|device_rated_params|device_id|bigint|NO||设备ID（FK dim_devices.id）
+public|device_rated_params|param_key|text|NO||参数键，例如 rated_flow/rated_head/rated_power/pipe_diameter 等
+public|device_rated_params|value_numeric|numeric|YES||数值型参数值（与 value_text 至少一个非空）
+public|device_rated_params|value_text|text|YES||文本型参数值（与 value_numeric 至少一个非空）
+public|device_rated_params|unit|text|YES||单位字面量，如 M3/h、m、kW、V、A、Hz、MPa、mm
+public|device_rated_params|source|text|YES||参数来源（资料/说明书/配置）
+public|device_rated_params|effective_from|timestamp with time zone|YES||参数生效开始时间（可选）
+public|device_rated_params|effective_to|timestamp with time zone|YES||参数生效结束时间（可选）
+public|device_rated_params|created_at|timestamp with time zone|YES|now()|创建时间
+public|device_rated_params|updated_at|timestamp with time zone|YES|now()|更新时间
+public|dim_devices|id|bigint|NO|nextval('dim_devices_id_seq'::regclass)|主键
+public|dim_devices|station_id|bigint|NO||所属泵站ID（FK dim_stations.id）
+public|dim_devices|name|text|NO||设备名称（同站内唯一）
+public|dim_devices|type|text|NO||设备类型：pump | main_pipeline
+public|dim_devices|pump_type|text|YES||泵型：variable_frequency | soft_start；当类型为总管时须为 NULL
+public|dim_devices|extra|jsonb|YES||附加信息（JSON）
+public|dim_devices|created_at|timestamp with time zone|YES|now()|创建时间
+public|dim_mapping_items|id|bigint|NO|nextval('dim_mapping_items_id_seq'::regclass)|主键
+public|dim_mapping_items|mapping_hash|text|NO||mapping 内容的哈希（或版本号）
+public|dim_mapping_items|station_name|text|NO||泵站名称（来自 mapping）
+public|dim_mapping_items|device_name|text|NO||设备名称（来自 mapping）
+public|dim_mapping_items|metric_key|text|NO||指标字段键（FK dim_metric_config.metric_key）
+public|dim_mapping_items|source_hint|text|NO||mapping 中的源标识（不依赖实际文件路径）
+public|dim_mapping_items|created_at|timestamp with time zone|YES|now()|创建时间
+public|dim_metric_config|id|bigint|NO|nextval('dim_metric_config_id_seq'::regclass)|主键
+public|dim_metric_config|metric_key|text|NO||指标字段键（唯一），如 voltage_b、pressure 等
+public|dim_metric_config|unit|text|NO||单位字面量（严格按 mapping）
+public|dim_metric_config|unit_display|text|YES||单位显示名（可与 unit 相同）
+public|dim_metric_config|decimals_policy|text|YES|'as_is'::text|小数位策略：as_is 或 fixed
+public|dim_metric_config|fixed_decimals|smallint|YES||当策略为 fixed 时的小数位数
+public|dim_metric_config|value_type|text|YES||值类型（可选）
+public|dim_metric_config|valid_min|numeric|YES||值最小边界（可选）
+public|dim_metric_config|valid_max|numeric|YES||值最大边界（可选）
+public|dim_metric_config|created_at|timestamp with time zone|YES|now()|创建时间
+public|dim_metric_config|updated_at|timestamp with time zone|YES|now()|更新时间
+public|dim_stations|id|bigint|NO|nextval('dim_stations_id_seq'::regclass)|主键
+public|dim_stations|name|text|NO||泵站名称（唯一）
+public|dim_stations|extra|jsonb|YES||附加信息（JSON）
+public|dim_stations|created_at|timestamp with time zone|YES|now()|创建时间
+public|fact_measurements_2025w33_p0|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w33_p0|station_id|bigint|NO||
+public|fact_measurements_2025w33_p0|device_id|bigint|NO||
+public|fact_measurements_2025w33_p0|metric_id|bigint|NO||
+public|fact_measurements_2025w33_p0|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w33_p0|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w33_p0|value|numeric|NO||
+public|fact_measurements_2025w33_p0|source_hint|text|YES||
+public|fact_measurements_2025w33_p0|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w33_p1|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w33_p1|station_id|bigint|NO||
+public|fact_measurements_2025w33_p1|device_id|bigint|NO||
+public|fact_measurements_2025w33_p1|metric_id|bigint|NO||
+public|fact_measurements_2025w33_p1|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w33_p1|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w33_p1|value|numeric|NO||
+public|fact_measurements_2025w33_p1|source_hint|text|YES||
+public|fact_measurements_2025w33_p1|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w33_p10|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w33_p10|station_id|bigint|NO||
+public|fact_measurements_2025w33_p10|device_id|bigint|NO||
+public|fact_measurements_2025w33_p10|metric_id|bigint|NO||
+public|fact_measurements_2025w33_p10|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w33_p10|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w33_p10|value|numeric|NO||
+public|fact_measurements_2025w33_p10|source_hint|text|YES||
+public|fact_measurements_2025w33_p10|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w33_p11|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w33_p11|station_id|bigint|NO||
+public|fact_measurements_2025w33_p11|device_id|bigint|NO||
+public|fact_measurements_2025w33_p11|metric_id|bigint|NO||
+public|fact_measurements_2025w33_p11|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w33_p11|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w33_p11|value|numeric|NO||
+public|fact_measurements_2025w33_p11|source_hint|text|YES||
+public|fact_measurements_2025w33_p11|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w33_p12|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w33_p12|station_id|bigint|NO||
+public|fact_measurements_2025w33_p12|device_id|bigint|NO||
+public|fact_measurements_2025w33_p12|metric_id|bigint|NO||
+public|fact_measurements_2025w33_p12|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w33_p12|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w33_p12|value|numeric|NO||
+public|fact_measurements_2025w33_p12|source_hint|text|YES||
+public|fact_measurements_2025w33_p12|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w33_p13|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w33_p13|station_id|bigint|NO||
+public|fact_measurements_2025w33_p13|device_id|bigint|NO||
+public|fact_measurements_2025w33_p13|metric_id|bigint|NO||
+public|fact_measurements_2025w33_p13|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w33_p13|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w33_p13|value|numeric|NO||
+public|fact_measurements_2025w33_p13|source_hint|text|YES||
+public|fact_measurements_2025w33_p13|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w33_p14|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w33_p14|station_id|bigint|NO||
+public|fact_measurements_2025w33_p14|device_id|bigint|NO||
+public|fact_measurements_2025w33_p14|metric_id|bigint|NO||
+public|fact_measurements_2025w33_p14|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w33_p14|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w33_p14|value|numeric|NO||
+public|fact_measurements_2025w33_p14|source_hint|text|YES||
+public|fact_measurements_2025w33_p14|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w33_p15|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w33_p15|station_id|bigint|NO||
+public|fact_measurements_2025w33_p15|device_id|bigint|NO||
+public|fact_measurements_2025w33_p15|metric_id|bigint|NO||
+public|fact_measurements_2025w33_p15|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w33_p15|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w33_p15|value|numeric|NO||
+public|fact_measurements_2025w33_p15|source_hint|text|YES||
+public|fact_measurements_2025w33_p15|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w33_p2|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w33_p2|station_id|bigint|NO||
+public|fact_measurements_2025w33_p2|device_id|bigint|NO||
+public|fact_measurements_2025w33_p2|metric_id|bigint|NO||
+public|fact_measurements_2025w33_p2|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w33_p2|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w33_p2|value|numeric|NO||
+public|fact_measurements_2025w33_p2|source_hint|text|YES||
+public|fact_measurements_2025w33_p2|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w33_p3|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w33_p3|station_id|bigint|NO||
+public|fact_measurements_2025w33_p3|device_id|bigint|NO||
+public|fact_measurements_2025w33_p3|metric_id|bigint|NO||
+public|fact_measurements_2025w33_p3|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w33_p3|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w33_p3|value|numeric|NO||
+public|fact_measurements_2025w33_p3|source_hint|text|YES||
+public|fact_measurements_2025w33_p3|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w33_p4|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w33_p4|station_id|bigint|NO||
+public|fact_measurements_2025w33_p4|device_id|bigint|NO||
+public|fact_measurements_2025w33_p4|metric_id|bigint|NO||
+public|fact_measurements_2025w33_p4|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w33_p4|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w33_p4|value|numeric|NO||
+public|fact_measurements_2025w33_p4|source_hint|text|YES||
+public|fact_measurements_2025w33_p4|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w33_p5|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w33_p5|station_id|bigint|NO||
+public|fact_measurements_2025w33_p5|device_id|bigint|NO||
+public|fact_measurements_2025w33_p5|metric_id|bigint|NO||
+public|fact_measurements_2025w33_p5|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w33_p5|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w33_p5|value|numeric|NO||
+public|fact_measurements_2025w33_p5|source_hint|text|YES||
+public|fact_measurements_2025w33_p5|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w33_p6|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w33_p6|station_id|bigint|NO||
+public|fact_measurements_2025w33_p6|device_id|bigint|NO||
+public|fact_measurements_2025w33_p6|metric_id|bigint|NO||
+public|fact_measurements_2025w33_p6|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w33_p6|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w33_p6|value|numeric|NO||
+public|fact_measurements_2025w33_p6|source_hint|text|YES||
+public|fact_measurements_2025w33_p6|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w33_p7|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w33_p7|station_id|bigint|NO||
+public|fact_measurements_2025w33_p7|device_id|bigint|NO||
+public|fact_measurements_2025w33_p7|metric_id|bigint|NO||
+public|fact_measurements_2025w33_p7|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w33_p7|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w33_p7|value|numeric|NO||
+public|fact_measurements_2025w33_p7|source_hint|text|YES||
+public|fact_measurements_2025w33_p7|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w33_p8|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w33_p8|station_id|bigint|NO||
+public|fact_measurements_2025w33_p8|device_id|bigint|NO||
+public|fact_measurements_2025w33_p8|metric_id|bigint|NO||
+public|fact_measurements_2025w33_p8|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w33_p8|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w33_p8|value|numeric|NO||
+public|fact_measurements_2025w33_p8|source_hint|text|YES||
+public|fact_measurements_2025w33_p8|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w33_p9|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w33_p9|station_id|bigint|NO||
+public|fact_measurements_2025w33_p9|device_id|bigint|NO||
+public|fact_measurements_2025w33_p9|metric_id|bigint|NO||
+public|fact_measurements_2025w33_p9|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w33_p9|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w33_p9|value|numeric|NO||
+public|fact_measurements_2025w33_p9|source_hint|text|YES||
+public|fact_measurements_2025w33_p9|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w34_p0|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w34_p0|station_id|bigint|NO||
+public|fact_measurements_2025w34_p0|device_id|bigint|NO||
+public|fact_measurements_2025w34_p0|metric_id|bigint|NO||
+public|fact_measurements_2025w34_p0|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w34_p0|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w34_p0|value|numeric|NO||
+public|fact_measurements_2025w34_p0|source_hint|text|YES||
+public|fact_measurements_2025w34_p0|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w34_p1|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w34_p1|station_id|bigint|NO||
+public|fact_measurements_2025w34_p1|device_id|bigint|NO||
+public|fact_measurements_2025w34_p1|metric_id|bigint|NO||
+public|fact_measurements_2025w34_p1|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w34_p1|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w34_p1|value|numeric|NO||
+public|fact_measurements_2025w34_p1|source_hint|text|YES||
+public|fact_measurements_2025w34_p1|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w34_p10|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w34_p10|station_id|bigint|NO||
+public|fact_measurements_2025w34_p10|device_id|bigint|NO||
+public|fact_measurements_2025w34_p10|metric_id|bigint|NO||
+public|fact_measurements_2025w34_p10|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w34_p10|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w34_p10|value|numeric|NO||
+public|fact_measurements_2025w34_p10|source_hint|text|YES||
+public|fact_measurements_2025w34_p10|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w34_p11|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w34_p11|station_id|bigint|NO||
+public|fact_measurements_2025w34_p11|device_id|bigint|NO||
+public|fact_measurements_2025w34_p11|metric_id|bigint|NO||
+public|fact_measurements_2025w34_p11|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w34_p11|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w34_p11|value|numeric|NO||
+public|fact_measurements_2025w34_p11|source_hint|text|YES||
+public|fact_measurements_2025w34_p11|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w34_p12|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w34_p12|station_id|bigint|NO||
+public|fact_measurements_2025w34_p12|device_id|bigint|NO||
+public|fact_measurements_2025w34_p12|metric_id|bigint|NO||
+public|fact_measurements_2025w34_p12|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w34_p12|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w34_p12|value|numeric|NO||
+public|fact_measurements_2025w34_p12|source_hint|text|YES||
+public|fact_measurements_2025w34_p12|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w34_p13|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w34_p13|station_id|bigint|NO||
+public|fact_measurements_2025w34_p13|device_id|bigint|NO||
+public|fact_measurements_2025w34_p13|metric_id|bigint|NO||
+public|fact_measurements_2025w34_p13|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w34_p13|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w34_p13|value|numeric|NO||
+public|fact_measurements_2025w34_p13|source_hint|text|YES||
+public|fact_measurements_2025w34_p13|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w34_p14|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w34_p14|station_id|bigint|NO||
+public|fact_measurements_2025w34_p14|device_id|bigint|NO||
+public|fact_measurements_2025w34_p14|metric_id|bigint|NO||
+public|fact_measurements_2025w34_p14|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w34_p14|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w34_p14|value|numeric|NO||
+public|fact_measurements_2025w34_p14|source_hint|text|YES||
+public|fact_measurements_2025w34_p14|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w34_p15|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w34_p15|station_id|bigint|NO||
+public|fact_measurements_2025w34_p15|device_id|bigint|NO||
+public|fact_measurements_2025w34_p15|metric_id|bigint|NO||
+public|fact_measurements_2025w34_p15|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w34_p15|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w34_p15|value|numeric|NO||
+public|fact_measurements_2025w34_p15|source_hint|text|YES||
+public|fact_measurements_2025w34_p15|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w34_p2|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w34_p2|station_id|bigint|NO||
+public|fact_measurements_2025w34_p2|device_id|bigint|NO||
+public|fact_measurements_2025w34_p2|metric_id|bigint|NO||
+public|fact_measurements_2025w34_p2|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w34_p2|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w34_p2|value|numeric|NO||
+public|fact_measurements_2025w34_p2|source_hint|text|YES||
+public|fact_measurements_2025w34_p2|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w34_p3|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w34_p3|station_id|bigint|NO||
+public|fact_measurements_2025w34_p3|device_id|bigint|NO||
+public|fact_measurements_2025w34_p3|metric_id|bigint|NO||
+public|fact_measurements_2025w34_p3|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w34_p3|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w34_p3|value|numeric|NO||
+public|fact_measurements_2025w34_p3|source_hint|text|YES||
+public|fact_measurements_2025w34_p3|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w34_p4|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w34_p4|station_id|bigint|NO||
+public|fact_measurements_2025w34_p4|device_id|bigint|NO||
+public|fact_measurements_2025w34_p4|metric_id|bigint|NO||
+public|fact_measurements_2025w34_p4|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w34_p4|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w34_p4|value|numeric|NO||
+public|fact_measurements_2025w34_p4|source_hint|text|YES||
+public|fact_measurements_2025w34_p4|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w34_p5|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w34_p5|station_id|bigint|NO||
+public|fact_measurements_2025w34_p5|device_id|bigint|NO||
+public|fact_measurements_2025w34_p5|metric_id|bigint|NO||
+public|fact_measurements_2025w34_p5|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w34_p5|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w34_p5|value|numeric|NO||
+public|fact_measurements_2025w34_p5|source_hint|text|YES||
+public|fact_measurements_2025w34_p5|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w34_p6|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w34_p6|station_id|bigint|NO||
+public|fact_measurements_2025w34_p6|device_id|bigint|NO||
+public|fact_measurements_2025w34_p6|metric_id|bigint|NO||
+public|fact_measurements_2025w34_p6|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w34_p6|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w34_p6|value|numeric|NO||
+public|fact_measurements_2025w34_p6|source_hint|text|YES||
+public|fact_measurements_2025w34_p6|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w34_p7|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w34_p7|station_id|bigint|NO||
+public|fact_measurements_2025w34_p7|device_id|bigint|NO||
+public|fact_measurements_2025w34_p7|metric_id|bigint|NO||
+public|fact_measurements_2025w34_p7|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w34_p7|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w34_p7|value|numeric|NO||
+public|fact_measurements_2025w34_p7|source_hint|text|YES||
+public|fact_measurements_2025w34_p7|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w34_p8|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w34_p8|station_id|bigint|NO||
+public|fact_measurements_2025w34_p8|device_id|bigint|NO||
+public|fact_measurements_2025w34_p8|metric_id|bigint|NO||
+public|fact_measurements_2025w34_p8|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w34_p8|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w34_p8|value|numeric|NO||
+public|fact_measurements_2025w34_p8|source_hint|text|YES||
+public|fact_measurements_2025w34_p8|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w34_p9|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w34_p9|station_id|bigint|NO||
+public|fact_measurements_2025w34_p9|device_id|bigint|NO||
+public|fact_measurements_2025w34_p9|metric_id|bigint|NO||
+public|fact_measurements_2025w34_p9|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w34_p9|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w34_p9|value|numeric|NO||
+public|fact_measurements_2025w34_p9|source_hint|text|YES||
+public|fact_measurements_2025w34_p9|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w35_p0|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w35_p0|station_id|bigint|NO||
+public|fact_measurements_2025w35_p0|device_id|bigint|NO||
+public|fact_measurements_2025w35_p0|metric_id|bigint|NO||
+public|fact_measurements_2025w35_p0|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w35_p0|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w35_p0|value|numeric|NO||
+public|fact_measurements_2025w35_p0|source_hint|text|YES||
+public|fact_measurements_2025w35_p0|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w35_p1|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w35_p1|station_id|bigint|NO||
+public|fact_measurements_2025w35_p1|device_id|bigint|NO||
+public|fact_measurements_2025w35_p1|metric_id|bigint|NO||
+public|fact_measurements_2025w35_p1|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w35_p1|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w35_p1|value|numeric|NO||
+public|fact_measurements_2025w35_p1|source_hint|text|YES||
+public|fact_measurements_2025w35_p1|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w35_p10|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w35_p10|station_id|bigint|NO||
+public|fact_measurements_2025w35_p10|device_id|bigint|NO||
+public|fact_measurements_2025w35_p10|metric_id|bigint|NO||
+public|fact_measurements_2025w35_p10|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w35_p10|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w35_p10|value|numeric|NO||
+public|fact_measurements_2025w35_p10|source_hint|text|YES||
+public|fact_measurements_2025w35_p10|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w35_p11|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w35_p11|station_id|bigint|NO||
+public|fact_measurements_2025w35_p11|device_id|bigint|NO||
+public|fact_measurements_2025w35_p11|metric_id|bigint|NO||
+public|fact_measurements_2025w35_p11|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w35_p11|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w35_p11|value|numeric|NO||
+public|fact_measurements_2025w35_p11|source_hint|text|YES||
+public|fact_measurements_2025w35_p11|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w35_p12|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w35_p12|station_id|bigint|NO||
+public|fact_measurements_2025w35_p12|device_id|bigint|NO||
+public|fact_measurements_2025w35_p12|metric_id|bigint|NO||
+public|fact_measurements_2025w35_p12|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w35_p12|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w35_p12|value|numeric|NO||
+public|fact_measurements_2025w35_p12|source_hint|text|YES||
+public|fact_measurements_2025w35_p12|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w35_p13|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w35_p13|station_id|bigint|NO||
+public|fact_measurements_2025w35_p13|device_id|bigint|NO||
+public|fact_measurements_2025w35_p13|metric_id|bigint|NO||
+public|fact_measurements_2025w35_p13|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w35_p13|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w35_p13|value|numeric|NO||
+public|fact_measurements_2025w35_p13|source_hint|text|YES||
+public|fact_measurements_2025w35_p13|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w35_p14|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w35_p14|station_id|bigint|NO||
+public|fact_measurements_2025w35_p14|device_id|bigint|NO||
+public|fact_measurements_2025w35_p14|metric_id|bigint|NO||
+public|fact_measurements_2025w35_p14|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w35_p14|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w35_p14|value|numeric|NO||
+public|fact_measurements_2025w35_p14|source_hint|text|YES||
+public|fact_measurements_2025w35_p14|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w35_p15|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w35_p15|station_id|bigint|NO||
+public|fact_measurements_2025w35_p15|device_id|bigint|NO||
+public|fact_measurements_2025w35_p15|metric_id|bigint|NO||
+public|fact_measurements_2025w35_p15|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w35_p15|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w35_p15|value|numeric|NO||
+public|fact_measurements_2025w35_p15|source_hint|text|YES||
+public|fact_measurements_2025w35_p15|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w35_p2|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w35_p2|station_id|bigint|NO||
+public|fact_measurements_2025w35_p2|device_id|bigint|NO||
+public|fact_measurements_2025w35_p2|metric_id|bigint|NO||
+public|fact_measurements_2025w35_p2|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w35_p2|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w35_p2|value|numeric|NO||
+public|fact_measurements_2025w35_p2|source_hint|text|YES||
+public|fact_measurements_2025w35_p2|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w35_p3|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w35_p3|station_id|bigint|NO||
+public|fact_measurements_2025w35_p3|device_id|bigint|NO||
+public|fact_measurements_2025w35_p3|metric_id|bigint|NO||
+public|fact_measurements_2025w35_p3|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w35_p3|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w35_p3|value|numeric|NO||
+public|fact_measurements_2025w35_p3|source_hint|text|YES||
+public|fact_measurements_2025w35_p3|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w35_p4|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w35_p4|station_id|bigint|NO||
+public|fact_measurements_2025w35_p4|device_id|bigint|NO||
+public|fact_measurements_2025w35_p4|metric_id|bigint|NO||
+public|fact_measurements_2025w35_p4|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w35_p4|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w35_p4|value|numeric|NO||
+public|fact_measurements_2025w35_p4|source_hint|text|YES||
+public|fact_measurements_2025w35_p4|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w35_p5|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w35_p5|station_id|bigint|NO||
+public|fact_measurements_2025w35_p5|device_id|bigint|NO||
+public|fact_measurements_2025w35_p5|metric_id|bigint|NO||
+public|fact_measurements_2025w35_p5|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w35_p5|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w35_p5|value|numeric|NO||
+public|fact_measurements_2025w35_p5|source_hint|text|YES||
+public|fact_measurements_2025w35_p5|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w35_p6|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w35_p6|station_id|bigint|NO||
+public|fact_measurements_2025w35_p6|device_id|bigint|NO||
+public|fact_measurements_2025w35_p6|metric_id|bigint|NO||
+public|fact_measurements_2025w35_p6|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w35_p6|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w35_p6|value|numeric|NO||
+public|fact_measurements_2025w35_p6|source_hint|text|YES||
+public|fact_measurements_2025w35_p6|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w35_p7|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w35_p7|station_id|bigint|NO||
+public|fact_measurements_2025w35_p7|device_id|bigint|NO||
+public|fact_measurements_2025w35_p7|metric_id|bigint|NO||
+public|fact_measurements_2025w35_p7|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w35_p7|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w35_p7|value|numeric|NO||
+public|fact_measurements_2025w35_p7|source_hint|text|YES||
+public|fact_measurements_2025w35_p7|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w35_p8|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w35_p8|station_id|bigint|NO||
+public|fact_measurements_2025w35_p8|device_id|bigint|NO||
+public|fact_measurements_2025w35_p8|metric_id|bigint|NO||
+public|fact_measurements_2025w35_p8|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w35_p8|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w35_p8|value|numeric|NO||
+public|fact_measurements_2025w35_p8|source_hint|text|YES||
+public|fact_measurements_2025w35_p8|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w35_p9|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w35_p9|station_id|bigint|NO||
+public|fact_measurements_2025w35_p9|device_id|bigint|NO||
+public|fact_measurements_2025w35_p9|metric_id|bigint|NO||
+public|fact_measurements_2025w35_p9|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w35_p9|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w35_p9|value|numeric|NO||
+public|fact_measurements_2025w35_p9|source_hint|text|YES||
+public|fact_measurements_2025w35_p9|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w36_p0|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w36_p0|station_id|bigint|NO||
+public|fact_measurements_2025w36_p0|device_id|bigint|NO||
+public|fact_measurements_2025w36_p0|metric_id|bigint|NO||
+public|fact_measurements_2025w36_p0|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w36_p0|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w36_p0|value|numeric|NO||
+public|fact_measurements_2025w36_p0|source_hint|text|YES||
+public|fact_measurements_2025w36_p0|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w36_p1|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w36_p1|station_id|bigint|NO||
+public|fact_measurements_2025w36_p1|device_id|bigint|NO||
+public|fact_measurements_2025w36_p1|metric_id|bigint|NO||
+public|fact_measurements_2025w36_p1|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w36_p1|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w36_p1|value|numeric|NO||
+public|fact_measurements_2025w36_p1|source_hint|text|YES||
+public|fact_measurements_2025w36_p1|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w36_p10|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w36_p10|station_id|bigint|NO||
+public|fact_measurements_2025w36_p10|device_id|bigint|NO||
+public|fact_measurements_2025w36_p10|metric_id|bigint|NO||
+public|fact_measurements_2025w36_p10|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w36_p10|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w36_p10|value|numeric|NO||
+public|fact_measurements_2025w36_p10|source_hint|text|YES||
+public|fact_measurements_2025w36_p10|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w36_p11|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w36_p11|station_id|bigint|NO||
+public|fact_measurements_2025w36_p11|device_id|bigint|NO||
+public|fact_measurements_2025w36_p11|metric_id|bigint|NO||
+public|fact_measurements_2025w36_p11|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w36_p11|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w36_p11|value|numeric|NO||
+public|fact_measurements_2025w36_p11|source_hint|text|YES||
+public|fact_measurements_2025w36_p11|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w36_p12|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w36_p12|station_id|bigint|NO||
+public|fact_measurements_2025w36_p12|device_id|bigint|NO||
+public|fact_measurements_2025w36_p12|metric_id|bigint|NO||
+public|fact_measurements_2025w36_p12|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w36_p12|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w36_p12|value|numeric|NO||
+public|fact_measurements_2025w36_p12|source_hint|text|YES||
+public|fact_measurements_2025w36_p12|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w36_p13|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w36_p13|station_id|bigint|NO||
+public|fact_measurements_2025w36_p13|device_id|bigint|NO||
+public|fact_measurements_2025w36_p13|metric_id|bigint|NO||
+public|fact_measurements_2025w36_p13|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w36_p13|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w36_p13|value|numeric|NO||
+public|fact_measurements_2025w36_p13|source_hint|text|YES||
+public|fact_measurements_2025w36_p13|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w36_p14|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w36_p14|station_id|bigint|NO||
+public|fact_measurements_2025w36_p14|device_id|bigint|NO||
+public|fact_measurements_2025w36_p14|metric_id|bigint|NO||
+public|fact_measurements_2025w36_p14|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w36_p14|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w36_p14|value|numeric|NO||
+public|fact_measurements_2025w36_p14|source_hint|text|YES||
+public|fact_measurements_2025w36_p14|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w36_p15|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w36_p15|station_id|bigint|NO||
+public|fact_measurements_2025w36_p15|device_id|bigint|NO||
+public|fact_measurements_2025w36_p15|metric_id|bigint|NO||
+public|fact_measurements_2025w36_p15|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w36_p15|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w36_p15|value|numeric|NO||
+public|fact_measurements_2025w36_p15|source_hint|text|YES||
+public|fact_measurements_2025w36_p15|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w36_p2|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w36_p2|station_id|bigint|NO||
+public|fact_measurements_2025w36_p2|device_id|bigint|NO||
+public|fact_measurements_2025w36_p2|metric_id|bigint|NO||
+public|fact_measurements_2025w36_p2|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w36_p2|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w36_p2|value|numeric|NO||
+public|fact_measurements_2025w36_p2|source_hint|text|YES||
+public|fact_measurements_2025w36_p2|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w36_p3|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w36_p3|station_id|bigint|NO||
+public|fact_measurements_2025w36_p3|device_id|bigint|NO||
+public|fact_measurements_2025w36_p3|metric_id|bigint|NO||
+public|fact_measurements_2025w36_p3|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w36_p3|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w36_p3|value|numeric|NO||
+public|fact_measurements_2025w36_p3|source_hint|text|YES||
+public|fact_measurements_2025w36_p3|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w36_p4|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w36_p4|station_id|bigint|NO||
+public|fact_measurements_2025w36_p4|device_id|bigint|NO||
+public|fact_measurements_2025w36_p4|metric_id|bigint|NO||
+public|fact_measurements_2025w36_p4|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w36_p4|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w36_p4|value|numeric|NO||
+public|fact_measurements_2025w36_p4|source_hint|text|YES||
+public|fact_measurements_2025w36_p4|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w36_p5|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w36_p5|station_id|bigint|NO||
+public|fact_measurements_2025w36_p5|device_id|bigint|NO||
+public|fact_measurements_2025w36_p5|metric_id|bigint|NO||
+public|fact_measurements_2025w36_p5|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w36_p5|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w36_p5|value|numeric|NO||
+public|fact_measurements_2025w36_p5|source_hint|text|YES||
+public|fact_measurements_2025w36_p5|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w36_p6|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w36_p6|station_id|bigint|NO||
+public|fact_measurements_2025w36_p6|device_id|bigint|NO||
+public|fact_measurements_2025w36_p6|metric_id|bigint|NO||
+public|fact_measurements_2025w36_p6|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w36_p6|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w36_p6|value|numeric|NO||
+public|fact_measurements_2025w36_p6|source_hint|text|YES||
+public|fact_measurements_2025w36_p6|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w36_p7|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w36_p7|station_id|bigint|NO||
+public|fact_measurements_2025w36_p7|device_id|bigint|NO||
+public|fact_measurements_2025w36_p7|metric_id|bigint|NO||
+public|fact_measurements_2025w36_p7|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w36_p7|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w36_p7|value|numeric|NO||
+public|fact_measurements_2025w36_p7|source_hint|text|YES||
+public|fact_measurements_2025w36_p7|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w36_p8|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w36_p8|station_id|bigint|NO||
+public|fact_measurements_2025w36_p8|device_id|bigint|NO||
+public|fact_measurements_2025w36_p8|metric_id|bigint|NO||
+public|fact_measurements_2025w36_p8|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w36_p8|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w36_p8|value|numeric|NO||
+public|fact_measurements_2025w36_p8|source_hint|text|YES||
+public|fact_measurements_2025w36_p8|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w36_p9|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w36_p9|station_id|bigint|NO||
+public|fact_measurements_2025w36_p9|device_id|bigint|NO||
+public|fact_measurements_2025w36_p9|metric_id|bigint|NO||
+public|fact_measurements_2025w36_p9|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w36_p9|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w36_p9|value|numeric|NO||
+public|fact_measurements_2025w36_p9|source_hint|text|YES||
+public|fact_measurements_2025w36_p9|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w37_p0|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w37_p0|station_id|bigint|NO||
+public|fact_measurements_2025w37_p0|device_id|bigint|NO||
+public|fact_measurements_2025w37_p0|metric_id|bigint|NO||
+public|fact_measurements_2025w37_p0|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w37_p0|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w37_p0|value|numeric|NO||
+public|fact_measurements_2025w37_p0|source_hint|text|YES||
+public|fact_measurements_2025w37_p0|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w37_p1|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w37_p1|station_id|bigint|NO||
+public|fact_measurements_2025w37_p1|device_id|bigint|NO||
+public|fact_measurements_2025w37_p1|metric_id|bigint|NO||
+public|fact_measurements_2025w37_p1|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w37_p1|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w37_p1|value|numeric|NO||
+public|fact_measurements_2025w37_p1|source_hint|text|YES||
+public|fact_measurements_2025w37_p1|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w37_p10|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w37_p10|station_id|bigint|NO||
+public|fact_measurements_2025w37_p10|device_id|bigint|NO||
+public|fact_measurements_2025w37_p10|metric_id|bigint|NO||
+public|fact_measurements_2025w37_p10|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w37_p10|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w37_p10|value|numeric|NO||
+public|fact_measurements_2025w37_p10|source_hint|text|YES||
+public|fact_measurements_2025w37_p10|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w37_p11|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w37_p11|station_id|bigint|NO||
+public|fact_measurements_2025w37_p11|device_id|bigint|NO||
+public|fact_measurements_2025w37_p11|metric_id|bigint|NO||
+public|fact_measurements_2025w37_p11|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w37_p11|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w37_p11|value|numeric|NO||
+public|fact_measurements_2025w37_p11|source_hint|text|YES||
+public|fact_measurements_2025w37_p11|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w37_p12|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w37_p12|station_id|bigint|NO||
+public|fact_measurements_2025w37_p12|device_id|bigint|NO||
+public|fact_measurements_2025w37_p12|metric_id|bigint|NO||
+public|fact_measurements_2025w37_p12|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w37_p12|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w37_p12|value|numeric|NO||
+public|fact_measurements_2025w37_p12|source_hint|text|YES||
+public|fact_measurements_2025w37_p12|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w37_p13|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w37_p13|station_id|bigint|NO||
+public|fact_measurements_2025w37_p13|device_id|bigint|NO||
+public|fact_measurements_2025w37_p13|metric_id|bigint|NO||
+public|fact_measurements_2025w37_p13|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w37_p13|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w37_p13|value|numeric|NO||
+public|fact_measurements_2025w37_p13|source_hint|text|YES||
+public|fact_measurements_2025w37_p13|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w37_p14|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w37_p14|station_id|bigint|NO||
+public|fact_measurements_2025w37_p14|device_id|bigint|NO||
+public|fact_measurements_2025w37_p14|metric_id|bigint|NO||
+public|fact_measurements_2025w37_p14|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w37_p14|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w37_p14|value|numeric|NO||
+public|fact_measurements_2025w37_p14|source_hint|text|YES||
+public|fact_measurements_2025w37_p14|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w37_p15|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w37_p15|station_id|bigint|NO||
+public|fact_measurements_2025w37_p15|device_id|bigint|NO||
+public|fact_measurements_2025w37_p15|metric_id|bigint|NO||
+public|fact_measurements_2025w37_p15|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w37_p15|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w37_p15|value|numeric|NO||
+public|fact_measurements_2025w37_p15|source_hint|text|YES||
+public|fact_measurements_2025w37_p15|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w37_p2|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w37_p2|station_id|bigint|NO||
+public|fact_measurements_2025w37_p2|device_id|bigint|NO||
+public|fact_measurements_2025w37_p2|metric_id|bigint|NO||
+public|fact_measurements_2025w37_p2|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w37_p2|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w37_p2|value|numeric|NO||
+public|fact_measurements_2025w37_p2|source_hint|text|YES||
+public|fact_measurements_2025w37_p2|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w37_p3|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w37_p3|station_id|bigint|NO||
+public|fact_measurements_2025w37_p3|device_id|bigint|NO||
+public|fact_measurements_2025w37_p3|metric_id|bigint|NO||
+public|fact_measurements_2025w37_p3|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w37_p3|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w37_p3|value|numeric|NO||
+public|fact_measurements_2025w37_p3|source_hint|text|YES||
+public|fact_measurements_2025w37_p3|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w37_p4|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w37_p4|station_id|bigint|NO||
+public|fact_measurements_2025w37_p4|device_id|bigint|NO||
+public|fact_measurements_2025w37_p4|metric_id|bigint|NO||
+public|fact_measurements_2025w37_p4|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w37_p4|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w37_p4|value|numeric|NO||
+public|fact_measurements_2025w37_p4|source_hint|text|YES||
+public|fact_measurements_2025w37_p4|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w37_p5|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w37_p5|station_id|bigint|NO||
+public|fact_measurements_2025w37_p5|device_id|bigint|NO||
+public|fact_measurements_2025w37_p5|metric_id|bigint|NO||
+public|fact_measurements_2025w37_p5|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w37_p5|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w37_p5|value|numeric|NO||
+public|fact_measurements_2025w37_p5|source_hint|text|YES||
+public|fact_measurements_2025w37_p5|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w37_p6|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w37_p6|station_id|bigint|NO||
+public|fact_measurements_2025w37_p6|device_id|bigint|NO||
+public|fact_measurements_2025w37_p6|metric_id|bigint|NO||
+public|fact_measurements_2025w37_p6|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w37_p6|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w37_p6|value|numeric|NO||
+public|fact_measurements_2025w37_p6|source_hint|text|YES||
+public|fact_measurements_2025w37_p6|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w37_p7|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w37_p7|station_id|bigint|NO||
+public|fact_measurements_2025w37_p7|device_id|bigint|NO||
+public|fact_measurements_2025w37_p7|metric_id|bigint|NO||
+public|fact_measurements_2025w37_p7|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w37_p7|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w37_p7|value|numeric|NO||
+public|fact_measurements_2025w37_p7|source_hint|text|YES||
+public|fact_measurements_2025w37_p7|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w37_p8|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w37_p8|station_id|bigint|NO||
+public|fact_measurements_2025w37_p8|device_id|bigint|NO||
+public|fact_measurements_2025w37_p8|metric_id|bigint|NO||
+public|fact_measurements_2025w37_p8|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w37_p8|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w37_p8|value|numeric|NO||
+public|fact_measurements_2025w37_p8|source_hint|text|YES||
+public|fact_measurements_2025w37_p8|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w37_p9|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w37_p9|station_id|bigint|NO||
+public|fact_measurements_2025w37_p9|device_id|bigint|NO||
+public|fact_measurements_2025w37_p9|metric_id|bigint|NO||
+public|fact_measurements_2025w37_p9|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w37_p9|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w37_p9|value|numeric|NO||
+public|fact_measurements_2025w37_p9|source_hint|text|YES||
+public|fact_measurements_2025w37_p9|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w38_p0|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w38_p0|station_id|bigint|NO||
+public|fact_measurements_2025w38_p0|device_id|bigint|NO||
+public|fact_measurements_2025w38_p0|metric_id|bigint|NO||
+public|fact_measurements_2025w38_p0|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w38_p0|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w38_p0|value|numeric|NO||
+public|fact_measurements_2025w38_p0|source_hint|text|YES||
+public|fact_measurements_2025w38_p0|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w38_p1|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w38_p1|station_id|bigint|NO||
+public|fact_measurements_2025w38_p1|device_id|bigint|NO||
+public|fact_measurements_2025w38_p1|metric_id|bigint|NO||
+public|fact_measurements_2025w38_p1|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w38_p1|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w38_p1|value|numeric|NO||
+public|fact_measurements_2025w38_p1|source_hint|text|YES||
+public|fact_measurements_2025w38_p1|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w38_p10|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w38_p10|station_id|bigint|NO||
+public|fact_measurements_2025w38_p10|device_id|bigint|NO||
+public|fact_measurements_2025w38_p10|metric_id|bigint|NO||
+public|fact_measurements_2025w38_p10|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w38_p10|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w38_p10|value|numeric|NO||
+public|fact_measurements_2025w38_p10|source_hint|text|YES||
+public|fact_measurements_2025w38_p10|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w38_p11|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w38_p11|station_id|bigint|NO||
+public|fact_measurements_2025w38_p11|device_id|bigint|NO||
+public|fact_measurements_2025w38_p11|metric_id|bigint|NO||
+public|fact_measurements_2025w38_p11|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w38_p11|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w38_p11|value|numeric|NO||
+public|fact_measurements_2025w38_p11|source_hint|text|YES||
+public|fact_measurements_2025w38_p11|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w38_p12|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w38_p12|station_id|bigint|NO||
+public|fact_measurements_2025w38_p12|device_id|bigint|NO||
+public|fact_measurements_2025w38_p12|metric_id|bigint|NO||
+public|fact_measurements_2025w38_p12|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w38_p12|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w38_p12|value|numeric|NO||
+public|fact_measurements_2025w38_p12|source_hint|text|YES||
+public|fact_measurements_2025w38_p12|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w38_p13|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w38_p13|station_id|bigint|NO||
+public|fact_measurements_2025w38_p13|device_id|bigint|NO||
+public|fact_measurements_2025w38_p13|metric_id|bigint|NO||
+public|fact_measurements_2025w38_p13|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w38_p13|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w38_p13|value|numeric|NO||
+public|fact_measurements_2025w38_p13|source_hint|text|YES||
+public|fact_measurements_2025w38_p13|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w38_p14|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w38_p14|station_id|bigint|NO||
+public|fact_measurements_2025w38_p14|device_id|bigint|NO||
+public|fact_measurements_2025w38_p14|metric_id|bigint|NO||
+public|fact_measurements_2025w38_p14|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w38_p14|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w38_p14|value|numeric|NO||
+public|fact_measurements_2025w38_p14|source_hint|text|YES||
+public|fact_measurements_2025w38_p14|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w38_p15|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w38_p15|station_id|bigint|NO||
+public|fact_measurements_2025w38_p15|device_id|bigint|NO||
+public|fact_measurements_2025w38_p15|metric_id|bigint|NO||
+public|fact_measurements_2025w38_p15|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w38_p15|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w38_p15|value|numeric|NO||
+public|fact_measurements_2025w38_p15|source_hint|text|YES||
+public|fact_measurements_2025w38_p15|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w38_p2|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w38_p2|station_id|bigint|NO||
+public|fact_measurements_2025w38_p2|device_id|bigint|NO||
+public|fact_measurements_2025w38_p2|metric_id|bigint|NO||
+public|fact_measurements_2025w38_p2|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w38_p2|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w38_p2|value|numeric|NO||
+public|fact_measurements_2025w38_p2|source_hint|text|YES||
+public|fact_measurements_2025w38_p2|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w38_p3|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w38_p3|station_id|bigint|NO||
+public|fact_measurements_2025w38_p3|device_id|bigint|NO||
+public|fact_measurements_2025w38_p3|metric_id|bigint|NO||
+public|fact_measurements_2025w38_p3|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w38_p3|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w38_p3|value|numeric|NO||
+public|fact_measurements_2025w38_p3|source_hint|text|YES||
+public|fact_measurements_2025w38_p3|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w38_p4|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w38_p4|station_id|bigint|NO||
+public|fact_measurements_2025w38_p4|device_id|bigint|NO||
+public|fact_measurements_2025w38_p4|metric_id|bigint|NO||
+public|fact_measurements_2025w38_p4|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w38_p4|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w38_p4|value|numeric|NO||
+public|fact_measurements_2025w38_p4|source_hint|text|YES||
+public|fact_measurements_2025w38_p4|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w38_p5|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w38_p5|station_id|bigint|NO||
+public|fact_measurements_2025w38_p5|device_id|bigint|NO||
+public|fact_measurements_2025w38_p5|metric_id|bigint|NO||
+public|fact_measurements_2025w38_p5|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w38_p5|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w38_p5|value|numeric|NO||
+public|fact_measurements_2025w38_p5|source_hint|text|YES||
+public|fact_measurements_2025w38_p5|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w38_p6|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w38_p6|station_id|bigint|NO||
+public|fact_measurements_2025w38_p6|device_id|bigint|NO||
+public|fact_measurements_2025w38_p6|metric_id|bigint|NO||
+public|fact_measurements_2025w38_p6|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w38_p6|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w38_p6|value|numeric|NO||
+public|fact_measurements_2025w38_p6|source_hint|text|YES||
+public|fact_measurements_2025w38_p6|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w38_p7|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w38_p7|station_id|bigint|NO||
+public|fact_measurements_2025w38_p7|device_id|bigint|NO||
+public|fact_measurements_2025w38_p7|metric_id|bigint|NO||
+public|fact_measurements_2025w38_p7|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w38_p7|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w38_p7|value|numeric|NO||
+public|fact_measurements_2025w38_p7|source_hint|text|YES||
+public|fact_measurements_2025w38_p7|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w38_p8|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w38_p8|station_id|bigint|NO||
+public|fact_measurements_2025w38_p8|device_id|bigint|NO||
+public|fact_measurements_2025w38_p8|metric_id|bigint|NO||
+public|fact_measurements_2025w38_p8|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w38_p8|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w38_p8|value|numeric|NO||
+public|fact_measurements_2025w38_p8|source_hint|text|YES||
+public|fact_measurements_2025w38_p8|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w38_p9|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w38_p9|station_id|bigint|NO||
+public|fact_measurements_2025w38_p9|device_id|bigint|NO||
+public|fact_measurements_2025w38_p9|metric_id|bigint|NO||
+public|fact_measurements_2025w38_p9|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w38_p9|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w38_p9|value|numeric|NO||
+public|fact_measurements_2025w38_p9|source_hint|text|YES||
+public|fact_measurements_2025w38_p9|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w39_p0|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w39_p0|station_id|bigint|NO||
+public|fact_measurements_2025w39_p0|device_id|bigint|NO||
+public|fact_measurements_2025w39_p0|metric_id|bigint|NO||
+public|fact_measurements_2025w39_p0|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w39_p0|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w39_p0|value|numeric|NO||
+public|fact_measurements_2025w39_p0|source_hint|text|YES||
+public|fact_measurements_2025w39_p0|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w39_p1|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w39_p1|station_id|bigint|NO||
+public|fact_measurements_2025w39_p1|device_id|bigint|NO||
+public|fact_measurements_2025w39_p1|metric_id|bigint|NO||
+public|fact_measurements_2025w39_p1|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w39_p1|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w39_p1|value|numeric|NO||
+public|fact_measurements_2025w39_p1|source_hint|text|YES||
+public|fact_measurements_2025w39_p1|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w39_p10|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w39_p10|station_id|bigint|NO||
+public|fact_measurements_2025w39_p10|device_id|bigint|NO||
+public|fact_measurements_2025w39_p10|metric_id|bigint|NO||
+public|fact_measurements_2025w39_p10|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w39_p10|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w39_p10|value|numeric|NO||
+public|fact_measurements_2025w39_p10|source_hint|text|YES||
+public|fact_measurements_2025w39_p10|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w39_p11|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w39_p11|station_id|bigint|NO||
+public|fact_measurements_2025w39_p11|device_id|bigint|NO||
+public|fact_measurements_2025w39_p11|metric_id|bigint|NO||
+public|fact_measurements_2025w39_p11|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w39_p11|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w39_p11|value|numeric|NO||
+public|fact_measurements_2025w39_p11|source_hint|text|YES||
+public|fact_measurements_2025w39_p11|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w39_p12|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w39_p12|station_id|bigint|NO||
+public|fact_measurements_2025w39_p12|device_id|bigint|NO||
+public|fact_measurements_2025w39_p12|metric_id|bigint|NO||
+public|fact_measurements_2025w39_p12|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w39_p12|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w39_p12|value|numeric|NO||
+public|fact_measurements_2025w39_p12|source_hint|text|YES||
+public|fact_measurements_2025w39_p12|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w39_p13|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w39_p13|station_id|bigint|NO||
+public|fact_measurements_2025w39_p13|device_id|bigint|NO||
+public|fact_measurements_2025w39_p13|metric_id|bigint|NO||
+public|fact_measurements_2025w39_p13|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w39_p13|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w39_p13|value|numeric|NO||
+public|fact_measurements_2025w39_p13|source_hint|text|YES||
+public|fact_measurements_2025w39_p13|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w39_p14|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w39_p14|station_id|bigint|NO||
+public|fact_measurements_2025w39_p14|device_id|bigint|NO||
+public|fact_measurements_2025w39_p14|metric_id|bigint|NO||
+public|fact_measurements_2025w39_p14|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w39_p14|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w39_p14|value|numeric|NO||
+public|fact_measurements_2025w39_p14|source_hint|text|YES||
+public|fact_measurements_2025w39_p14|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w39_p15|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w39_p15|station_id|bigint|NO||
+public|fact_measurements_2025w39_p15|device_id|bigint|NO||
+public|fact_measurements_2025w39_p15|metric_id|bigint|NO||
+public|fact_measurements_2025w39_p15|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w39_p15|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w39_p15|value|numeric|NO||
+public|fact_measurements_2025w39_p15|source_hint|text|YES||
+public|fact_measurements_2025w39_p15|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w39_p2|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w39_p2|station_id|bigint|NO||
+public|fact_measurements_2025w39_p2|device_id|bigint|NO||
+public|fact_measurements_2025w39_p2|metric_id|bigint|NO||
+public|fact_measurements_2025w39_p2|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w39_p2|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w39_p2|value|numeric|NO||
+public|fact_measurements_2025w39_p2|source_hint|text|YES||
+public|fact_measurements_2025w39_p2|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w39_p3|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w39_p3|station_id|bigint|NO||
+public|fact_measurements_2025w39_p3|device_id|bigint|NO||
+public|fact_measurements_2025w39_p3|metric_id|bigint|NO||
+public|fact_measurements_2025w39_p3|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w39_p3|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w39_p3|value|numeric|NO||
+public|fact_measurements_2025w39_p3|source_hint|text|YES||
+public|fact_measurements_2025w39_p3|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w39_p4|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w39_p4|station_id|bigint|NO||
+public|fact_measurements_2025w39_p4|device_id|bigint|NO||
+public|fact_measurements_2025w39_p4|metric_id|bigint|NO||
+public|fact_measurements_2025w39_p4|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w39_p4|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w39_p4|value|numeric|NO||
+public|fact_measurements_2025w39_p4|source_hint|text|YES||
+public|fact_measurements_2025w39_p4|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w39_p5|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w39_p5|station_id|bigint|NO||
+public|fact_measurements_2025w39_p5|device_id|bigint|NO||
+public|fact_measurements_2025w39_p5|metric_id|bigint|NO||
+public|fact_measurements_2025w39_p5|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w39_p5|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w39_p5|value|numeric|NO||
+public|fact_measurements_2025w39_p5|source_hint|text|YES||
+public|fact_measurements_2025w39_p5|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w39_p6|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w39_p6|station_id|bigint|NO||
+public|fact_measurements_2025w39_p6|device_id|bigint|NO||
+public|fact_measurements_2025w39_p6|metric_id|bigint|NO||
+public|fact_measurements_2025w39_p6|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w39_p6|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w39_p6|value|numeric|NO||
+public|fact_measurements_2025w39_p6|source_hint|text|YES||
+public|fact_measurements_2025w39_p6|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w39_p7|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w39_p7|station_id|bigint|NO||
+public|fact_measurements_2025w39_p7|device_id|bigint|NO||
+public|fact_measurements_2025w39_p7|metric_id|bigint|NO||
+public|fact_measurements_2025w39_p7|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w39_p7|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w39_p7|value|numeric|NO||
+public|fact_measurements_2025w39_p7|source_hint|text|YES||
+public|fact_measurements_2025w39_p7|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w39_p8|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w39_p8|station_id|bigint|NO||
+public|fact_measurements_2025w39_p8|device_id|bigint|NO||
+public|fact_measurements_2025w39_p8|metric_id|bigint|NO||
+public|fact_measurements_2025w39_p8|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w39_p8|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w39_p8|value|numeric|NO||
+public|fact_measurements_2025w39_p8|source_hint|text|YES||
+public|fact_measurements_2025w39_p8|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w39_p9|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w39_p9|station_id|bigint|NO||
+public|fact_measurements_2025w39_p9|device_id|bigint|NO||
+public|fact_measurements_2025w39_p9|metric_id|bigint|NO||
+public|fact_measurements_2025w39_p9|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w39_p9|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w39_p9|value|numeric|NO||
+public|fact_measurements_2025w39_p9|source_hint|text|YES||
+public|fact_measurements_2025w39_p9|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w40_p0|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w40_p0|station_id|bigint|NO||
+public|fact_measurements_2025w40_p0|device_id|bigint|NO||
+public|fact_measurements_2025w40_p0|metric_id|bigint|NO||
+public|fact_measurements_2025w40_p0|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w40_p0|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w40_p0|value|numeric|NO||
+public|fact_measurements_2025w40_p0|source_hint|text|YES||
+public|fact_measurements_2025w40_p0|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w40_p1|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w40_p1|station_id|bigint|NO||
+public|fact_measurements_2025w40_p1|device_id|bigint|NO||
+public|fact_measurements_2025w40_p1|metric_id|bigint|NO||
+public|fact_measurements_2025w40_p1|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w40_p1|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w40_p1|value|numeric|NO||
+public|fact_measurements_2025w40_p1|source_hint|text|YES||
+public|fact_measurements_2025w40_p1|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w40_p10|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w40_p10|station_id|bigint|NO||
+public|fact_measurements_2025w40_p10|device_id|bigint|NO||
+public|fact_measurements_2025w40_p10|metric_id|bigint|NO||
+public|fact_measurements_2025w40_p10|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w40_p10|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w40_p10|value|numeric|NO||
+public|fact_measurements_2025w40_p10|source_hint|text|YES||
+public|fact_measurements_2025w40_p10|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w40_p11|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w40_p11|station_id|bigint|NO||
+public|fact_measurements_2025w40_p11|device_id|bigint|NO||
+public|fact_measurements_2025w40_p11|metric_id|bigint|NO||
+public|fact_measurements_2025w40_p11|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w40_p11|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w40_p11|value|numeric|NO||
+public|fact_measurements_2025w40_p11|source_hint|text|YES||
+public|fact_measurements_2025w40_p11|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w40_p12|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w40_p12|station_id|bigint|NO||
+public|fact_measurements_2025w40_p12|device_id|bigint|NO||
+public|fact_measurements_2025w40_p12|metric_id|bigint|NO||
+public|fact_measurements_2025w40_p12|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w40_p12|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w40_p12|value|numeric|NO||
+public|fact_measurements_2025w40_p12|source_hint|text|YES||
+public|fact_measurements_2025w40_p12|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w40_p13|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w40_p13|station_id|bigint|NO||
+public|fact_measurements_2025w40_p13|device_id|bigint|NO||
+public|fact_measurements_2025w40_p13|metric_id|bigint|NO||
+public|fact_measurements_2025w40_p13|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w40_p13|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w40_p13|value|numeric|NO||
+public|fact_measurements_2025w40_p13|source_hint|text|YES||
+public|fact_measurements_2025w40_p13|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w40_p14|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w40_p14|station_id|bigint|NO||
+public|fact_measurements_2025w40_p14|device_id|bigint|NO||
+public|fact_measurements_2025w40_p14|metric_id|bigint|NO||
+public|fact_measurements_2025w40_p14|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w40_p14|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w40_p14|value|numeric|NO||
+public|fact_measurements_2025w40_p14|source_hint|text|YES||
+public|fact_measurements_2025w40_p14|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w40_p15|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w40_p15|station_id|bigint|NO||
+public|fact_measurements_2025w40_p15|device_id|bigint|NO||
+public|fact_measurements_2025w40_p15|metric_id|bigint|NO||
+public|fact_measurements_2025w40_p15|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w40_p15|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w40_p15|value|numeric|NO||
+public|fact_measurements_2025w40_p15|source_hint|text|YES||
+public|fact_measurements_2025w40_p15|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w40_p2|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w40_p2|station_id|bigint|NO||
+public|fact_measurements_2025w40_p2|device_id|bigint|NO||
+public|fact_measurements_2025w40_p2|metric_id|bigint|NO||
+public|fact_measurements_2025w40_p2|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w40_p2|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w40_p2|value|numeric|NO||
+public|fact_measurements_2025w40_p2|source_hint|text|YES||
+public|fact_measurements_2025w40_p2|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w40_p3|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w40_p3|station_id|bigint|NO||
+public|fact_measurements_2025w40_p3|device_id|bigint|NO||
+public|fact_measurements_2025w40_p3|metric_id|bigint|NO||
+public|fact_measurements_2025w40_p3|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w40_p3|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w40_p3|value|numeric|NO||
+public|fact_measurements_2025w40_p3|source_hint|text|YES||
+public|fact_measurements_2025w40_p3|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w40_p4|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w40_p4|station_id|bigint|NO||
+public|fact_measurements_2025w40_p4|device_id|bigint|NO||
+public|fact_measurements_2025w40_p4|metric_id|bigint|NO||
+public|fact_measurements_2025w40_p4|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w40_p4|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w40_p4|value|numeric|NO||
+public|fact_measurements_2025w40_p4|source_hint|text|YES||
+public|fact_measurements_2025w40_p4|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w40_p5|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w40_p5|station_id|bigint|NO||
+public|fact_measurements_2025w40_p5|device_id|bigint|NO||
+public|fact_measurements_2025w40_p5|metric_id|bigint|NO||
+public|fact_measurements_2025w40_p5|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w40_p5|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w40_p5|value|numeric|NO||
+public|fact_measurements_2025w40_p5|source_hint|text|YES||
+public|fact_measurements_2025w40_p5|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w40_p6|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w40_p6|station_id|bigint|NO||
+public|fact_measurements_2025w40_p6|device_id|bigint|NO||
+public|fact_measurements_2025w40_p6|metric_id|bigint|NO||
+public|fact_measurements_2025w40_p6|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w40_p6|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w40_p6|value|numeric|NO||
+public|fact_measurements_2025w40_p6|source_hint|text|YES||
+public|fact_measurements_2025w40_p6|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w40_p7|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w40_p7|station_id|bigint|NO||
+public|fact_measurements_2025w40_p7|device_id|bigint|NO||
+public|fact_measurements_2025w40_p7|metric_id|bigint|NO||
+public|fact_measurements_2025w40_p7|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w40_p7|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w40_p7|value|numeric|NO||
+public|fact_measurements_2025w40_p7|source_hint|text|YES||
+public|fact_measurements_2025w40_p7|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w40_p8|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w40_p8|station_id|bigint|NO||
+public|fact_measurements_2025w40_p8|device_id|bigint|NO||
+public|fact_measurements_2025w40_p8|metric_id|bigint|NO||
+public|fact_measurements_2025w40_p8|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w40_p8|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w40_p8|value|numeric|NO||
+public|fact_measurements_2025w40_p8|source_hint|text|YES||
+public|fact_measurements_2025w40_p8|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w40_p9|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w40_p9|station_id|bigint|NO||
+public|fact_measurements_2025w40_p9|device_id|bigint|NO||
+public|fact_measurements_2025w40_p9|metric_id|bigint|NO||
+public|fact_measurements_2025w40_p9|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w40_p9|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w40_p9|value|numeric|NO||
+public|fact_measurements_2025w40_p9|source_hint|text|YES||
+public|fact_measurements_2025w40_p9|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w41_p0|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w41_p0|station_id|bigint|NO||
+public|fact_measurements_2025w41_p0|device_id|bigint|NO||
+public|fact_measurements_2025w41_p0|metric_id|bigint|NO||
+public|fact_measurements_2025w41_p0|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w41_p0|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w41_p0|value|numeric|NO||
+public|fact_measurements_2025w41_p0|source_hint|text|YES||
+public|fact_measurements_2025w41_p0|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w41_p1|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w41_p1|station_id|bigint|NO||
+public|fact_measurements_2025w41_p1|device_id|bigint|NO||
+public|fact_measurements_2025w41_p1|metric_id|bigint|NO||
+public|fact_measurements_2025w41_p1|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w41_p1|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w41_p1|value|numeric|NO||
+public|fact_measurements_2025w41_p1|source_hint|text|YES||
+public|fact_measurements_2025w41_p1|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w41_p10|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w41_p10|station_id|bigint|NO||
+public|fact_measurements_2025w41_p10|device_id|bigint|NO||
+public|fact_measurements_2025w41_p10|metric_id|bigint|NO||
+public|fact_measurements_2025w41_p10|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w41_p10|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w41_p10|value|numeric|NO||
+public|fact_measurements_2025w41_p10|source_hint|text|YES||
+public|fact_measurements_2025w41_p10|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w41_p11|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w41_p11|station_id|bigint|NO||
+public|fact_measurements_2025w41_p11|device_id|bigint|NO||
+public|fact_measurements_2025w41_p11|metric_id|bigint|NO||
+public|fact_measurements_2025w41_p11|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w41_p11|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w41_p11|value|numeric|NO||
+public|fact_measurements_2025w41_p11|source_hint|text|YES||
+public|fact_measurements_2025w41_p11|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w41_p12|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w41_p12|station_id|bigint|NO||
+public|fact_measurements_2025w41_p12|device_id|bigint|NO||
+public|fact_measurements_2025w41_p12|metric_id|bigint|NO||
+public|fact_measurements_2025w41_p12|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w41_p12|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w41_p12|value|numeric|NO||
+public|fact_measurements_2025w41_p12|source_hint|text|YES||
+public|fact_measurements_2025w41_p12|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w41_p13|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w41_p13|station_id|bigint|NO||
+public|fact_measurements_2025w41_p13|device_id|bigint|NO||
+public|fact_measurements_2025w41_p13|metric_id|bigint|NO||
+public|fact_measurements_2025w41_p13|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w41_p13|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w41_p13|value|numeric|NO||
+public|fact_measurements_2025w41_p13|source_hint|text|YES||
+public|fact_measurements_2025w41_p13|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w41_p14|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w41_p14|station_id|bigint|NO||
+public|fact_measurements_2025w41_p14|device_id|bigint|NO||
+public|fact_measurements_2025w41_p14|metric_id|bigint|NO||
+public|fact_measurements_2025w41_p14|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w41_p14|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w41_p14|value|numeric|NO||
+public|fact_measurements_2025w41_p14|source_hint|text|YES||
+public|fact_measurements_2025w41_p14|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w41_p15|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w41_p15|station_id|bigint|NO||
+public|fact_measurements_2025w41_p15|device_id|bigint|NO||
+public|fact_measurements_2025w41_p15|metric_id|bigint|NO||
+public|fact_measurements_2025w41_p15|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w41_p15|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w41_p15|value|numeric|NO||
+public|fact_measurements_2025w41_p15|source_hint|text|YES||
+public|fact_measurements_2025w41_p15|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w41_p2|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w41_p2|station_id|bigint|NO||
+public|fact_measurements_2025w41_p2|device_id|bigint|NO||
+public|fact_measurements_2025w41_p2|metric_id|bigint|NO||
+public|fact_measurements_2025w41_p2|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w41_p2|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w41_p2|value|numeric|NO||
+public|fact_measurements_2025w41_p2|source_hint|text|YES||
+public|fact_measurements_2025w41_p2|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w41_p3|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w41_p3|station_id|bigint|NO||
+public|fact_measurements_2025w41_p3|device_id|bigint|NO||
+public|fact_measurements_2025w41_p3|metric_id|bigint|NO||
+public|fact_measurements_2025w41_p3|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w41_p3|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w41_p3|value|numeric|NO||
+public|fact_measurements_2025w41_p3|source_hint|text|YES||
+public|fact_measurements_2025w41_p3|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w41_p4|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w41_p4|station_id|bigint|NO||
+public|fact_measurements_2025w41_p4|device_id|bigint|NO||
+public|fact_measurements_2025w41_p4|metric_id|bigint|NO||
+public|fact_measurements_2025w41_p4|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w41_p4|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w41_p4|value|numeric|NO||
+public|fact_measurements_2025w41_p4|source_hint|text|YES||
+public|fact_measurements_2025w41_p4|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w41_p5|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w41_p5|station_id|bigint|NO||
+public|fact_measurements_2025w41_p5|device_id|bigint|NO||
+public|fact_measurements_2025w41_p5|metric_id|bigint|NO||
+public|fact_measurements_2025w41_p5|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w41_p5|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w41_p5|value|numeric|NO||
+public|fact_measurements_2025w41_p5|source_hint|text|YES||
+public|fact_measurements_2025w41_p5|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w41_p6|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w41_p6|station_id|bigint|NO||
+public|fact_measurements_2025w41_p6|device_id|bigint|NO||
+public|fact_measurements_2025w41_p6|metric_id|bigint|NO||
+public|fact_measurements_2025w41_p6|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w41_p6|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w41_p6|value|numeric|NO||
+public|fact_measurements_2025w41_p6|source_hint|text|YES||
+public|fact_measurements_2025w41_p6|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w41_p7|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w41_p7|station_id|bigint|NO||
+public|fact_measurements_2025w41_p7|device_id|bigint|NO||
+public|fact_measurements_2025w41_p7|metric_id|bigint|NO||
+public|fact_measurements_2025w41_p7|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w41_p7|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w41_p7|value|numeric|NO||
+public|fact_measurements_2025w41_p7|source_hint|text|YES||
+public|fact_measurements_2025w41_p7|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w41_p8|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w41_p8|station_id|bigint|NO||
+public|fact_measurements_2025w41_p8|device_id|bigint|NO||
+public|fact_measurements_2025w41_p8|metric_id|bigint|NO||
+public|fact_measurements_2025w41_p8|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w41_p8|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w41_p8|value|numeric|NO||
+public|fact_measurements_2025w41_p8|source_hint|text|YES||
+public|fact_measurements_2025w41_p8|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w41_p9|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w41_p9|station_id|bigint|NO||
+public|fact_measurements_2025w41_p9|device_id|bigint|NO||
+public|fact_measurements_2025w41_p9|metric_id|bigint|NO||
+public|fact_measurements_2025w41_p9|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w41_p9|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w41_p9|value|numeric|NO||
+public|fact_measurements_2025w41_p9|source_hint|text|YES||
+public|fact_measurements_2025w41_p9|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w42_p0|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w42_p0|station_id|bigint|NO||
+public|fact_measurements_2025w42_p0|device_id|bigint|NO||
+public|fact_measurements_2025w42_p0|metric_id|bigint|NO||
+public|fact_measurements_2025w42_p0|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w42_p0|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w42_p0|value|numeric|NO||
+public|fact_measurements_2025w42_p0|source_hint|text|YES||
+public|fact_measurements_2025w42_p0|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w42_p1|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w42_p1|station_id|bigint|NO||
+public|fact_measurements_2025w42_p1|device_id|bigint|NO||
+public|fact_measurements_2025w42_p1|metric_id|bigint|NO||
+public|fact_measurements_2025w42_p1|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w42_p1|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w42_p1|value|numeric|NO||
+public|fact_measurements_2025w42_p1|source_hint|text|YES||
+public|fact_measurements_2025w42_p1|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w42_p10|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w42_p10|station_id|bigint|NO||
+public|fact_measurements_2025w42_p10|device_id|bigint|NO||
+public|fact_measurements_2025w42_p10|metric_id|bigint|NO||
+public|fact_measurements_2025w42_p10|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w42_p10|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w42_p10|value|numeric|NO||
+public|fact_measurements_2025w42_p10|source_hint|text|YES||
+public|fact_measurements_2025w42_p10|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w42_p11|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w42_p11|station_id|bigint|NO||
+public|fact_measurements_2025w42_p11|device_id|bigint|NO||
+public|fact_measurements_2025w42_p11|metric_id|bigint|NO||
+public|fact_measurements_2025w42_p11|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w42_p11|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w42_p11|value|numeric|NO||
+public|fact_measurements_2025w42_p11|source_hint|text|YES||
+public|fact_measurements_2025w42_p11|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w42_p12|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w42_p12|station_id|bigint|NO||
+public|fact_measurements_2025w42_p12|device_id|bigint|NO||
+public|fact_measurements_2025w42_p12|metric_id|bigint|NO||
+public|fact_measurements_2025w42_p12|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w42_p12|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w42_p12|value|numeric|NO||
+public|fact_measurements_2025w42_p12|source_hint|text|YES||
+public|fact_measurements_2025w42_p12|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w42_p13|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w42_p13|station_id|bigint|NO||
+public|fact_measurements_2025w42_p13|device_id|bigint|NO||
+public|fact_measurements_2025w42_p13|metric_id|bigint|NO||
+public|fact_measurements_2025w42_p13|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w42_p13|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w42_p13|value|numeric|NO||
+public|fact_measurements_2025w42_p13|source_hint|text|YES||
+public|fact_measurements_2025w42_p13|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w42_p14|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w42_p14|station_id|bigint|NO||
+public|fact_measurements_2025w42_p14|device_id|bigint|NO||
+public|fact_measurements_2025w42_p14|metric_id|bigint|NO||
+public|fact_measurements_2025w42_p14|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w42_p14|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w42_p14|value|numeric|NO||
+public|fact_measurements_2025w42_p14|source_hint|text|YES||
+public|fact_measurements_2025w42_p14|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w42_p15|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w42_p15|station_id|bigint|NO||
+public|fact_measurements_2025w42_p15|device_id|bigint|NO||
+public|fact_measurements_2025w42_p15|metric_id|bigint|NO||
+public|fact_measurements_2025w42_p15|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w42_p15|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w42_p15|value|numeric|NO||
+public|fact_measurements_2025w42_p15|source_hint|text|YES||
+public|fact_measurements_2025w42_p15|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w42_p2|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w42_p2|station_id|bigint|NO||
+public|fact_measurements_2025w42_p2|device_id|bigint|NO||
+public|fact_measurements_2025w42_p2|metric_id|bigint|NO||
+public|fact_measurements_2025w42_p2|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w42_p2|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w42_p2|value|numeric|NO||
+public|fact_measurements_2025w42_p2|source_hint|text|YES||
+public|fact_measurements_2025w42_p2|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w42_p3|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w42_p3|station_id|bigint|NO||
+public|fact_measurements_2025w42_p3|device_id|bigint|NO||
+public|fact_measurements_2025w42_p3|metric_id|bigint|NO||
+public|fact_measurements_2025w42_p3|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w42_p3|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w42_p3|value|numeric|NO||
+public|fact_measurements_2025w42_p3|source_hint|text|YES||
+public|fact_measurements_2025w42_p3|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w42_p4|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w42_p4|station_id|bigint|NO||
+public|fact_measurements_2025w42_p4|device_id|bigint|NO||
+public|fact_measurements_2025w42_p4|metric_id|bigint|NO||
+public|fact_measurements_2025w42_p4|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w42_p4|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w42_p4|value|numeric|NO||
+public|fact_measurements_2025w42_p4|source_hint|text|YES||
+public|fact_measurements_2025w42_p4|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w42_p5|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w42_p5|station_id|bigint|NO||
+public|fact_measurements_2025w42_p5|device_id|bigint|NO||
+public|fact_measurements_2025w42_p5|metric_id|bigint|NO||
+public|fact_measurements_2025w42_p5|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w42_p5|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w42_p5|value|numeric|NO||
+public|fact_measurements_2025w42_p5|source_hint|text|YES||
+public|fact_measurements_2025w42_p5|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w42_p6|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w42_p6|station_id|bigint|NO||
+public|fact_measurements_2025w42_p6|device_id|bigint|NO||
+public|fact_measurements_2025w42_p6|metric_id|bigint|NO||
+public|fact_measurements_2025w42_p6|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w42_p6|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w42_p6|value|numeric|NO||
+public|fact_measurements_2025w42_p6|source_hint|text|YES||
+public|fact_measurements_2025w42_p6|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w42_p7|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w42_p7|station_id|bigint|NO||
+public|fact_measurements_2025w42_p7|device_id|bigint|NO||
+public|fact_measurements_2025w42_p7|metric_id|bigint|NO||
+public|fact_measurements_2025w42_p7|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w42_p7|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w42_p7|value|numeric|NO||
+public|fact_measurements_2025w42_p7|source_hint|text|YES||
+public|fact_measurements_2025w42_p7|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w42_p8|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w42_p8|station_id|bigint|NO||
+public|fact_measurements_2025w42_p8|device_id|bigint|NO||
+public|fact_measurements_2025w42_p8|metric_id|bigint|NO||
+public|fact_measurements_2025w42_p8|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w42_p8|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w42_p8|value|numeric|NO||
+public|fact_measurements_2025w42_p8|source_hint|text|YES||
+public|fact_measurements_2025w42_p8|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w42_p9|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w42_p9|station_id|bigint|NO||
+public|fact_measurements_2025w42_p9|device_id|bigint|NO||
+public|fact_measurements_2025w42_p9|metric_id|bigint|NO||
+public|fact_measurements_2025w42_p9|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w42_p9|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w42_p9|value|numeric|NO||
+public|fact_measurements_2025w42_p9|source_hint|text|YES||
+public|fact_measurements_2025w42_p9|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w43_p0|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w43_p0|station_id|bigint|NO||
+public|fact_measurements_2025w43_p0|device_id|bigint|NO||
+public|fact_measurements_2025w43_p0|metric_id|bigint|NO||
+public|fact_measurements_2025w43_p0|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w43_p0|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w43_p0|value|numeric|NO||
+public|fact_measurements_2025w43_p0|source_hint|text|YES||
+public|fact_measurements_2025w43_p0|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w43_p1|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w43_p1|station_id|bigint|NO||
+public|fact_measurements_2025w43_p1|device_id|bigint|NO||
+public|fact_measurements_2025w43_p1|metric_id|bigint|NO||
+public|fact_measurements_2025w43_p1|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w43_p1|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w43_p1|value|numeric|NO||
+public|fact_measurements_2025w43_p1|source_hint|text|YES||
+public|fact_measurements_2025w43_p1|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w43_p10|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w43_p10|station_id|bigint|NO||
+public|fact_measurements_2025w43_p10|device_id|bigint|NO||
+public|fact_measurements_2025w43_p10|metric_id|bigint|NO||
+public|fact_measurements_2025w43_p10|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w43_p10|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w43_p10|value|numeric|NO||
+public|fact_measurements_2025w43_p10|source_hint|text|YES||
+public|fact_measurements_2025w43_p10|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w43_p11|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w43_p11|station_id|bigint|NO||
+public|fact_measurements_2025w43_p11|device_id|bigint|NO||
+public|fact_measurements_2025w43_p11|metric_id|bigint|NO||
+public|fact_measurements_2025w43_p11|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w43_p11|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w43_p11|value|numeric|NO||
+public|fact_measurements_2025w43_p11|source_hint|text|YES||
+public|fact_measurements_2025w43_p11|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w43_p12|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w43_p12|station_id|bigint|NO||
+public|fact_measurements_2025w43_p12|device_id|bigint|NO||
+public|fact_measurements_2025w43_p12|metric_id|bigint|NO||
+public|fact_measurements_2025w43_p12|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w43_p12|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w43_p12|value|numeric|NO||
+public|fact_measurements_2025w43_p12|source_hint|text|YES||
+public|fact_measurements_2025w43_p12|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w43_p13|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w43_p13|station_id|bigint|NO||
+public|fact_measurements_2025w43_p13|device_id|bigint|NO||
+public|fact_measurements_2025w43_p13|metric_id|bigint|NO||
+public|fact_measurements_2025w43_p13|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w43_p13|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w43_p13|value|numeric|NO||
+public|fact_measurements_2025w43_p13|source_hint|text|YES||
+public|fact_measurements_2025w43_p13|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w43_p14|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w43_p14|station_id|bigint|NO||
+public|fact_measurements_2025w43_p14|device_id|bigint|NO||
+public|fact_measurements_2025w43_p14|metric_id|bigint|NO||
+public|fact_measurements_2025w43_p14|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w43_p14|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w43_p14|value|numeric|NO||
+public|fact_measurements_2025w43_p14|source_hint|text|YES||
+public|fact_measurements_2025w43_p14|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w43_p15|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w43_p15|station_id|bigint|NO||
+public|fact_measurements_2025w43_p15|device_id|bigint|NO||
+public|fact_measurements_2025w43_p15|metric_id|bigint|NO||
+public|fact_measurements_2025w43_p15|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w43_p15|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w43_p15|value|numeric|NO||
+public|fact_measurements_2025w43_p15|source_hint|text|YES||
+public|fact_measurements_2025w43_p15|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w43_p2|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w43_p2|station_id|bigint|NO||
+public|fact_measurements_2025w43_p2|device_id|bigint|NO||
+public|fact_measurements_2025w43_p2|metric_id|bigint|NO||
+public|fact_measurements_2025w43_p2|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w43_p2|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w43_p2|value|numeric|NO||
+public|fact_measurements_2025w43_p2|source_hint|text|YES||
+public|fact_measurements_2025w43_p2|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w43_p3|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w43_p3|station_id|bigint|NO||
+public|fact_measurements_2025w43_p3|device_id|bigint|NO||
+public|fact_measurements_2025w43_p3|metric_id|bigint|NO||
+public|fact_measurements_2025w43_p3|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w43_p3|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w43_p3|value|numeric|NO||
+public|fact_measurements_2025w43_p3|source_hint|text|YES||
+public|fact_measurements_2025w43_p3|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w43_p4|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w43_p4|station_id|bigint|NO||
+public|fact_measurements_2025w43_p4|device_id|bigint|NO||
+public|fact_measurements_2025w43_p4|metric_id|bigint|NO||
+public|fact_measurements_2025w43_p4|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w43_p4|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w43_p4|value|numeric|NO||
+public|fact_measurements_2025w43_p4|source_hint|text|YES||
+public|fact_measurements_2025w43_p4|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w43_p5|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w43_p5|station_id|bigint|NO||
+public|fact_measurements_2025w43_p5|device_id|bigint|NO||
+public|fact_measurements_2025w43_p5|metric_id|bigint|NO||
+public|fact_measurements_2025w43_p5|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w43_p5|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w43_p5|value|numeric|NO||
+public|fact_measurements_2025w43_p5|source_hint|text|YES||
+public|fact_measurements_2025w43_p5|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w43_p6|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w43_p6|station_id|bigint|NO||
+public|fact_measurements_2025w43_p6|device_id|bigint|NO||
+public|fact_measurements_2025w43_p6|metric_id|bigint|NO||
+public|fact_measurements_2025w43_p6|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w43_p6|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w43_p6|value|numeric|NO||
+public|fact_measurements_2025w43_p6|source_hint|text|YES||
+public|fact_measurements_2025w43_p6|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w43_p7|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w43_p7|station_id|bigint|NO||
+public|fact_measurements_2025w43_p7|device_id|bigint|NO||
+public|fact_measurements_2025w43_p7|metric_id|bigint|NO||
+public|fact_measurements_2025w43_p7|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w43_p7|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w43_p7|value|numeric|NO||
+public|fact_measurements_2025w43_p7|source_hint|text|YES||
+public|fact_measurements_2025w43_p7|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w43_p8|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w43_p8|station_id|bigint|NO||
+public|fact_measurements_2025w43_p8|device_id|bigint|NO||
+public|fact_measurements_2025w43_p8|metric_id|bigint|NO||
+public|fact_measurements_2025w43_p8|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w43_p8|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w43_p8|value|numeric|NO||
+public|fact_measurements_2025w43_p8|source_hint|text|YES||
+public|fact_measurements_2025w43_p8|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w43_p9|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w43_p9|station_id|bigint|NO||
+public|fact_measurements_2025w43_p9|device_id|bigint|NO||
+public|fact_measurements_2025w43_p9|metric_id|bigint|NO||
+public|fact_measurements_2025w43_p9|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w43_p9|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w43_p9|value|numeric|NO||
+public|fact_measurements_2025w43_p9|source_hint|text|YES||
+public|fact_measurements_2025w43_p9|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w44_p0|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w44_p0|station_id|bigint|NO||
+public|fact_measurements_2025w44_p0|device_id|bigint|NO||
+public|fact_measurements_2025w44_p0|metric_id|bigint|NO||
+public|fact_measurements_2025w44_p0|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w44_p0|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w44_p0|value|numeric|NO||
+public|fact_measurements_2025w44_p0|source_hint|text|YES||
+public|fact_measurements_2025w44_p0|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w44_p1|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w44_p1|station_id|bigint|NO||
+public|fact_measurements_2025w44_p1|device_id|bigint|NO||
+public|fact_measurements_2025w44_p1|metric_id|bigint|NO||
+public|fact_measurements_2025w44_p1|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w44_p1|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w44_p1|value|numeric|NO||
+public|fact_measurements_2025w44_p1|source_hint|text|YES||
+public|fact_measurements_2025w44_p1|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w44_p10|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w44_p10|station_id|bigint|NO||
+public|fact_measurements_2025w44_p10|device_id|bigint|NO||
+public|fact_measurements_2025w44_p10|metric_id|bigint|NO||
+public|fact_measurements_2025w44_p10|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w44_p10|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w44_p10|value|numeric|NO||
+public|fact_measurements_2025w44_p10|source_hint|text|YES||
+public|fact_measurements_2025w44_p10|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w44_p11|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w44_p11|station_id|bigint|NO||
+public|fact_measurements_2025w44_p11|device_id|bigint|NO||
+public|fact_measurements_2025w44_p11|metric_id|bigint|NO||
+public|fact_measurements_2025w44_p11|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w44_p11|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w44_p11|value|numeric|NO||
+public|fact_measurements_2025w44_p11|source_hint|text|YES||
+public|fact_measurements_2025w44_p11|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w44_p12|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w44_p12|station_id|bigint|NO||
+public|fact_measurements_2025w44_p12|device_id|bigint|NO||
+public|fact_measurements_2025w44_p12|metric_id|bigint|NO||
+public|fact_measurements_2025w44_p12|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w44_p12|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w44_p12|value|numeric|NO||
+public|fact_measurements_2025w44_p12|source_hint|text|YES||
+public|fact_measurements_2025w44_p12|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w44_p13|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w44_p13|station_id|bigint|NO||
+public|fact_measurements_2025w44_p13|device_id|bigint|NO||
+public|fact_measurements_2025w44_p13|metric_id|bigint|NO||
+public|fact_measurements_2025w44_p13|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w44_p13|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w44_p13|value|numeric|NO||
+public|fact_measurements_2025w44_p13|source_hint|text|YES||
+public|fact_measurements_2025w44_p13|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w44_p14|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w44_p14|station_id|bigint|NO||
+public|fact_measurements_2025w44_p14|device_id|bigint|NO||
+public|fact_measurements_2025w44_p14|metric_id|bigint|NO||
+public|fact_measurements_2025w44_p14|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w44_p14|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w44_p14|value|numeric|NO||
+public|fact_measurements_2025w44_p14|source_hint|text|YES||
+public|fact_measurements_2025w44_p14|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w44_p15|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w44_p15|station_id|bigint|NO||
+public|fact_measurements_2025w44_p15|device_id|bigint|NO||
+public|fact_measurements_2025w44_p15|metric_id|bigint|NO||
+public|fact_measurements_2025w44_p15|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w44_p15|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w44_p15|value|numeric|NO||
+public|fact_measurements_2025w44_p15|source_hint|text|YES||
+public|fact_measurements_2025w44_p15|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w44_p2|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w44_p2|station_id|bigint|NO||
+public|fact_measurements_2025w44_p2|device_id|bigint|NO||
+public|fact_measurements_2025w44_p2|metric_id|bigint|NO||
+public|fact_measurements_2025w44_p2|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w44_p2|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w44_p2|value|numeric|NO||
+public|fact_measurements_2025w44_p2|source_hint|text|YES||
+public|fact_measurements_2025w44_p2|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w44_p3|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w44_p3|station_id|bigint|NO||
+public|fact_measurements_2025w44_p3|device_id|bigint|NO||
+public|fact_measurements_2025w44_p3|metric_id|bigint|NO||
+public|fact_measurements_2025w44_p3|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w44_p3|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w44_p3|value|numeric|NO||
+public|fact_measurements_2025w44_p3|source_hint|text|YES||
+public|fact_measurements_2025w44_p3|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w44_p4|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w44_p4|station_id|bigint|NO||
+public|fact_measurements_2025w44_p4|device_id|bigint|NO||
+public|fact_measurements_2025w44_p4|metric_id|bigint|NO||
+public|fact_measurements_2025w44_p4|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w44_p4|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w44_p4|value|numeric|NO||
+public|fact_measurements_2025w44_p4|source_hint|text|YES||
+public|fact_measurements_2025w44_p4|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w44_p5|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w44_p5|station_id|bigint|NO||
+public|fact_measurements_2025w44_p5|device_id|bigint|NO||
+public|fact_measurements_2025w44_p5|metric_id|bigint|NO||
+public|fact_measurements_2025w44_p5|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w44_p5|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w44_p5|value|numeric|NO||
+public|fact_measurements_2025w44_p5|source_hint|text|YES||
+public|fact_measurements_2025w44_p5|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w44_p6|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w44_p6|station_id|bigint|NO||
+public|fact_measurements_2025w44_p6|device_id|bigint|NO||
+public|fact_measurements_2025w44_p6|metric_id|bigint|NO||
+public|fact_measurements_2025w44_p6|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w44_p6|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w44_p6|value|numeric|NO||
+public|fact_measurements_2025w44_p6|source_hint|text|YES||
+public|fact_measurements_2025w44_p6|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w44_p7|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w44_p7|station_id|bigint|NO||
+public|fact_measurements_2025w44_p7|device_id|bigint|NO||
+public|fact_measurements_2025w44_p7|metric_id|bigint|NO||
+public|fact_measurements_2025w44_p7|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w44_p7|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w44_p7|value|numeric|NO||
+public|fact_measurements_2025w44_p7|source_hint|text|YES||
+public|fact_measurements_2025w44_p7|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w44_p8|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w44_p8|station_id|bigint|NO||
+public|fact_measurements_2025w44_p8|device_id|bigint|NO||
+public|fact_measurements_2025w44_p8|metric_id|bigint|NO||
+public|fact_measurements_2025w44_p8|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w44_p8|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w44_p8|value|numeric|NO||
+public|fact_measurements_2025w44_p8|source_hint|text|YES||
+public|fact_measurements_2025w44_p8|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w44_p9|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w44_p9|station_id|bigint|NO||
+public|fact_measurements_2025w44_p9|device_id|bigint|NO||
+public|fact_measurements_2025w44_p9|metric_id|bigint|NO||
+public|fact_measurements_2025w44_p9|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w44_p9|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w44_p9|value|numeric|NO||
+public|fact_measurements_2025w44_p9|source_hint|text|YES||
+public|fact_measurements_2025w44_p9|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w45_p0|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w45_p0|station_id|bigint|NO||
+public|fact_measurements_2025w45_p0|device_id|bigint|NO||
+public|fact_measurements_2025w45_p0|metric_id|bigint|NO||
+public|fact_measurements_2025w45_p0|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w45_p0|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w45_p0|value|numeric|NO||
+public|fact_measurements_2025w45_p0|source_hint|text|YES||
+public|fact_measurements_2025w45_p0|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w45_p1|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w45_p1|station_id|bigint|NO||
+public|fact_measurements_2025w45_p1|device_id|bigint|NO||
+public|fact_measurements_2025w45_p1|metric_id|bigint|NO||
+public|fact_measurements_2025w45_p1|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w45_p1|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w45_p1|value|numeric|NO||
+public|fact_measurements_2025w45_p1|source_hint|text|YES||
+public|fact_measurements_2025w45_p1|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w45_p10|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w45_p10|station_id|bigint|NO||
+public|fact_measurements_2025w45_p10|device_id|bigint|NO||
+public|fact_measurements_2025w45_p10|metric_id|bigint|NO||
+public|fact_measurements_2025w45_p10|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w45_p10|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w45_p10|value|numeric|NO||
+public|fact_measurements_2025w45_p10|source_hint|text|YES||
+public|fact_measurements_2025w45_p10|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w45_p11|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w45_p11|station_id|bigint|NO||
+public|fact_measurements_2025w45_p11|device_id|bigint|NO||
+public|fact_measurements_2025w45_p11|metric_id|bigint|NO||
+public|fact_measurements_2025w45_p11|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w45_p11|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w45_p11|value|numeric|NO||
+public|fact_measurements_2025w45_p11|source_hint|text|YES||
+public|fact_measurements_2025w45_p11|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w45_p12|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w45_p12|station_id|bigint|NO||
+public|fact_measurements_2025w45_p12|device_id|bigint|NO||
+public|fact_measurements_2025w45_p12|metric_id|bigint|NO||
+public|fact_measurements_2025w45_p12|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w45_p12|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w45_p12|value|numeric|NO||
+public|fact_measurements_2025w45_p12|source_hint|text|YES||
+public|fact_measurements_2025w45_p12|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w45_p13|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w45_p13|station_id|bigint|NO||
+public|fact_measurements_2025w45_p13|device_id|bigint|NO||
+public|fact_measurements_2025w45_p13|metric_id|bigint|NO||
+public|fact_measurements_2025w45_p13|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w45_p13|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w45_p13|value|numeric|NO||
+public|fact_measurements_2025w45_p13|source_hint|text|YES||
+public|fact_measurements_2025w45_p13|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w45_p14|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w45_p14|station_id|bigint|NO||
+public|fact_measurements_2025w45_p14|device_id|bigint|NO||
+public|fact_measurements_2025w45_p14|metric_id|bigint|NO||
+public|fact_measurements_2025w45_p14|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w45_p14|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w45_p14|value|numeric|NO||
+public|fact_measurements_2025w45_p14|source_hint|text|YES||
+public|fact_measurements_2025w45_p14|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w45_p15|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w45_p15|station_id|bigint|NO||
+public|fact_measurements_2025w45_p15|device_id|bigint|NO||
+public|fact_measurements_2025w45_p15|metric_id|bigint|NO||
+public|fact_measurements_2025w45_p15|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w45_p15|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w45_p15|value|numeric|NO||
+public|fact_measurements_2025w45_p15|source_hint|text|YES||
+public|fact_measurements_2025w45_p15|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w45_p2|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w45_p2|station_id|bigint|NO||
+public|fact_measurements_2025w45_p2|device_id|bigint|NO||
+public|fact_measurements_2025w45_p2|metric_id|bigint|NO||
+public|fact_measurements_2025w45_p2|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w45_p2|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w45_p2|value|numeric|NO||
+public|fact_measurements_2025w45_p2|source_hint|text|YES||
+public|fact_measurements_2025w45_p2|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w45_p3|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w45_p3|station_id|bigint|NO||
+public|fact_measurements_2025w45_p3|device_id|bigint|NO||
+public|fact_measurements_2025w45_p3|metric_id|bigint|NO||
+public|fact_measurements_2025w45_p3|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w45_p3|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w45_p3|value|numeric|NO||
+public|fact_measurements_2025w45_p3|source_hint|text|YES||
+public|fact_measurements_2025w45_p3|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w45_p4|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w45_p4|station_id|bigint|NO||
+public|fact_measurements_2025w45_p4|device_id|bigint|NO||
+public|fact_measurements_2025w45_p4|metric_id|bigint|NO||
+public|fact_measurements_2025w45_p4|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w45_p4|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w45_p4|value|numeric|NO||
+public|fact_measurements_2025w45_p4|source_hint|text|YES||
+public|fact_measurements_2025w45_p4|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w45_p5|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w45_p5|station_id|bigint|NO||
+public|fact_measurements_2025w45_p5|device_id|bigint|NO||
+public|fact_measurements_2025w45_p5|metric_id|bigint|NO||
+public|fact_measurements_2025w45_p5|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w45_p5|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w45_p5|value|numeric|NO||
+public|fact_measurements_2025w45_p5|source_hint|text|YES||
+public|fact_measurements_2025w45_p5|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w45_p6|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w45_p6|station_id|bigint|NO||
+public|fact_measurements_2025w45_p6|device_id|bigint|NO||
+public|fact_measurements_2025w45_p6|metric_id|bigint|NO||
+public|fact_measurements_2025w45_p6|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w45_p6|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w45_p6|value|numeric|NO||
+public|fact_measurements_2025w45_p6|source_hint|text|YES||
+public|fact_measurements_2025w45_p6|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w45_p7|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w45_p7|station_id|bigint|NO||
+public|fact_measurements_2025w45_p7|device_id|bigint|NO||
+public|fact_measurements_2025w45_p7|metric_id|bigint|NO||
+public|fact_measurements_2025w45_p7|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w45_p7|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w45_p7|value|numeric|NO||
+public|fact_measurements_2025w45_p7|source_hint|text|YES||
+public|fact_measurements_2025w45_p7|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w45_p8|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w45_p8|station_id|bigint|NO||
+public|fact_measurements_2025w45_p8|device_id|bigint|NO||
+public|fact_measurements_2025w45_p8|metric_id|bigint|NO||
+public|fact_measurements_2025w45_p8|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w45_p8|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w45_p8|value|numeric|NO||
+public|fact_measurements_2025w45_p8|source_hint|text|YES||
+public|fact_measurements_2025w45_p8|inserted_at|timestamp with time zone|YES|now()|
+public|fact_measurements_2025w45_p9|id|bigint|NO|nextval('fact_measurements_id_seq'::regclass)|
+public|fact_measurements_2025w45_p9|station_id|bigint|NO||
+public|fact_measurements_2025w45_p9|device_id|bigint|NO||
+public|fact_measurements_2025w45_p9|metric_id|bigint|NO||
+public|fact_measurements_2025w45_p9|ts_raw|timestamp with time zone|NO||
+public|fact_measurements_2025w45_p9|ts_bucket|timestamp with time zone|NO||
+public|fact_measurements_2025w45_p9|value|numeric|NO||
+public|fact_measurements_2025w45_p9|source_hint|text|YES||
+public|fact_measurements_2025w45_p9|inserted_at|timestamp with time zone|YES|now()|
+reporting|mv_measurements_daily|station_id|bigint|YES||
+reporting|mv_measurements_daily|device_id|bigint|YES||
+reporting|mv_measurements_daily|metric_id|bigint|YES||
+reporting|mv_measurements_daily|ts_day|timestamp with time zone|YES||
+reporting|mv_measurements_daily|cnt|bigint|YES||
+reporting|mv_measurements_daily|avg_value|numeric|YES||
+reporting|mv_measurements_daily|min_value|numeric|YES||
+reporting|mv_measurements_daily|max_value|numeric|YES||
+reporting|mv_measurements_daily|sum_value|numeric|YES||
+reporting|mv_measurements_hourly|station_id|bigint|YES||
+reporting|mv_measurements_hourly|device_id|bigint|YES||
+reporting|mv_measurements_hourly|metric_id|bigint|YES||
+reporting|mv_measurements_hourly|ts_hour|timestamp with time zone|YES||
+reporting|mv_measurements_hourly|cnt|bigint|YES||
+reporting|mv_measurements_hourly|avg_value|numeric|YES||
+reporting|mv_measurements_hourly|min_value|numeric|YES||
+reporting|mv_measurements_hourly|max_value|numeric|YES||
+reporting|mv_measurements_hourly|sum_value|numeric|YES||

@@ -1,3 +1,29 @@
+repos:
+  - repo: https://github.com/psf/black
+    rev: 24.4.2
+    hooks:
+      - id: black
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.5.0
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+  - repo: local
+    hooks:
+      - id: memory-check
+        name: memory-check
+        entry: python scripts/tools/memory_check.py
+        language: system
+        pass_filenames: false
+        stages: [commit]
+      - id: memory-index
+        name: memory-index
+        entry: python scripts/tools/memory_index.py
+        language: system
+        pass_filenames: false
+        stages: [commit]
+
+
 exclude: |
   ^(venv/|\.venv/|env/|data/|ProjectDocs/)
 
@@ -9,6 +35,9 @@ repos:
       - id: end-of-file-fixer
       - id: check-merge-conflict
       - id: check-yaml
+      - id: detect-private-key
+      - id: mixed-line-ending
+
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.6.2
@@ -36,6 +65,23 @@ repos:
     hooks:
       - id: bandit
         args: ["-q"]
+
+  - repo: https://github.com/executablebooks/mdformat
+    rev: 0.7.17
+    hooks:
+      - id: mdformat
+        additional_dependencies: [mdformat-gfm]
+
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+
+  - repo: https://github.com/PyCQA/pydocstyle
+    rev: 6.3.0
+    hooks:
+      - id: pydocstyle
+
         files: "\\.py$"
         exclude: "^tests/"
         pass_filenames: true
