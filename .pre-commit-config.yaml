@@ -1,32 +1,4 @@
-repos:
-  - repo: https://github.com/psf/black
-    rev: 24.4.2
-    hooks:
-      - id: black
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.5.0
-    hooks:
-      - id: ruff
-        args: ["--fix"]
-  - repo: local
-    hooks:
-      - id: memory-check
-        name: memory-check
-        entry: python scripts/tools/memory_check.py
-        language: system
-        pass_filenames: false
-        stages: [commit]
-      - id: memory-index
-        name: memory-index
-        entry: python scripts/tools/memory_index.py
-        language: system
-        pass_filenames: false
-        stages: [commit]
-
-
-exclude: |
-  ^(venv/|\.venv/|env/|data/|ProjectDocs/)
-
+---
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
@@ -38,14 +10,11 @@ repos:
       - id: detect-private-key
       - id: mixed-line-ending
 
-
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.6.2
     hooks:
       - id: ruff
         args: ["--fix"]
-      # 如需用 Ruff Formatter 可启用下行并移除 Black
-      # - id: ruff-format
 
   - repo: https://github.com/psf/black
     rev: 24.4.2
@@ -58,7 +27,6 @@ repos:
     hooks:
       - id: mypy
         args: ["--ignore-missing-imports", "--install-types", "--non-interactive"]
-        additional_dependencies: []
 
   - repo: https://github.com/PyCQA/bandit
     rev: 1.7.9
@@ -82,6 +50,20 @@ repos:
     hooks:
       - id: pydocstyle
 
-        files: "\\.py$"
-        exclude: "^tests/"
-        pass_filenames: true
+  - repo: local
+    hooks:
+      - id: memory-check
+        name: memory-check
+        entry: python scripts/tools/memory_check.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: memory-index
+        name: memory-index
+        entry: python scripts/tools/memory_index.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+exclude: |
+  ^(venv/|\.venv/|env/|data/|ProjectDocs/)

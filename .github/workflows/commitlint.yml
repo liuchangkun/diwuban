@@ -1,3 +1,4 @@
+---
 name: Commitlint
 on:
   pull_request:
@@ -11,8 +12,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: npm install --global @commitlint/cli @commitlint/config-conventional
-      - run: echo "module.exports = { extends: ['@commitlint/config-conventional'] };" > commitlint.config.js
+      - name: Install commitlint
+        run: npm install --global @commitlint/cli @commitlint/config-conventional
+        shell: bash
+      - name: Write commitlint config
+        run: |
+          echo "module.exports = {extends: ['@commitlint/config-conventional']};" > commitlint.config.js
+        shell: bash
       - name: Lint PR commits
         uses: wagoid/commitlint-github-action@v6
         with:

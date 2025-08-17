@@ -37,7 +37,15 @@ PLAYBOOK_FILES = [
     os.path.join(PLAYBOOKS_DIR, "性能基准.md"),
 ]
 
-FRONT_MATTER_RE = re.compile(r"---\s*\n(.*?)\n---", re.DOTALL)
+# 兼容三种 front matter 形态：
+# 1) 典型 YAML: ---\nkey: val\n---
+# 2) 单行标题包含键值（"## id: ... date: ... summary: ..."）
+# 3) 下划线分隔线 + 下一行为以 "## id:" 开头的行
+FRONT_MATTER_RE = re.compile(r"---\s*\r?\n(.*?)\r?\n---", re.DOTALL)
+SINGLELINE_ENTRY_RE = re.compile(
+    r"^##\s+id:\s*(?P<id>[^\s]+).*?date:\s*(?P<date>\d{4}-\d{2}-\d{2}).*?summary:\s*(?P<summary>.+)$"
+)
+UNDERLINE_SPLIT_RE = re.compile(r"^_{6,}$")
 ID_RE = re.compile(r"^([A-Z]+)-(\d{8})-(\d+)$")
 DATE_FMT = "%Y-%m-%d"
 BEGIN_MARK = "<!-- memory_index:BEGIN -->"
@@ -103,13 +111,28 @@ def collect_entries() -> List[Tuple[str, str, str]]:
         except Exception as e:
             log(f"错误：读取失败 {os.path.relpath(f, ROOT)}: {e}")
             continue
+        # 1) YAML front matter
         blocks = FRONT_MATTER_RE.findall(text)
-        log(f"文件 {os.path.relpath(f, ROOT)} 提取到 front matter 块 {len(blocks)} 个")
+        yaml_count = 0
         for b in blocks:
             tpl = parse_front_matter(b)
             if tpl is None:
                 continue
             entries.append(tpl)
+            yaml_count += 1
+        # 2) 单行 "## id: ... date: ... summary: ..."
+        single_count = 0
+        for line in text.splitlines():
+            m = SINGLELINE_ENTRY_RE.match(line.strip())
+            if m:
+                id_val = m.group("id").strip()
+                date_val = m.group("date").strip()
+                summary_val = m.group("summary").strip()
+                entries.append((id_val, date_val, summary_val))
+                single_count += 1
+        log(
+            f"文件 {os.path.relpath(f, ROOT)} front matter 块 {yaml_count}，单行条目 {single_count}"
+        )
     return entries
 
 
