@@ -1,0 +1,21 @@
+阶段1：最小造数与对齐检查（dev）
+
+执行脚本：scripts/dev/seed_minimal_demo.sql
+核心配置：dim_stations.extra->>'tz' = 'Asia/Shanghai'；写入使用 safe_upsert_measurement_local（本地时间按站点时区转 UTC，秒级对齐）
+
+关键信息：
+- 写入 frequency 两条（同一秒 10:00:00 与 10:00:00.800）→ 主键冲突合并成功（返回 true*2）
+- 写入 flow_rate 两条（10:15 与 11:45）→ 成功
+
+计数检查（示例）：
+- stations           | 1
+- pump_devices       | 1
+- main_devices       | 1
+- metric_config_keys | 2
+- mapping_items      | 72
+
+对齐检查：
+- not_aligned = 0（全部满足 date_trunc('second', ts_bucket) = ts_bucket）
+
+备注：
+- 本次最小化演示仅验证 frequency/flow_rate 两类指标；其余指标在 dim_metric_config 中已补齐，后续按需写入。

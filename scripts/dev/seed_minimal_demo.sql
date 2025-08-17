@@ -1,4 +1,6 @@
 -- 最小化演示造数（dev）— 维表就绪 + 插入少量事实数据（对齐秒级）
+SET client_encoding TO 'UTF8';
+
 -- 前提：已创建数据库与表结构；允许在 dev 环境写入少量测试数据
 -- 约束：时间按泵站时区（extra->>'tz'）对齐到 UTC 秒；不使用 CSV 文件名/路径推断维度/指标
 \set ON_ERROR_STOP 1
@@ -29,7 +31,7 @@ WITH s AS (
   SELECT id FROM public.dim_stations WHERE name='二期供水泵房' LIMIT 1
 )
 INSERT INTO public.dim_devices(station_id, name, type, pump_type, extra)
-SELECT s.id, '二期供水泵房总管', 'Main_pipeline', NULL, NULL
+SELECT s.id, '二期供水泵房总管', 'main_pipeline', NULL, NULL
 FROM s
 WHERE NOT EXISTS (
   SELECT 1 FROM public.dim_devices d WHERE d.name='二期供水泵房总管' AND d.station_id=s.id
@@ -52,20 +54,19 @@ WHERE NOT EXISTS (
 );
 
 -- 4) 映射快照（示例：为泵与总管各生成若干 metric 映射）
-WITH s AS (SELECT id, name FROM public.dim_stations WHERE name='二期供水泵房' LIMIT 1),
-     pump AS (SELECT id, name FROM public.dim_devices d JOIN s ON d.station_id=s.id WHERE d.name='二期供水泵房1#泵' LIMIT 1),
-     main AS (SELECT id, name FROM public.dim_devices d JOIN s ON d.station_id=s.id WHERE d.name='二期供水泵房总管' LIMIT 1)
+WITH s AS (SELECT s.id AS sid, s.name AS sname FROM public.dim_stations s WHERE s.name='二期供水泵房' LIMIT 1),
+     pump AS (SELECT d.id AS did, d.name AS dname FROM public.dim_devices d JOIN s ON d.station_id=s.sid WHERE d.name='二期供水泵房1#泵' LIMIT 1)
 INSERT INTO public.dim_mapping_items(mapping_hash, station_name, device_name, metric_key, source_hint)
-SELECT md5(s.name||'|'||p.name||'|'||k)::text, s.name, p.name, k, 'data_mapping.json'
+SELECT md5(s.sname||'|'||p.dname||'|'||k)::text, s.sname, p.dname, k, 'data_mapping.json'
 FROM s JOIN pump p ON TRUE, LATERAL (VALUES
   ('frequency'),('voltage_a'),('current_a'),('power'),('kwh'),('power_factor')
 ) AS t(k)
 ON CONFLICT DO NOTHING;
 
-WITH s AS (SELECT id, name FROM public.dim_stations WHERE name='二期供水泵房' LIMIT 1),
-     main AS (SELECT id, name FROM public.dim_devices d JOIN s ON d.station_id=s.id WHERE d.name='二期供水泵房总管' LIMIT 1)
+WITH s AS (SELECT s.id AS sid, s.name AS sname FROM public.dim_stations s WHERE s.name='二期供水泵房' LIMIT 1),
+     main AS (SELECT d.id AS did, d.name AS dname FROM public.dim_devices d JOIN s ON d.station_id=s.sid WHERE d.name='二期供水泵房总管' LIMIT 1)
 INSERT INTO public.dim_mapping_items(mapping_hash, station_name, device_name, metric_key, source_hint)
-SELECT md5(s.name||'|'||m.name||'|'||k)::text, s.name, m.name, k, 'data_mapping.json'
+SELECT md5(s.sname||'|'||m.dname||'|'||k)::text, s.sname, m.dname, k, 'data_mapping.json'
 FROM s JOIN main m ON TRUE, LATERAL (VALUES
   ('pressure'),('flow_rate'),('cumulative_flow')
 ) AS t(k)
@@ -75,16 +76,26 @@ ON CONFLICT DO NOTHING;
 -- 5.1) 泵设备：frequency（两条同一秒，验证合并）
 WITH s AS (SELECT id FROM public.dim_stations WHERE name='二期供水泵房' LIMIT 1),
      d AS (SELECT id FROM public.dim_devices WHERE name='二期供水泵房1#泵' LIMIT 1),
-     m AS (SELECT id FROM public.dim_metric_config WHERE metric_key='frequency' LIMIT 1)
-SELECT public.safe_upsert_measurement_local((SELECT id FROM s),(SELECT id FROM d),(SELECT id FROM m),'2025-08-16 10:00:00', 30.5, 'demo');
-SELECT public.safe_upsert_measurement_local((SELECT id FROM s),(SELECT id FROM d),(SELECT id FROM m),'2025-08-16 10:00:00.800', 31.0, 'demo');
+     m AS (SELECT id FROM public.dim_metric_config WHERE metric_key='frequency' LIMIT 1),
+     t AS (
+       SELECT '2025-08-16 10:00:00'::timestamp AS ts_local, 30.5::numeric AS val
+       UNION ALL
+       SELECT '2025-08-16 10:00:00.800'::timestamp, 31.0::numeric
+     )
+SELECT public.safe_upsert_measurement_local((SELECT id FROM s),(SELECT id FROM d),(SELECT id FROM m), t.ts_local, t.val, 'demo')
+FROM t;
 
 -- 5.2) 总管：flow_rate（两小时两条）
 WITH s AS (SELECT id FROM public.dim_stations WHERE name='二期供水泵房' LIMIT 1),
      d AS (SELECT id FROM public.dim_devices WHERE name='二期供水泵房总管' LIMIT 1),
-     m AS (SELECT id FROM public.dim_metric_config WHERE metric_key='flow_rate' LIMIT 1)
-SELECT public.safe_upsert_measurement_local((SELECT id FROM s),(SELECT id FROM d),(SELECT id FROM m),'2025-08-16 10:15:00', 120.0, 'demo');
-SELECT public.safe_upsert_measurement_local((SELECT id FROM s),(SELECT id FROM d),(SELECT id FROM m),'2025-08-16 11:45:00', 135.2, 'demo');
+     m AS (SELECT id FROM public.dim_metric_config WHERE metric_key='flow_rate' LIMIT 1),
+     t AS (
+       SELECT '2025-08-16 10:15:00'::timestamp AS ts_local, 120.0::numeric AS val
+       UNION ALL
+       SELECT '2025-08-16 11:45:00'::timestamp, 135.2::numeric
+     )
+SELECT public.safe_upsert_measurement_local((SELECT id FROM s),(SELECT id FROM d),(SELECT id FROM m), t.ts_local, t.val, 'demo')
+FROM t;
 
 -- 6) 验证（返回计数与对齐检查）
 \echo '--- 验证：维表示例与事实行数 ---'

@@ -1,4 +1,5 @@
 -- Auto-generated from config/data_mapping.json
+SET client_encoding TO 'UTF8';
 -- Do not edit manually. UTF-8, LF newlines.
 \set ON_ERROR_STOP 1
 BEGIN;
@@ -70,7 +71,7 @@ WITH s AS (
   SELECT id FROM public.dim_stations WHERE name='二期供水泵房' LIMIT 1
 )
 INSERT INTO public.dim_devices(station_id, name, type, pump_type)
-SELECT s.id, '二期供水泵房总管', 'Main_pipeline', NULL
+SELECT s.id, '二期供水泵房总管', 'main_pipeline', NULL
 FROM s
 WHERE NOT EXISTS (
   SELECT 1 FROM public.dim_devices d WHERE d.station_id=s.id AND d.name='二期供水泵房总管'
@@ -124,7 +125,7 @@ WITH s AS (
   SELECT id FROM public.dim_stations WHERE name='二期取水泵房' LIMIT 1
 )
 INSERT INTO public.dim_devices(station_id, name, type, pump_type)
-SELECT s.id, '总管', 'Main_pipeline', NULL
+SELECT s.id, '总管', 'main_pipeline', NULL
 FROM s
 WHERE NOT EXISTS (
   SELECT 1 FROM public.dim_devices d WHERE d.station_id=s.id AND d.name='总管'

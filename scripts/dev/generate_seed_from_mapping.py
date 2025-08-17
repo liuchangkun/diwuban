@@ -14,11 +14,14 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Dict, Iterable, Set
+from typing import Any, Dict, Iterable, Set
 
 ROOT = Path(__file__).resolve().parents[2]
 MAPPING_PATH = ROOT / "config" / "data_mapping.json"
 OUT_SQL = ROOT / "scripts" / "dev" / "seed_from_mapping.sql"
+
+ALLOWED_DEVICE_TYPES = {"pump", "main_pipeline"}
+ALLOWED_PUMP_TYPES = {"variable_frequency", "soft_start"}
 
 # 已知 metric 的默认单位（可按需扩展/调整）
 DEFAULT_UNITS = {
@@ -38,12 +41,12 @@ DEFAULT_UNITS = {
 }
 
 
-def load_mapping() -> Dict:
+def load_mapping() -> Dict[str, Dict[str, Dict[str, Any]]]:
     with open(MAPPING_PATH, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
-def collect_all_metric_keys(mapping: Dict) -> Set[str]:
+def collect_all_metric_keys(mapping: Dict[str, Dict[str, Dict[str, Any]]]) -> Set[str]:
     keys: Set[str] = set()
     for station_name, devices in mapping.items():
         if not isinstance(devices, dict):
@@ -62,10 +65,11 @@ def sql_quote(s: str) -> str:
     return s.replace("'", "''")
 
 
-def gen_sql(mapping: Dict) -> str:
+def gen_sql(mapping: Dict[str, Dict[str, Dict[str, Any]]]) -> str:
     lines: list[str] = []
     ap = lines.append
     ap("-- Auto-generated from config/data_mapping.json")
+    ap("SET client_encoding TO 'UTF8';")
     ap("-- Do not edit manually. UTF-8, LF newlines.")
     ap("\\set ON_ERROR_STOP 1")
     ap("BEGIN;")
@@ -92,11 +96,26 @@ WHERE NOT EXISTS (
             if not isinstance(attrs, dict):
                 continue
             dev_type_list = attrs.get("type") or []
-            dev_type = dev_type_list[0] if dev_type_list else ""
+            dev_type_raw = dev_type_list[0] if dev_type_list else ""
+            dev_type = (dev_type_raw or "").strip().lower()
+            if dev_type not in ALLOWED_DEVICE_TYPES:
+                # 尽量容错：将大小写/驼峰写法归一（如 Main_pipeline → main_pipeline）
+                if dev_type_raw and dev_type_raw.strip().lower() == "main_pipeline":
+                    dev_type = "main_pipeline"
+                else:
+                    dev_type = dev_type  # 保持原状（若为空将导致 NOT NULL/CK 失败，提示修正 mapping）
             pump_type_list = attrs.get("pump_type") or []
-            pump_type = pump_type_list[0] if pump_type_list else None
-            if dev_type != "pump":
-                pump_type = None
+            pump_type_raw = pump_type_list[0] if pump_type_list else None
+            pump_type_norm = (
+                (pump_type_raw or "").strip().lower()
+                if pump_type_raw is not None
+                else None
+            )
+            pump_type = (
+                pump_type_norm
+                if (dev_type == "pump" and pump_type_norm in ALLOWED_PUMP_TYPES)
+                else None
+            )
             d_name = sql_quote(device_name)
             ap(
                 """
