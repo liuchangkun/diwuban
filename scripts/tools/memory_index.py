@@ -184,6 +184,9 @@ def update_nav(latest_lines: List[str]) -> None:
     after = nav_text[e:]
     middle = "\n" + "\n".join(latest_lines) + "\n"
     new_text = before + middle + after
+    if new_text == nav_text:
+        log("导航文件无变更，跳过写入。")
+        return
     with open(NAV_PATH, "w", encoding="utf-8", newline="\n") as fp:
         fp.write(new_text)
     log(
@@ -206,8 +209,19 @@ def write_index_md(entries: List[Tuple[str, str, str]], path: str) -> None:
         else:
             type_code, seq = "UNK", id_val
         lines.append(f"| {date_val} | {type_code} | {seq} | {summary} |")
+    content = "\n".join(lines) + "\n"
+    old = None
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as fp:
+                old = fp.read()
+        except Exception:
+            old = None
+    if old == content:
+        log(f"索引未变化：{os.path.relpath(path, ROOT)}（{len(entries)} 条）")
+        return
     with open(path, "w", encoding="utf-8", newline="\n") as fp:
-        fp.write("\n".join(lines) + "\n")
+        fp.write(content)
     log(f"已生成索引文件：{os.path.relpath(path, ROOT)}（{len(entries)} 条）")
 
 
