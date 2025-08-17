@@ -23,7 +23,7 @@ import os
 import re
 import sys
 from datetime import datetime
-from typing import List, Tuple, Optional
+from typing import List, Optional, Tuple
 
 # 常量
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -212,6 +212,8 @@ def _parse_index_rows(text: str) -> List[Tuple[str, str, str, str]]:
         if len(parts) < 4:
             continue
         date_val, type_code, seq, summary = parts[0], parts[1], parts[2], parts[3]
+        # 反向转义，恢复语义（与写入时的转义对应）
+        summary = summary.replace(r"\|", "|").replace(r"\_", "_")
         rows.append((date_val, type_code, seq, summary))
     return rows
 
@@ -250,7 +252,9 @@ def write_index_md(entries: List[Tuple[str, str, str]], path: str) -> None:
         "|---|---|---|---|",
     ]
     for date_val, type_code, seq, summary in want_rows:
-        lines.append(f"| {date_val} | {type_code} | {seq} | {summary} |")
+        # 转义 Markdown 表格敏感字符，避免 mdformat/解析器误处理
+        esc = summary.replace("|", r"\|").replace("_", r"\_")
+        lines.append(f"| {date_val} | {type_code} | {seq} | {esc} |")
     content = "\n".join(lines) + "\n"
     with open(path, "w", encoding="utf-8", newline="\n") as fp:
         fp.write(content)
