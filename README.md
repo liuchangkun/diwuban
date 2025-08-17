@@ -36,6 +36,26 @@ flowchart LR
 - 数据质量与校验（骨架）：docs/数据质量与校验.md
 - PLAYBOOKS 使用说明：docs/PLAYBOOKS/USAGE.md
 
+## 八、本地开发规范（保存即自动 + 全绿门禁）
+
+- 保存即自动（VSCode）：
+  - 需要扩展：ms-python.black-formatter、charliermarsh.ruff、emeraldwalk.runonsave
+  - 自动动作：
+    - Python：Black + Ruff 修复
+    - Markdown：mdformat 规范化
+    - PLAYBOOKS：memory_index 刷新“最近变更”和 INDEX（仅内容变化才写入）
+
+- 提交前（pre-commit 严格）：
+  - ruff、black、mypy、bandit、mdformat、check-yaml、mixed-line-ending、memory-check、memory-index
+  - 本地全量体检：pre-commit run --all-files
+
+- CI 门禁：
+  - pre-commit 全绿检查（报告上传为构件 + PR 评论摘要）
+  - build-test 依赖 pre-commit，通过后才跑测试/覆盖率
+
+- 触发词（PLAYBOOKS 三步自动化）：
+  - 记录变更/更新 PLAYBOOKS/保存记忆/按照 PLAYBOOKS 流程完成/记忆和文档都更新了吗？/PLAYBOOKS
+
 ## 五、运行与测试
 
 - 配置：.env（DB_HOST/PORT/NAME/USER/PASS 等）

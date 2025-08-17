@@ -31,6 +31,24 @@ jobs:
           set -o pipefail
           pre-commit run --all-files | tee pre-commit-report.txt
 
+      - name: Generate pre-commit summary
+        if: always()
+        shell: bash
+        run: |
+          echo "### pre-commit 结果摘要" >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo '```text' >> "$GITHUB_STEP_SUMMARY"
+          tail -n 200 pre-commit-report.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment pre-commit report to PR
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          recreate: true
+          header: pre-commit
+          path: pre-commit-report.txt
+
       - name: Upload pre-commit report
         uses: actions/upload-artifact@v4
         if: always()
