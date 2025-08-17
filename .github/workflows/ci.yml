@@ -11,6 +11,9 @@ jobs:
   pre-commit:
     name: pre-commit 全绿检查
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,7 +32,8 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          pre-commit run --all-files | tee pre-commit-report.txt
+          pre-commit run --all-files -v --show-diff-on-failure | tee pre-commit-report.txt
+          git --no-pager diff > pre-commit-diff.patch || true
 
       - name: Generate pre-commit summary
         if: always()
@@ -49,12 +53,22 @@ jobs:
           header: pre-commit
           path: pre-commit-report.txt
 
-      - name: Upload pre-commit report
+      - name: Comment pre-commit diff to PR (if any)
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          recreate: false
+          header: pre-commit-diff
+          path: pre-commit-diff.patch
+
+      - name: Upload pre-commit artifacts
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: pre-commit-report
-          path: pre-commit-report.txt
+          name: pre-commit-artifacts
+          path: |
+            pre-commit-report.txt
+            pre-commit-diff.patch
           if-no-files-found: warn
 
   build-test:
