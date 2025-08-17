@@ -191,6 +191,7 @@ def update_nav(latest_lines: List[str]) -> None:
         fp.write(new_text)
     log(
         f"已更新最近变更区域（{len(latest_lines)} 条）→ {os.path.relpath(NAV_PATH, ROOT)}"
+    )
 
 
 def _parse_index_rows(text: str) -> List[Tuple[str, str, str, str]]:
@@ -213,8 +214,6 @@ def _parse_index_rows(text: str) -> List[Tuple[str, str, str, str]]:
         date_val, type_code, seq, summary = parts[0], parts[1], parts[2], parts[3]
         rows.append((date_val, type_code, seq, summary))
     return rows
-
-    )
 
 
 def write_index_md(entries: List[Tuple[str, str, str]], path: str) -> None:
