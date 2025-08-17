@@ -191,6 +191,29 @@ def update_nav(latest_lines: List[str]) -> None:
         fp.write(new_text)
     log(
         f"已更新最近变更区域（{len(latest_lines)} 条）→ {os.path.relpath(NAV_PATH, ROOT)}"
+
+
+def _parse_index_rows(text: str) -> List[Tuple[str, str, str, str]]:
+    """解析已存在的索引表，返回 (date, type_code, seq, summary) 列表。"""
+    rows: List[Tuple[str, str, str, str]] = []
+    started = False
+    for line in text.splitlines():
+        s = line.strip()
+        if not started:
+            if s.startswith("|---"):
+                started = True
+            continue
+        if not s.startswith("|"):
+            # 表结束
+            break
+        # 去除两侧竖线，并按竖线分列
+        parts = [p.strip() for p in s.strip("|").split("|")]
+        if len(parts) < 4:
+            continue
+        date_val, type_code, seq, summary = parts[0], parts[1], parts[2], parts[3]
+        rows.append((date_val, type_code, seq, summary))
+    return rows
+
     )
 
 
