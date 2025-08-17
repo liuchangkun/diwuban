@@ -17,6 +17,9 @@
 
 ## 自检项
 
+- [ ] pre-commit 全绿（本地 `pre-commit run --all-files` 通过）
+- [ ] PLAYBOOKS 已更新（并已刷新“最近变更”与 INDEX）
+- [ ] 文档已对齐（与数据库/脚本一致；必要时更新 docs/ 与 README 索引）
 - [ ] 未访问 venv/.venv 目录
 - [ ] 数据文件来源全部由 config/data_mapping.json 驱动
 - [ ] 若变更对齐/派生/拟合策略，已增加 version 并更新文档
