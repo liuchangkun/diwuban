@@ -46,4 +46,13 @@
 - 刷新记忆索引：`python scripts/tools/memory_index.py`
 - 运行测试：`pytest -q`（如允许长任务）
 
+## 8. 导入模块贡献指南（强制）
+
+- CSV 列名固定：TagName（变量名称）、DataTime（数据时间）、DataValue（数据值）；严禁自动探测/同义词
+- 映射唯一来源：config/data_mapping.json；严禁从文件名/路径推断维度/指标
+- 并发与背压：默认 workers=6、按 UTC 周界分窗；实现 shrink_batch/shrink_workers 与回升策略
+- 日志验收：runs/YYYYMMDD/\<job_id>/ 多流齐备；字段齐备；SQL 摘要与 explain 开关键符合规范
+- 测试要求：并发/背压、日志字段/开关、合并窗口边界、UPSERT 语义均需单测/集成测覆盖
+- PR 要求：同步更新相关文档与 PLAYBOOKS；提供回滚方案；“完成一个函数即自查一次”
+
 —— 本指南持续与仓库自动化保持一致。若发现不一致，请以实际 pre-commit/CI 行为为准并提交修正。

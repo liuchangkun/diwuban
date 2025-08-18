@@ -65,4 +65,12 @@
 - 以 docs/文档地图与导航.md 为唯一入口。
 - 常见主题（示例）：体系结构、表结构与数据库、数据库函数参考、泵站时间对齐实现、测试指南、性能优化、附录等。
 
+## 9. 导入与日志的强制规范（新增）
+
+- CSV 列名固定：TagName（变量名称）、DataTime（数据时间）、DataValue（数据值）
+- 合并窗口边界：按 UTC ISO 周界（周一 00:00:00）对齐，窗口 \[start, end)
+- 并发与背压：默认 workers=6；P95>2s 或失败率>1% 触发缩批/降并发；恢复后回升
+- 配置文件位置：configs/ingest.yaml、configs/logging.yaml；覆盖顺序 CLI>ENV>YAML>默认
+- 日志：仅摘要 SQL（logging.sql.text=summary；explain=on_error），启用 redaction；多流目录 runs/YYYYMMDD/\<job_id>/
+
 —— 本文件作为“总纲”。细节请以导航文档链接到的子文档为准，并保持与实现一致。
