@@ -140,30 +140,33 @@ def init_logging(
     quiet: bool | None = None,
 ) -> None:
     global _cleanup_performed
-    
+
     # 执行启动清理（仅在首次调用时执行）
-    if not _cleanup_performed and hasattr(settings.logging, 'startup_cleanup'):
+    if not _cleanup_performed and hasattr(settings.logging, "startup_cleanup"):
         cleanup_config = settings.logging.startup_cleanup
         if cleanup_config.clear_logs or cleanup_config.clear_database:
             # 设置基本的控制台日志，用于记录清理过程
-            basic_logger = logging.getLogger('startup_cleanup')
+            basic_logger = logging.getLogger("startup_cleanup")
             basic_logger.setLevel(logging.INFO)
             if not basic_logger.handlers:
                 console_handler = logging.StreamHandler()
-                console_handler.setFormatter(logging.Formatter(
-                    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-                ))
+                console_handler.setFormatter(
+                    logging.Formatter(
+                        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+                    )
+                )
                 basic_logger.addHandler(console_handler)
-            
+
             try:
                 from app.services.system.cleanup import perform_startup_cleanup
+
                 perform_startup_cleanup(settings)
                 _cleanup_performed = True
             except Exception as e:
                 basic_logger.error(f"启动清理失败，但程序将继续运行: {e}")
                 # 即使清理失败，也标记为已执行，避免重复尝试
                 _cleanup_performed = True
-    
+
     run_dir.mkdir(parents=True, exist_ok=True)
 
     # 注意：LoggingSettings 是冻结数据类，CLI 层若需临时覆盖应使用局部变量而非直接赋值

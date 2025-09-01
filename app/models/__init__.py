@@ -15,7 +15,7 @@
 使用方式：
     from app.models import Station, Device, OperationData
     from app.models.base import DeviceType, CurveType
-    
+
     # 创建设备模型实例
     device = Device(
         device_id="PUMP001_01",

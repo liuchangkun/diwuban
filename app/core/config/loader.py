@@ -28,10 +28,10 @@ from __future__ import annotations
 使用示例：
     from pathlib import Path
     from app.core.config.loader import load_settings
-    
+
     # 加载配置
     settings = load_settings(Path("configs"))
-    
+
     # 访问配置项
     print(f"数据库主机: {settings.db.host}")
     print(f"导入工作线程: {settings.ingest.workers}")
@@ -54,14 +54,15 @@ import yaml  # type: ignore[import-untyped]
 class IngestWindow:
     """
     数据导入时间窗口配置
-    
+
     用于定义数据导入的时间范围，支持相对时间（如 "7d"）和绝对时间。
-    
+
     属性：
         size: 相对时间窗口大小，如 "7d"、"1h"、"30m"
         start: 绝对开始时间，ISO 格式
         end: 绝对结束时间，ISO 格式
     """
+
     size: str | None = None  # e.g. "7d"
     start: str | None = None
     end: str | None = None
@@ -101,15 +102,16 @@ class ErrorHandlingSettings:
 class WebServerSettings:
     """
     Web服务器配置
-    
+
     用于配置FastAPI应用程序的运行参数。
-    
+
     属性：
         host: 服务器绑定地址
         port: 服务器端口
         reload: 开发模式下是否启用热重载
         workers: 生产环境下的工作进程数
     """
+
     host: str = "127.0.0.1"
     port: int = 8000
     reload: bool = True
@@ -120,9 +122,9 @@ class WebServerSettings:
 class WebApiSettings:
     """
     Web API配置
-    
+
     用于配置FastAPI应用程序的API相关设置。
-    
+
     属性：
         title: API标题
         description: API描述
@@ -130,6 +132,7 @@ class WebApiSettings:
         docs_url: Swagger文档路径
         redoc_url: ReDoc文档路径
     """
+
     title: str = "Pump Station Optimization API"
     description: str = "泵站运行数据优化系统 API"
     version: str = "1.0.0"
@@ -141,15 +144,16 @@ class WebApiSettings:
 class WebAppSettings:
     """
     Web应用配置
-    
+
     用于配置应用程序的运行模式和行为。
-    
+
     属性：
         debug: 调试模式
         log_requests: 是否记录HTTP请求日志
         cors_enabled: 是否启用CORS
         cors_origins: 允许的跨域来源
     """
+
     debug: bool = False
     log_requests: bool = True
     cors_enabled: bool = False
@@ -160,14 +164,15 @@ class WebAppSettings:
 class WebPerformanceSettings:
     """
     Web性能配置
-    
+
     用于配置应用程序的性能相关参数。
-    
+
     属性：
         request_timeout: 请求超时时间（秒）
         max_request_size: 最大请求大小（字节）
         keepalive_timeout: Keep-Alive超时时间（秒）
     """
+
     request_timeout: int = 30
     max_request_size: int = 16777216  # 16MB
     keepalive_timeout: int = 65
@@ -177,15 +182,16 @@ class WebPerformanceSettings:
 class WebSettings:
     """
     Web服务完整配置
-    
+
     集成所有Web相关配置，提供统一的配置访问接口。
-    
+
     属性：
         server: 服务器配置
         api: API配置
         app: 应用配置
         performance: 性能配置
     """
+
     server: WebServerSettings = WebServerSettings()
     api: WebApiSettings = WebApiSettings()
     app: WebAppSettings = WebAppSettings()
@@ -196,9 +202,9 @@ class WebSettings:
 class SystemDirectoriesSettings:
     """
     系统目录配置
-    
+
     用于配置系统级别的目录路径。
-    
+
     属性：
         data: 数据文件目录
         logs: 日志文件目录
@@ -206,6 +212,7 @@ class SystemDirectoriesSettings:
         temp: 临时文件目录
         backup: 备份文件目录
     """
+
     data: str = "data"
     logs: str = "logs"
     configs: str = "configs"
@@ -217,14 +224,15 @@ class SystemDirectoriesSettings:
 class SystemTimezoneSettings:
     """
     系统时区配置
-    
+
     用于配置系统级别的时区设置。
-    
+
     属性：
         default: 默认时区
         storage: 数据库存储时区
         display: 显示时区
     """
+
     default: str = "Asia/Shanghai"
     storage: str = "UTC"
     display: str = "Asia/Shanghai"
@@ -234,14 +242,15 @@ class SystemTimezoneSettings:
 class SystemGeneralSettings:
     """
     系统通用配置
-    
+
     用于配置系统级别的通用设置。
-    
+
     属性：
         encoding: 默认文件编码
         locale: 系统语言环境
         max_workers: 系统级别默认最大工作线程数
     """
+
     encoding: str = "utf-8"
     locale: str = "zh_CN.UTF-8"
     max_workers: int = 4
@@ -251,14 +260,15 @@ class SystemGeneralSettings:
 class SystemSettings:
     """
     系统完整配置
-    
+
     集成所有系统级别配置，提供统一的配置访问接口。
-    
+
     属性：
         directories: 目录配置
         timezone: 时区配置
         general: 通用配置
     """
+
     directories: SystemDirectoriesSettings = SystemDirectoriesSettings()
     timezone: SystemTimezoneSettings = SystemTimezoneSettings()
     general: SystemGeneralSettings = SystemGeneralSettings()
@@ -268,14 +278,16 @@ class SystemSettings:
 class DefaultPathSettings:
     """
     默认文件路径配置
-    
+
     用于指定各种配置文件的默认路径，支持从配置文件中读取默认值。
-    
+
     属性：
         mapping_file: data_mapping.json 默认路径
         dim_metric_config: dim_metric_config.json 默认路径
     """
-    mapping_file: str = "config/data_mapping.v2.json"
+
+    mapping_file: str = "configs/data_mapping.v2.json"  # 统一为 configs/
+
     dim_metric_config: str = "config/dim_metric_config.json"
 
 
@@ -283,14 +295,15 @@ class DefaultPathSettings:
 class DefaultWindowSettings:
     """
     默认时间窗口配置
-    
+
     用于指定数据处理的默认时间窗口，支持全量数据处理模式。
-    
+
     属性：
         process_all_data: 是否处理全量数据（忽略时间窗口限制）
         start_utc: 默认开始时间（UTC）
         end_utc: 默认结束时间（UTC）
     """
+
     process_all_data: bool = True
     start_utc: str = "2025-02-27T18:00:00Z"
     end_utc: str = "2025-02-27T19:59:59Z"
@@ -372,14 +385,14 @@ class DbRetrySettings:
 class DbSettings:
     """
     数据库配置设置
-    
+
     包含数据库连接、连接池、超时和重试策略的全部配置。
-    
+
     安全注意事项：
     - 数据库配置仅允许来自 database.yaml，不允许通过 ENV/CLI 覆盖
     - 连接信息不应该在日志中明文输出
     - DSN 优先级：dsn_write > dsn_read > host/name/user 组合
-    
+
     属性：
         host: 数据库主机地址
         name: 数据库名称
@@ -390,6 +403,7 @@ class DbSettings:
         timeouts: 超时配置
         retry: 重试策略配置
     """
+
     # 注意：数据库配置仅允许来自 database.yaml，不允许通过 ENV/CLI 覆盖
     host: str = "localhost"
     name: str = "pump_station_optimization"
@@ -433,17 +447,19 @@ class LoggingPerformance:
 class StartupCleanupSettings:
     """
     启动清理配置
-    
+
     用于控制程序启动时的清理行为，确保干净的运行环境。
-    
+
     属性：
         clear_logs: 启动时清空logs目录
         clear_database: 启动时清空数据库
         logs_backup_count: 清理前保留的日志备份数
         confirm_clear: 是否需要确认清理操作
     """
-    clear_logs: bool = True
-    clear_database: bool = True
+
+    # 默认关闭启动清理，避免误删数据；仅在显式启用时才执行
+    clear_logs: bool = False  # 改为默认 False，防止误清理日志
+    clear_database: bool = False  # 改为默认 False，防止误清空数据库
     logs_backup_count: int = 3
     confirm_clear: bool = False
 
@@ -452,9 +468,9 @@ class StartupCleanupSettings:
 class DetailedLoggingSettings:
     """
     详细日志记录配置
-    
+
     用于控制日志记录的详细程度，支持函数级别的日志跟踪。
-    
+
     属性：
         enable_function_entry: 记录函数进入
         enable_function_exit: 记录函数退出
@@ -474,6 +490,7 @@ class DetailedLoggingSettings:
         internal_steps_interval: 内部步骤日志输出间隔（秒）
         loop_log_interval: 循环日志输出间隔（次数）
     """
+
     enable_function_entry: bool = True
     enable_function_exit: bool = True
     enable_parameter_logging: bool = True
@@ -497,9 +514,9 @@ class DetailedLoggingSettings:
 class KeyMetricsSettings:
     """
     关键信息日志配置
-    
+
     用于控制关键业务指标的日志记录，包括文件处理、数据统计等。
-    
+
     属性：
         enable_file_count: 记录文件数量
         enable_data_time_range: 记录数据时间范围
@@ -519,6 +536,7 @@ class KeyMetricsSettings:
         progress_report_interval: 进度报告间隔（行数）
         metrics_summary_interval: 指标汇总间隔（秒）
     """
+
     enable_file_count: bool = True
     enable_data_time_range: bool = True
     enable_processing_progress: bool = True
@@ -542,9 +560,9 @@ class KeyMetricsSettings:
 class SqlExecutionSettings:
     """
     SQL执行日志配置
-    
+
     用于控制SQL语句执行的详细日志记录。
-    
+
     属性：
         enable_statement_logging: 记录完整SQL语句
         enable_execution_metrics: 记录执行指标
@@ -555,6 +573,7 @@ class SqlExecutionSettings:
         max_sql_length: SQL语句最大记录长度
         sensitive_fields: 敏感字段列表
     """
+
     enable_statement_logging: bool = True
     enable_execution_metrics: bool = True
     enable_parameter_logging: bool = True
@@ -569,9 +588,9 @@ class SqlExecutionSettings:
 class InternalExecutionSettings:
     """
     函数内部执行过程配置
-    
+
     用于控制函数内部执行步骤的详细日志记录。
-    
+
     属性：
         enable_step_logging: 启用步骤日志
         enable_checkpoint_logging: 启用检查点日志
@@ -583,6 +602,7 @@ class InternalExecutionSettings:
         iteration_log_frequency: 迭代日志频率（每多X次记录一次）
         checkpoint_auto_interval: 自动检查点间隔（秒）
     """
+
     enable_step_logging: bool = True
     enable_checkpoint_logging: bool = True
     enable_branch_logging: bool = True
@@ -636,35 +656,42 @@ class LoggingSettings:
 class Settings:
     """
     应用程序主配置类
-    
+
     集成所有子系统的配置，提供统一的配置访问接口。
     所有配置对象都是 frozen dataclass，确保配置的不可变性。
-    
+
     配置组织结构：
     - db: 数据库连接和池配置
     - ingest: 数据导入和处理配置
     - merge: 数据合并和对齐配置
     - logging: 日志系统配置
-    
+    - web: Web服务配置
+
     使用示例：
         settings = load_settings(Path("configs"))
-        
+
         # 访问数据库配置
         db_host = settings.db.host
         pool_size = settings.db.pool.max_size
-        
+
         # 访问导入配置
         workers = settings.ingest.workers
         batch_size = settings.ingest.batch.size
-        
+
         # 访问日志配置
         log_level = settings.logging.level
         log_format = settings.logging.format
+
+        # 访问Web配置
+        host = settings.web.server.host
+        port = settings.web.server.port
     """
+
     db: DbSettings = DbSettings()
     ingest: IngestSettings = IngestSettings()
     merge: MergeSettings = MergeSettings()
     logging: LoggingSettings = LoggingSettings()
+    web: WebSettings = WebSettings()
 
 
 def _first_existing_dir(config_dir: Path) -> Path:
@@ -679,7 +706,7 @@ def load_settings(config_dir: Path) -> Settings:
     """加载配置（强制 ingest.base_dir 固定为 data）。
 
     - 目录优先级：传入 config_dir → ./configs → ./config
-    - 支持文件：ingest.yaml、logging.yaml、database.yaml
+    - 支持文件：ingest.yaml、logging.yaml、database.yaml、web.yaml
     - 合并策略：ingest 支持 CLI/ENV > YAML > 默认；db/logging 仅 YAML > 默认；仅白名单字段；不允许覆盖 ingest.base_dir
     """
     cfg = Settings()
@@ -692,6 +719,7 @@ def load_settings(config_dir: Path) -> Settings:
     ingest_path = cdir / "ingest.yaml"
     logging_path = cdir / "logging.yaml"
     database_path = cdir / "database.yaml"
+    web_path = cdir / "web.yaml"  # 添加web.yaml路径
 
     data: dict = {}
     if ingest_path.exists():
@@ -706,18 +734,23 @@ def load_settings(config_dir: Path) -> Settings:
         data.setdefault("db", {})
         with database_path.open("r", encoding="utf-8") as f:
             data["db"] = yaml.safe_load(f) or {}
+    if web_path.exists():  # 添加web.yaml加载逻辑
+        data.setdefault("web", {})
+        with web_path.open("r", encoding="utf-8") as f:
+            data["web"] = yaml.safe_load(f) or {}
 
     # 合并：仅合并允许的键；ingest.base_dir 强制为 data
     db = data.get("db", {})
     ingest = data.get("ingest", {})
     merge = data.get("merge", {})
     logging_cfg = data.get("logging", {})
+    web_cfg = data.get("web", {})  # 获取web配置
 
     cfg = Settings(
         db=DbSettings(
             # 严格按 YAML 加载，不读取 ENV/CLI
             host=str(db.get("host", cfg.db.host)),
-            name=str(db.get("name", cfg.db.name)),
+            name=str(db.get("dbname", cfg.db.name)),
             user=str(db.get("user", cfg.db.user)),
             dsn_read=db.get("dsn_read", cfg.db.dsn_read),
             dsn_write=db.get("dsn_write", cfg.db.dsn_write),
@@ -774,7 +807,7 @@ def load_settings(config_dir: Path) -> Settings:
                         (db.get("retry", {}) or {}).get(
                             "backoff_multiplier", cfg.db.retry.backoff_multiplier
                         )
-                    )
+                    ),
                 ),
             ),
         ),
@@ -1161,7 +1194,8 @@ def load_settings(config_dir: Path) -> Settings:
                 ),
                 logs_backup_count=int(
                     (logging_cfg.get("startup_cleanup", {}) or {}).get(
-                        "logs_backup_count", cfg.logging.startup_cleanup.logs_backup_count
+                        "logs_backup_count",
+                        cfg.logging.startup_cleanup.logs_backup_count,
                     )
                 ),
                 confirm_clear=bool(
@@ -1173,87 +1207,104 @@ def load_settings(config_dir: Path) -> Settings:
             detailed_logging=DetailedLoggingSettings(
                 enable_function_entry=bool(
                     (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "enable_function_entry", cfg.logging.detailed_logging.enable_function_entry
+                        "enable_function_entry",
+                        cfg.logging.detailed_logging.enable_function_entry,
                     )
                 ),
                 enable_function_exit=bool(
                     (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "enable_function_exit", cfg.logging.detailed_logging.enable_function_exit
+                        "enable_function_exit",
+                        cfg.logging.detailed_logging.enable_function_exit,
                     )
                 ),
                 enable_parameter_logging=bool(
                     (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "enable_parameter_logging", cfg.logging.detailed_logging.enable_parameter_logging
+                        "enable_parameter_logging",
+                        cfg.logging.detailed_logging.enable_parameter_logging,
                     )
                 ),
                 enable_context_logging=bool(
                     (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "enable_context_logging", cfg.logging.detailed_logging.enable_context_logging
+                        "enable_context_logging",
+                        cfg.logging.detailed_logging.enable_context_logging,
                     )
                 ),
                 enable_business_logging=bool(
                     (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "enable_business_logging", cfg.logging.detailed_logging.enable_business_logging
+                        "enable_business_logging",
+                        cfg.logging.detailed_logging.enable_business_logging,
                     )
                 ),
                 enable_progress_logging=bool(
                     (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "enable_progress_logging", cfg.logging.detailed_logging.enable_progress_logging
+                        "enable_progress_logging",
+                        cfg.logging.detailed_logging.enable_progress_logging,
                     )
                 ),
                 enable_performance_logging=bool(
                     (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "enable_performance_logging", cfg.logging.detailed_logging.enable_performance_logging
+                        "enable_performance_logging",
+                        cfg.logging.detailed_logging.enable_performance_logging,
                     )
                 ),
                 enable_error_details=bool(
                     (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "enable_error_details", cfg.logging.detailed_logging.enable_error_details
+                        "enable_error_details",
+                        cfg.logging.detailed_logging.enable_error_details,
                     )
                 ),
                 enable_internal_steps=bool(
                     (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "enable_internal_steps", cfg.logging.detailed_logging.enable_internal_steps
+                        "enable_internal_steps",
+                        cfg.logging.detailed_logging.enable_internal_steps,
                     )
                 ),
                 enable_condition_branches=bool(
                     (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "enable_condition_branches", cfg.logging.detailed_logging.enable_condition_branches
+                        "enable_condition_branches",
+                        cfg.logging.detailed_logging.enable_condition_branches,
                     )
                 ),
                 enable_loop_iterations=bool(
                     (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "enable_loop_iterations", cfg.logging.detailed_logging.enable_loop_iterations
+                        "enable_loop_iterations",
+                        cfg.logging.detailed_logging.enable_loop_iterations,
                     )
                 ),
                 enable_intermediate_results=bool(
                     (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "enable_intermediate_results", cfg.logging.detailed_logging.enable_intermediate_results
+                        "enable_intermediate_results",
+                        cfg.logging.detailed_logging.enable_intermediate_results,
                     )
                 ),
                 enable_data_validation=bool(
                     (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "enable_data_validation", cfg.logging.detailed_logging.enable_data_validation
+                        "enable_data_validation",
+                        cfg.logging.detailed_logging.enable_data_validation,
                     )
                 ),
                 enable_resource_usage=bool(
                     (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "enable_resource_usage", cfg.logging.detailed_logging.enable_resource_usage
+                        "enable_resource_usage",
+                        cfg.logging.detailed_logging.enable_resource_usage,
                     )
                 ),
                 enable_timing_details=bool(
                     (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "enable_timing_details", cfg.logging.detailed_logging.enable_timing_details
+                        "enable_timing_details",
+                        cfg.logging.detailed_logging.enable_timing_details,
                     )
                 ),
                 internal_steps_interval=int(
                     (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "internal_steps_interval", cfg.logging.detailed_logging.internal_steps_interval
+                        "internal_steps_interval",
+                        cfg.logging.detailed_logging.internal_steps_interval,
                     )
                 ),
                 loop_log_interval=int(
                     (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "loop_log_interval", cfg.logging.detailed_logging.loop_log_interval
+                        "loop_log_interval",
+                        cfg.logging.detailed_logging.loop_log_interval,
                     )
                 ),
             ),
@@ -1265,114 +1316,136 @@ def load_settings(config_dir: Path) -> Settings:
                 ),
                 enable_data_time_range=bool(
                     (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "enable_data_time_range", cfg.logging.key_metrics.enable_data_time_range
+                        "enable_data_time_range",
+                        cfg.logging.key_metrics.enable_data_time_range,
                     )
                 ),
                 enable_processing_progress=bool(
                     (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "enable_processing_progress", cfg.logging.key_metrics.enable_processing_progress
+                        "enable_processing_progress",
+                        cfg.logging.key_metrics.enable_processing_progress,
                     )
                 ),
                 enable_merge_statistics=bool(
                     (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "enable_merge_statistics", cfg.logging.key_metrics.enable_merge_statistics
+                        "enable_merge_statistics",
+                        cfg.logging.key_metrics.enable_merge_statistics,
                     )
                 ),
                 enable_performance_metrics=bool(
                     (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "enable_performance_metrics", cfg.logging.key_metrics.enable_performance_metrics
+                        "enable_performance_metrics",
+                        cfg.logging.key_metrics.enable_performance_metrics,
                     )
                 ),
                 enable_memory_usage=bool(
                     (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "enable_memory_usage", cfg.logging.key_metrics.enable_memory_usage
+                        "enable_memory_usage",
+                        cfg.logging.key_metrics.enable_memory_usage,
                     )
                 ),
                 enable_database_stats=bool(
                     (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "enable_database_stats", cfg.logging.key_metrics.enable_database_stats
+                        "enable_database_stats",
+                        cfg.logging.key_metrics.enable_database_stats,
                     )
                 ),
                 enable_file_size_info=bool(
                     (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "enable_file_size_info", cfg.logging.key_metrics.enable_file_size_info
+                        "enable_file_size_info",
+                        cfg.logging.key_metrics.enable_file_size_info,
                     )
                 ),
                 enable_throughput_metrics=bool(
                     (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "enable_throughput_metrics", cfg.logging.key_metrics.enable_throughput_metrics
+                        "enable_throughput_metrics",
+                        cfg.logging.key_metrics.enable_throughput_metrics,
                     )
                 ),
                 enable_error_statistics=bool(
                     (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "enable_error_statistics", cfg.logging.key_metrics.enable_error_statistics
+                        "enable_error_statistics",
+                        cfg.logging.key_metrics.enable_error_statistics,
                     )
                 ),
                 enable_quality_metrics=bool(
                     (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "enable_quality_metrics", cfg.logging.key_metrics.enable_quality_metrics
+                        "enable_quality_metrics",
+                        cfg.logging.key_metrics.enable_quality_metrics,
                     )
                 ),
                 enable_pipeline_stages=bool(
                     (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "enable_pipeline_stages", cfg.logging.key_metrics.enable_pipeline_stages
+                        "enable_pipeline_stages",
+                        cfg.logging.key_metrics.enable_pipeline_stages,
                     )
                 ),
                 enable_batch_statistics=bool(
                     (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "enable_batch_statistics", cfg.logging.key_metrics.enable_batch_statistics
+                        "enable_batch_statistics",
+                        cfg.logging.key_metrics.enable_batch_statistics,
                     )
                 ),
                 enable_resource_consumption=bool(
                     (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "enable_resource_consumption", cfg.logging.key_metrics.enable_resource_consumption
+                        "enable_resource_consumption",
+                        cfg.logging.key_metrics.enable_resource_consumption,
                     )
                 ),
                 enable_data_distribution=bool(
                     (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "enable_data_distribution", cfg.logging.key_metrics.enable_data_distribution
+                        "enable_data_distribution",
+                        cfg.logging.key_metrics.enable_data_distribution,
                     )
                 ),
                 progress_report_interval=int(
                     (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "progress_report_interval", cfg.logging.key_metrics.progress_report_interval
+                        "progress_report_interval",
+                        cfg.logging.key_metrics.progress_report_interval,
                     )
                 ),
                 metrics_summary_interval=int(
                     (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "metrics_summary_interval", cfg.logging.key_metrics.metrics_summary_interval
+                        "metrics_summary_interval",
+                        cfg.logging.key_metrics.metrics_summary_interval,
                     )
                 ),
             ),
             sql_execution=SqlExecutionSettings(
                 enable_statement_logging=bool(
                     (logging_cfg.get("sql_execution", {}) or {}).get(
-                        "enable_statement_logging", cfg.logging.sql_execution.enable_statement_logging
+                        "enable_statement_logging",
+                        cfg.logging.sql_execution.enable_statement_logging,
                     )
                 ),
                 enable_execution_metrics=bool(
                     (logging_cfg.get("sql_execution", {}) or {}).get(
-                        "enable_execution_metrics", cfg.logging.sql_execution.enable_execution_metrics
+                        "enable_execution_metrics",
+                        cfg.logging.sql_execution.enable_execution_metrics,
                     )
                 ),
                 enable_parameter_logging=bool(
                     (logging_cfg.get("sql_execution", {}) or {}).get(
-                        "enable_parameter_logging", cfg.logging.sql_execution.enable_parameter_logging
+                        "enable_parameter_logging",
+                        cfg.logging.sql_execution.enable_parameter_logging,
                     )
                 ),
                 enable_result_summary=bool(
                     (logging_cfg.get("sql_execution", {}) or {}).get(
-                        "enable_result_summary", cfg.logging.sql_execution.enable_result_summary
+                        "enable_result_summary",
+                        cfg.logging.sql_execution.enable_result_summary,
                     )
                 ),
                 enable_slow_query_detection=bool(
                     (logging_cfg.get("sql_execution", {}) or {}).get(
-                        "enable_slow_query_detection", cfg.logging.sql_execution.enable_slow_query_detection
+                        "enable_slow_query_detection",
+                        cfg.logging.sql_execution.enable_slow_query_detection,
                     )
                 ),
                 slow_query_threshold_ms=int(
                     (logging_cfg.get("sql_execution", {}) or {}).get(
-                        "slow_query_threshold_ms", cfg.logging.sql_execution.slow_query_threshold_ms
+                        "slow_query_threshold_ms",
+                        cfg.logging.sql_execution.slow_query_threshold_ms,
                     )
                 ),
                 max_sql_length=int(
@@ -1382,54 +1455,118 @@ def load_settings(config_dir: Path) -> Settings:
                 ),
                 sensitive_fields=tuple(
                     (logging_cfg.get("sql_execution", {}) or {}).get(
-                        "sensitive_fields", list(cfg.logging.sql_execution.sensitive_fields)
+                        "sensitive_fields",
+                        list(cfg.logging.sql_execution.sensitive_fields),
                     )
                 ),
             ),
             internal_execution=InternalExecutionSettings(
                 enable_step_logging=bool(
                     (logging_cfg.get("internal_execution", {}) or {}).get(
-                        "enable_step_logging", cfg.logging.internal_execution.enable_step_logging
+                        "enable_step_logging",
+                        cfg.logging.internal_execution.enable_step_logging,
                     )
                 ),
                 enable_checkpoint_logging=bool(
                     (logging_cfg.get("internal_execution", {}) or {}).get(
-                        "enable_checkpoint_logging", cfg.logging.internal_execution.enable_checkpoint_logging
+                        "enable_checkpoint_logging",
+                        cfg.logging.internal_execution.enable_checkpoint_logging,
                     )
                 ),
                 enable_branch_logging=bool(
                     (logging_cfg.get("internal_execution", {}) or {}).get(
-                        "enable_branch_logging", cfg.logging.internal_execution.enable_branch_logging
+                        "enable_branch_logging",
+                        cfg.logging.internal_execution.enable_branch_logging,
                     )
                 ),
                 enable_iteration_logging=bool(
                     (logging_cfg.get("internal_execution", {}) or {}).get(
-                        "enable_iteration_logging", cfg.logging.internal_execution.enable_iteration_logging
+                        "enable_iteration_logging",
+                        cfg.logging.internal_execution.enable_iteration_logging,
                     )
                 ),
                 enable_validation_logging=bool(
                     (logging_cfg.get("internal_execution", {}) or {}).get(
-                        "enable_validation_logging", cfg.logging.internal_execution.enable_validation_logging
+                        "enable_validation_logging",
+                        cfg.logging.internal_execution.enable_validation_logging,
                     )
                 ),
                 enable_transformation_logging=bool(
                     (logging_cfg.get("internal_execution", {}) or {}).get(
-                        "enable_transformation_logging", cfg.logging.internal_execution.enable_transformation_logging
+                        "enable_transformation_logging",
+                        cfg.logging.internal_execution.enable_transformation_logging,
                     )
                 ),
                 step_detail_level=str(
                     (logging_cfg.get("internal_execution", {}) or {}).get(
-                        "step_detail_level", cfg.logging.internal_execution.step_detail_level
+                        "step_detail_level",
+                        cfg.logging.internal_execution.step_detail_level,
                     )
                 ),
                 iteration_log_frequency=int(
                     (logging_cfg.get("internal_execution", {}) or {}).get(
-                        "iteration_log_frequency", cfg.logging.internal_execution.iteration_log_frequency
+                        "iteration_log_frequency",
+                        cfg.logging.internal_execution.iteration_log_frequency,
                     )
                 ),
                 checkpoint_auto_interval=int(
                     (logging_cfg.get("internal_execution", {}) or {}).get(
-                        "checkpoint_auto_interval", cfg.logging.internal_execution.checkpoint_auto_interval
+                        "checkpoint_auto_interval",
+                        cfg.logging.internal_execution.checkpoint_auto_interval,
+                    )
+                ),
+            ),
+        ),
+        web=WebSettings(  # 添加web配置处理逻辑
+            server=WebServerSettings(
+                host=str(web_cfg.get("server", {}).get("host", cfg.web.server.host)),
+                port=int(web_cfg.get("server", {}).get("port", cfg.web.server.port)),
+                reload=bool(
+                    web_cfg.get("server", {}).get("reload", cfg.web.server.reload)
+                ),
+                workers=int(
+                    web_cfg.get("server", {}).get("workers", cfg.web.server.workers)
+                ),
+            ),
+            api=WebApiSettings(
+                title=str(web_cfg.get("api", {}).get("title", cfg.web.api.title)),
+                description=str(
+                    web_cfg.get("api", {}).get("description", cfg.web.api.description)
+                ),
+                version=str(web_cfg.get("api", {}).get("version", cfg.web.api.version)),
+                docs_url=str(
+                    web_cfg.get("api", {}).get("docs_url", cfg.web.api.docs_url)
+                ),
+                redoc_url=str(
+                    web_cfg.get("api", {}).get("redoc_url", cfg.web.api.redoc_url)
+                ),
+            ),
+            app=WebAppSettings(
+                debug=bool(web_cfg.get("app", {}).get("debug", cfg.web.app.debug)),
+                log_requests=bool(
+                    web_cfg.get("app", {}).get("log_requests", cfg.web.app.log_requests)
+                ),
+                cors_enabled=bool(
+                    web_cfg.get("app", {}).get("cors_enabled", cfg.web.app.cors_enabled)
+                ),
+                cors_origins=list(
+                    web_cfg.get("app", {}).get("cors_origins", cfg.web.app.cors_origins)
+                ),
+            ),
+            performance=WebPerformanceSettings(
+                request_timeout=int(
+                    web_cfg.get("performance", {}).get(
+                        "request_timeout", cfg.web.performance.request_timeout
+                    )
+                ),
+                max_request_size=int(
+                    web_cfg.get("performance", {}).get(
+                        "max_request_size", cfg.web.performance.max_request_size
+                    )
+                ),
+                keepalive_timeout=int(
+                    web_cfg.get("performance", {}).get(
+                        "keepalive_timeout", cfg.web.performance.keepalive_timeout
                     )
                 ),
             ),
@@ -1449,6 +1586,7 @@ def load_settings_with_sources(config_dir: Path) -> tuple[Settings, dict]:
     ingest_path = cdir / "ingest.yaml"
     logging_path = cdir / "logging.yaml"
     database_path = cdir / "database.yaml"
+    web_path = cdir / "web.yaml"  # 添加web.yaml路径
 
     data: dict[str, dict] = {}
     if ingest_path.exists():
@@ -1460,11 +1598,15 @@ def load_settings_with_sources(config_dir: Path) -> tuple[Settings, dict]:
     if database_path.exists():
         with database_path.open("r", encoding="utf-8") as f:
             data["db"] = yaml.safe_load(f) or {}
+    if web_path.exists():  # 添加web.yaml加载逻辑
+        with web_path.open("r", encoding="utf-8") as f:
+            data["web"] = yaml.safe_load(f) or {}
 
     db = data.get("db", {})
     ingest = data.get("ingest", {})
     merge = data.get("merge", {})
     logging_cfg = data.get("logging", {})
+    web_cfg = data.get("web", {})  # 获取web配置
 
     def src_yaml_only(yaml_has: bool) -> str:
         return "YAML" if yaml_has else "DEFAULT"
@@ -1562,6 +1704,29 @@ def load_settings_with_sources(config_dir: Path) -> tuple[Settings, dict]:
             ),
             "retention_days": (
                 "YAML" if logging_cfg.get("retention_days") is not None else "DEFAULT"
+            ),
+        },
+        "web": {  # 添加web配置的来源追踪
+            "server.host": src_yaml_only("host" in web_cfg.get("server", {})),
+            "server.port": src_yaml_only("port" in web_cfg.get("server", {})),
+            "server.reload": src_yaml_only("reload" in web_cfg.get("server", {})),
+            "server.workers": src_yaml_only("workers" in web_cfg.get("server", {})),
+            "api.title": src_yaml_only("title" in web_cfg.get("api", {})),
+            "api.description": src_yaml_only("description" in web_cfg.get("api", {})),
+            "api.version": src_yaml_only("version" in web_cfg.get("api", {})),
+            "api.docs_url": src_yaml_only("docs_url" in web_cfg.get("api", {})),
+            "api.redoc_url": src_yaml_only("redoc_url" in web_cfg.get("api", {})),
+            "app.debug": src_yaml_only("debug" in web_cfg.get("app", {})),
+            "app.log_requests": src_yaml_only("log_requests" in web_cfg.get("app", {})),
+            "app.cors_enabled": src_yaml_only("cors_enabled" in web_cfg.get("app", {})),
+            "performance.request_timeout": src_yaml_only(
+                "request_timeout" in web_cfg.get("performance", {})
+            ),
+            "performance.max_request_size": src_yaml_only(
+                "max_request_size" in web_cfg.get("performance", {})
+            ),
+            "performance.keepalive_timeout": src_yaml_only(
+                "keepalive_timeout" in web_cfg.get("performance", {})
             ),
         },
     }

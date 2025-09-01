@@ -18,12 +18,7 @@ import time
 from pathlib import Path
 from typing import Iterable, Iterator, List
 
-try:
-    from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
-except ImportError:
-    pass  # type: ignore[no-redef]
-
-
+# 可选依赖（未使用，移除以降低静态告警）
 from app.adapters.db.gateway import (
     copy_valid_lines,
     create_staging_if_not_exists,
@@ -35,24 +30,19 @@ from app.core.config.loader import Settings
 from app.core.types import CopyStats, RejectRow, ValidRow
 from app.services.ingest.backpressure import BackpressureController
 from app.services.ingest.source_hint import make_source_hint
+from app.utils.logging_decorators import (
+    business_logger,
+    create_internal_step_logger,
+    data_processing_logger,
+    file_operation_logger,
+)
 from app.utils.logging_ext import (
-    EVENT_INGEST_COPY_BATCH,
     EventLogger,
     SamplingGate,
-    get_event_sampling_rate,
     log_ingest_begin,
     log_ingest_end,
     log_ingest_progress,
-)
-from app.utils.logging_decorators import (
-    business_logger,
-    file_operation_logger,
-    data_processing_logger,
-    create_progress_logger,
-    log_key_metrics,
-    create_internal_step_logger,
-    log_data_quality_check,
-)
+)  # 移除未用常量与函数，降低静态告警
 
 # 性能日志记录器（与业务日志分离便于分析）
 perf_logger = logging.getLogger("perf")
@@ -182,7 +172,7 @@ def copy_from_mapping(
     """
     # 创建内部步骤日志记录器
     step_logger = create_internal_step_logger("copy_from_mapping", logger, settings)
-    
+
     step_logger.step("初始化导入环境")
     base_dir = Path(settings.ingest.base_dir)
     _ensure_staging(settings)
@@ -193,7 +183,7 @@ def copy_from_mapping(
         # 为避免 dataclass frozen，使用 object.__setattr__ 临时挂到对象上（仅 runtime 使用）
         object.__setattr__(settings, "_runtime_run_id", run_id)
         object.__setattr__(settings.ingest, "_runtime_run_id", run_id)
-        
+
     step_logger.step("收集文件清单")
     files = list(_collect_files_from_mapping(mapping_path, base_dir))
     step_logger.step("文件清单收集完成", result=f"共发现 {len(files)} 个文件")
@@ -220,9 +210,9 @@ def copy_from_mapping(
 
         # 无文件可处理，直接返回统计
         return stats
-    
+
     step_logger.branch("文件数量检查", True, f"发现 {len(files)} 个文件")
-    
+
     step_logger.step("初始化背压控制器")
     # 控制器与状态
     ctrl = BackpressureController(
@@ -232,68 +222,76 @@ def copy_from_mapping(
     )
     in_backpressure = False
     file_costs: List[int] = []
-    
-    step_logger.checkpoint("file_processing_start", {
-        "total_files": len(files),
-        "batch_size": ctrl.batch_size,
-        "workers": settings.ingest.workers
-    })
+
+    step_logger.checkpoint(
+        "file_processing_start",
+        {
+            "total_files": len(files),
+            "batch_size": ctrl.batch_size,
+            "workers": settings.ingest.workers,
+        },
+    )
 
     # 创建文件处理迭代器
-    file_iterator = step_logger.iteration_start("文件处理循环", len(files))
+    _ = step_logger.iteration_start(
+        "文件处理循环", len(files)
+    )  # 仅触发日志，变量未使用
 
-    with get_conn(settings) as conn:
-        for station, device, metric_key, path in files:
-            if not path.exists():
-                logger.error(
-                    "文件不存在",
-                    extra={
-                        "event": "ingest.path.resolve",
-                        "extra": {"path": str(path), "not_found": True},
-                    },
+    conn = None  # 初始化连接变量，但实际在需要时获取连接
+    for station, device, metric_key, path in files:
+        if not path.exists():
+            logger.error(
+                "文件不存在",
+                extra={
+                    "event": "ingest.path.resolve",
+                    "extra": {"path": str(path), "not_found": True},
+                },
+            )
+            stats["files_failed"] = stats.get("files_failed", 0) + 1
+            continue
+
+        rows_iter = list(
+            _valid_rows_for_file(path, station, device, metric_key, settings)
+        )
+        valids = [r for r in rows_iter if isinstance(r, ValidRow)]
+        rejects = [r for r in rows_iter if isinstance(r, RejectRow)]
+        stats["rows_read"] = stats.get("rows_read", 0) + len(rows_iter)
+
+        # ingest.load.begin（按文件）
+        log_ingest_begin(
+            EventLogger(logging.getLogger("root")),
+            file_path=str(path),
+            rows_total=len(rows_iter),
+        )
+
+        # 批次级 COPY 与背压：以固定批大小（初始取 commit_interval），输出每批 perf 指标
+        if valids:
+            try:
+                # 以 ingest.batch.size 优先，未设置则回退 commit_interval
+                batch_size = max(
+                    1,
+                    int(
+                        getattr(settings.ingest.batch, "size", 0)
+                        or settings.ingest.commit_interval
+                    ),
                 )
-                stats["files_failed"] = stats.get("files_failed", 0) + 1
-                continue
-
-            rows_iter = list(
-                _valid_rows_for_file(path, station, device, metric_key, settings)
-            )
-            valids = [r for r in rows_iter if isinstance(r, ValidRow)]
-            rejects = [r for r in rows_iter if isinstance(r, RejectRow)]
-            stats["rows_read"] = stats.get("rows_read", 0) + len(rows_iter)
-
-            # ingest.load.begin（按文件）
-            log_ingest_begin(
-                EventLogger(logging.getLogger("root")),
-                file_path=str(path),
-                rows_total=len(rows_iter),
-            )
-
-            # 批次级 COPY 与背压：以固定批大小（初始取 commit_interval），输出每批 perf 指标
-            if valids:
-                try:
-                    # 以 ingest.batch.size 优先，未设置则回退 commit_interval
-                    batch_size = max(
-                        1,
-                        int(
-                            getattr(settings.ingest.batch, "size", 0)
-                            or settings.ingest.commit_interval
-                        ),
-                    )
-                    file_started_epoch = time.time()
-                    bytes_read = 0
-                    gate = SamplingGate(
-                        every_n=max(1, settings.logging.sampling.loop_log_every_n),
-                        min_interval_sec=max(
-                            0.0, float(settings.logging.sampling.min_interval_sec)
-                        ),
-                    )
+                file_started_epoch = time.time()
+                bytes_read = 0
+                gate = SamplingGate(
+                    every_n=max(1, settings.logging.sampling.loop_log_every_n),
+                    min_interval_sec=max(
+                        0.0, float(settings.logging.sampling.min_interval_sec)
+                    ),
+                )
+                # 在需要时获取数据库连接
+                t0 = time.perf_counter()  # 将t0移到正确的位置
+                with get_conn(settings) as conn:
                     for i in range(0, len(valids), batch_size):
                         batch = valids[i : i + batch_size]
                         lines = list(_lines_from_valid_rows(batch))
-                        t0 = time.perf_counter()
+                        t_batch = time.perf_counter()  # 使用新的变量名避免冲突
                         loaded = copy_valid_lines(conn, lines)
-                        cost_ms = int((time.perf_counter() - t0) * 1000)
+                        cost_ms = int((time.perf_counter() - t_batch) * 1000)
                         stats["rows_loaded"] = stats.get("rows_loaded", 0) + loaded
 
                         # ingest.load.progress（采样节流）
@@ -365,216 +363,58 @@ def copy_from_mapping(
                                     },
                                 },
                             )
-                    stats["files_succeeded"] = stats.get("files_succeeded", 0) + 1
+                stats["files_succeeded"] = stats.get("files_succeeded", 0) + 1
 
-                    # ingest.load.end（按文件）
-                    total_cost = int((time.perf_counter() - t0) * 1000)
-                    log_ingest_end(
-                        EventLogger(logging.getLogger("root")),
-                        rows_loaded=stats["rows_loaded"],
-                        cost_ms=total_cost,
-                    )
-                except Exception:
-                    logger.exception(
-                        "COPY 失败",
-                        extra={
-                            "event": "ingest.copy.failed",
-                            "extra": {"path": str(path)},
-                        },
-                    )
-                    stats["files_failed"] = stats.get("files_failed", 0) + 1
-
-            if rejects:
-                # 错误阈值控制：超过 per-file 阈值或错误百分比阈值则计失败并跳过写入
-                eh = settings.ingest.error_handling
-                total = len(valids) + len(rejects)
-                over_count = len(rejects) > int(eh.max_errors_per_file)
-                over_percent = (
-                    (len(rejects) / total) * 100.0 > float(eh.error_threshold_percent)
-                    if total
-                    else False
+                # ingest.load.end（按文件）
+                total_cost = int((time.perf_counter() - t0) * 1000)
+                log_ingest_end(
+                    EventLogger(logging.getLogger("root")),
+                    rows_loaded=stats["rows_loaded"],
+                    cost_ms=total_cost,
                 )
-                if over_count or over_percent:
-                    from app.utils.logging_ext import EVENT_INGEST_ERROR_THRESHOLD
-
-                    logger.error(
-                        "错误超过阈值，跳过写入拒绝行",
-                        extra={
-                            "event": EVENT_INGEST_ERROR_THRESHOLD,
-                            "extra": {
-                                "rejects": len(rejects),
-                                "total": total,
-                                "over_count": over_count,
-                                "over_percent": over_percent,
-                            },
-                        },
-                    )
-                    stats["files_failed"] = stats.get("files_failed", 0) + 1
-                    if not eh.continue_on_error:
-                        # 中断整个处理流程（当前实现为按文件循环，continue_on_error=False 时结束本文件）
-                        pass
-                else:
-                    insert_rejects(conn, rejects)
-                    stats["rows_rejected"] = stats.get("rows_rejected", 0) + len(
-                        rejects
-                    )
-
-    with get_conn(settings) as conn:
-        for station, device, metric_key, path in files:
-            if not path.exists():
-                from app.utils.logging_ext import EVENT_INGEST_PATH_RESOLVE
-
-                logger.error(
-                    "文件不存在",
+            except Exception:
+                logger.exception(
+                    "COPY 失败",
                     extra={
-                        "event": EVENT_INGEST_PATH_RESOLVE,
-                        "extra": {"path": str(path), "not_found": True},
+                        "event": "ingest.copy.failed",
+                        "extra": {"path": str(path)},
                     },
                 )
                 stats["files_failed"] = stats.get("files_failed", 0) + 1
-                continue
 
-            rows_iter = list(
-                _valid_rows_for_file(path, station, device, metric_key, settings)
+        if rejects:
+            # 错误阈值控制：超过 per-file 阈值或错误百分比阈值则计失败并跳过写入
+            eh = settings.ingest.error_handling
+            total = len(valids) + len(rejects)
+            over_count = len(rejects) > int(eh.max_errors_per_file)
+            over_percent = (
+                (len(rejects) / total) * 100.0 > float(eh.error_threshold_percent)
+                if total
+                else False
             )
-            valids = [r for r in rows_iter if isinstance(r, ValidRow)]
-            rejects = [r for r in rows_iter if isinstance(r, RejectRow)]
-            stats["rows_read"] = stats.get("rows_read", 0) + len(rows_iter)
+            if over_count or over_percent:
+                from app.utils.logging_ext import EVENT_INGEST_ERROR_THRESHOLD
 
-            # ingest.load.begin（按文件）
-            log_ingest_begin(
-                EventLogger(logging.getLogger("root")),
-                file_path=str(path),
-                rows_total=len(rows_iter),
-            )
-
-            if valids:
-                try:
-                    batch_size = max(1, ctrl.batch_size)
-                    for i in range(0, len(valids), batch_size):
-                        batch = valids[i : i + batch_size]
-                        t0 = time.perf_counter()
-                        loaded = copy_valid_lines(conn, _lines_from_valid_rows(batch))
-                        cost_ms = int((time.perf_counter() - t0) * 1000)
-                        rows_per_sec = (len(batch) / max(1, cost_ms)) * 1000.0
-
-                        # 采样/节流的进度日志（结构化 JSON）
-                        batch_lines = list(_lines_from_valid_rows(batch))
-                        batch_bytes = sum(
-                            len(line.encode("utf-8")) for line in batch_lines
-                        )
-                        stats["bytes_read"] = stats.get("bytes_read", 0) + batch_bytes
-                        log_ingest_progress(
-                            EventLogger(logging.getLogger("root")),
-                            SamplingGate(
-                                every_n=max(
-                                    1, settings.logging.sampling.loop_log_every_n
-                                ),
-                                min_interval_sec=max(
-                                    0.0,
-                                    float(settings.logging.sampling.min_interval_sec),
-                                ),
-                            ),
-                            rows_read=stats["rows_read"],
-                            bytes_read=stats["bytes_read"],
-                            batch_cost_ms=cost_ms,
-                            started_ts=time.time(),
-                        )
-
-                        # 事件级采样：根据 settings.logging.sampling.{default_rate,high_frequency_events}
-                        rate = get_event_sampling_rate(
-                            settings, EVENT_INGEST_COPY_BATCH
-                        )
-                        import random as _random
-
-                        if _random.random() <= rate:
-                            perf_logger.info(
-                                EVENT_INGEST_COPY_BATCH,
-                                extra={
-                                    "event": EVENT_INGEST_COPY_BATCH,
-                                    "extra": {
-                                        "batch_size": len(batch),
-                                        "batch_cost_ms": cost_ms,
-                                        "rows_per_sec": round(rows_per_sec, 2),
-                                    },
-                                },
-                            )
-
-                        file_costs.append(cost_ms)
-                        stats["rows_loaded"] = stats.get("rows_loaded", 0) + loaded
-
-                        # 背压判定（基于批次 P95 与数据质量失败率）
-                        total = len(valids) + len(rejects)
-                        fail_rate = (len(rejects) / total) if total else 0.0
-                        k = max(1, int(settings.ingest.p95_window))
-                        p95 = _p95(file_costs[-k:])
-                        run_diag["p95_samples"].append(p95)
-                        adj = ctrl.decide(p95_ms=p95, fail_rate=fail_rate)
-                        if adj.get("action") in ("shrink_batch", "shrink_workers"):
-                            if not in_backpressure:
-                                in_backpressure = True
-                                # 事件采样：backpressure.enter（顶部已导入 get_event_sampling_rate）
-                                _rate_bp_enter = get_event_sampling_rate(
-                                    settings, EVENT_BACKPRESSURE_ENTER
-                                )
-                                import random as _random
-
-                                if _random.random() <= _rate_bp_enter:
-                                    run_diag["bp_enter"] += 1
-                                    perf_logger.info(
-                                        EVENT_BACKPRESSURE_ENTER,
-                                        extra={
-                                            "event": EVENT_BACKPRESSURE_ENTER,
-                                            "extra": {
-                                                "p95_batch_ms": p95,
-                                                "p95_window": k,
-                                                "batch_cost_ms": cost_ms,
-                                                "rows_per_sec": round(rows_per_sec, 2),
-                                                "fail_rate": fail_rate,
-                                                "adjustment": adj,
-                                            },
-                                        },
-                                    )
-                            if adj.get("action") == "shrink_batch" and adj.get(
-                                "to_batch"
-                            ):
-                                batch_size = int(adj["to_batch"]) or batch_size
-                        elif adj.get("action") == "recover" and in_backpressure:
-                            in_backpressure = False
-                            # 事件采样：backpressure.exit（顶部已导入 get_event_sampling_rate）
-                            _rate_bp_exit = get_event_sampling_rate(
-                                settings, EVENT_BACKPRESSURE_EXIT
-                            )
-                            import random as _random
-
-                            if _random.random() <= _rate_bp_exit:
-                                run_diag["bp_exit"] += 1
-                                perf_logger.info(
-                                    EVENT_BACKPRESSURE_EXIT,
-                                    extra={
-                                        "event": EVENT_BACKPRESSURE_EXIT,
-                                        "extra": {
-                                            "p95_batch_ms": p95,
-                                            "p95_window": k,
-                                            "batch_cost_ms": cost_ms,
-                                            "rows_per_sec": round(rows_per_sec, 2),
-                                            "fail_rate": fail_rate,
-                                        },
-                                    },
-                                )
-                    stats["files_succeeded"] = stats.get("files_succeeded", 0) + 1
-                except Exception:
-                    logger.exception(
-                        "COPY 失败",
-                        extra={
-                            "event": "ingest.copy.failed",
-                            "extra": {"path": str(path)},
+                logger.error(
+                    "错误超过阈值，跳过写入拒绝行",
+                    extra={
+                        "event": EVENT_INGEST_ERROR_THRESHOLD,
+                        "extra": {
+                            "rejects": len(rejects),
+                            "total": total,
+                            "over_count": over_count,
+                            "over_percent": over_percent,
                         },
-                    )
-                    stats["files_failed"] = stats.get("files_failed", 0) + 1
-
-            if rejects:
-                insert_rejects(conn, rejects)
+                    },
+                )
+                stats["files_failed"] = stats.get("files_failed", 0) + 1
+                if not eh.continue_on_error:
+                    # 中断整个处理流程（当前实现为按文件循环，continue_on_error=False 时结束本文件）
+                    pass
+            else:
+                # 在需要时获取数据库连接来插入拒绝行
+                with get_conn(settings) as conn:
+                    insert_rejects(conn, rejects)
                 stats["rows_rejected"] = stats.get("rows_rejected", 0) + len(rejects)
 
     # 整次 run 的 task.summary 输出（一次）

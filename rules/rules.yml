@@ -1,12 +1,122 @@
-# 机读规则配置（与 PROJECT_RULES.md 对应）
+# 机读规则配置（与 docs/ 规范文档对应）
 # 注意：仅包含关键可参数化的条目，其余以文档规则为准
+# IDE规则系统配置
+# @rules-config: enabled
+# @rules-version: 1.0
+# @rules-source: docs/编码规范.md,docs/体系结构总览.md,docs/日志规范.md
 
+# =============================================================================
+# IDE规则定义区域 (供IDE设置窗口识别)
+# =============================================================================
+rules_metadata:
+  version: "1.0"
+  source_docs: 
+    - "docs/编码规范.md"
+    - "docs/体系结构总览.md" 
+    - "docs/日志规范.md"
+    - "docs/智能助手行为控制.md"
+  last_updated: "2025-08-31"
+  categories:
+    - "coding_standards"
+    - "architecture" 
+    - "logging"
+    - "safety"
+    - "mcp_workflow"
+
+# 项目基础配置
 project:
   timezone: "Asia/Shanghai"   # R3.1 默认时区
   storage_time_basis: "UTC"   # 入库基准时间
+  python_version: ">=3.10"    # 最低Python版本要求
+  max_file_lines: 500         # 文件行数建议上限
+  max_function_lines: 200     # 函数行数上限
+  complexity_limit: 10        # 圈复杂度上限
 
+# 编码规范规则（基于 docs/编码规范.md）
+coding_standards:
+  type_annotations:
+    required_for_public_api: true    # 对外API必须类型注解
+    mypy_strict_mode: true           # 关键模块启用mypy严格模式
+  
+  sql_safety:
+    parameterized_only: true         # 严禁字符串拼接SQL
+    placeholder_style: "%s"          # 必须使用%s占位符
+    no_string_concat: true           # 禁止字符串拼接
+  
+  error_handling:
+    no_bare_except: true             # 禁止裸except
+    specific_exceptions_only: true    # 仅捕获已知异常
+    no_swallow_exceptions: true      # 不得吞异常
+  
+  naming_conventions:
+    packages_modules: "snake_case"   # 包/模块：小写蛇形
+    classes: "PascalCase"            # 类：大驼峰
+    functions_variables: "snake_case" # 函数/变量：小写蛇形
+    constants: "UPPER_SNAKE_CASE"    # 常量：大写蛇形
+    private_prefix: "_"              # 内部成员前缀
+  
+  documentation:
+    docstring_style: "Google"        # 使用Google风格
+    public_api_required: true        # 公开API必须docstring
+    include_examples: true           # 包含示例
+
+# 架构设计规则（基于 docs/体系结构总览.md）
+architecture:
+  layer_separation:
+    adapter_gateway_required: true   # 跨层访问必须走网关/适配器
+    single_responsibility: true      # 单一职责原则
+    no_circular_dependencies: true   # 禁止循环依赖
+  
+  directory_structure:
+    adapters_path: "app/adapters"     # 适配器层路径
+    services_path: "app/services"     # 服务层路径
+    models_path: "app/models"         # 模型层路径
+    api_path: "app/api"               # API层路径
+    core_path: "app/core"             # 核心层路径
+  
+  database_access:
+    pool_only: true                  # 仅使用连接池
+    gateway_pattern: true            # 使用网关模式
+    no_direct_dsn: true              # 禁止直接DSN拼接
+
+# 日志规范规则（基于 docs/日志规范.md）
+logging_standards:
+  format:
+    structured_only: true            # 必须结构化格式(JSON)
+    encoding: "utf-8"                # UTF-8编码
+    timezone: "UTC"                  # UTC时间
+  
+  event_naming:
+    pattern: "<domain>.<action>[.detail]"  # 事件命名模式
+    domains: ["ingest", "align", "db", "mv", "audit", "task", "guardrail", "backpressure", "quality", "cli", "pool"]
+  
+  required_fields:
+    - "ts"                           # 时间戳
+    - "level"                        # 日志级别
+    - "event"                        # 事件名称
+    - "logger"                       # 日志器
+  
+  security:
+    redaction_required: true         # 必须脱敏
+    max_line_size: 8192             # 单行最大字节
+    no_sensitive_data: true         # 禁止敏感信息
+
+# 配置管理规则
+configuration:
+  sources:
+    yaml_only: true                 # 配置统一YAML
+    no_code_dsn: true               # 严禁代码中拼接DSN
+    priority: ["CLI", "ENV", "YAML", "DEFAULT"]  # 配置优先级
+  
+  files:
+    database_config: "configs/database.yaml"
+    web_config: "configs/web.yaml"
+    ingest_config: "configs/ingest.yaml"
+    logging_config: "configs/logging.yaml"
+    mapping_config: "configs/data_mapping.v2.json"  # 唯一事实源
+
+# 数据处理对齐规则
 alignment:
-  default_grid: "auto"         # auto | 1s | 5s | 1min
   nearest_tolerance_ratio: 0.5 # 最近邻容差=0.5*grid
   interpolate_instantaneous: false # 瞬时量默认不插值
   interpolate_cumulative: false    # 累计量禁插值（强制）
@@ -32,7 +142,29 @@ persistence:
   upsert_key: ["device_id", "metric_id", "ts_utc"]
 
 safety:
-  ignore_dirs: ["venv", ".venv", "env"]  # 工具与脚本必须忽略
+  ignore_dirs: ["venv", ".venv", "env", "data"]  # 工具与脚本必须忽略
+  forbidden_operations:
+    - "database_migration"       # 禁止数据库迁移
+    - "data_directory_write"     # 禁止写入data/目录
+    - "venv_modification"        # 禁止操作venv/
+  
+  risk_levels:
+    low: ["view_code", "read_docs", "unit_test", "readonly_command"]
+    medium: ["modify_code", "change_config", "generate_script", "add_dependency"]
+    high: ["install_dependency", "database_migration", "deploy", "data_write"]
+
+# MCP工具强制规则（基于 docs/智能助手行为控制.md）
+mcp_requirements:
+  mandatory_tools: ["Context7", "Sequential_thinking"]
+  workflow_stages:
+    - "retrieve"                # 检索
+    - "plan"                    # 规划  
+    - "verify"                  # 验证
+    - "audit"                   # 审计
+  
+  task_management:
+    required_for_complex: true   # 复杂任务必须使用任务清单
+    min_steps_threshold: 3       # 3步以上任务必须分解
 
 # 可按 metric 覆盖策略示例（将来扩展）
 # overrides:

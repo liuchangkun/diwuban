@@ -6,7 +6,7 @@
 - 输出：标准 schema 的 JSON 文件（stations 数组）
 
 用法：
-  python scripts/tools/convert_mapping_to_standard.py config/data_mapping.json config/data_mapping.v2.json
+  python scripts/tools/convert_mapping_to_standard.py config/data_mapping.json configs/data_mapping.v2.json  # 输出统一至 configs/ 目录
 
 说明：
 - 仅处理 value 为“字符串数组”的键作为指标 files，其他键（如 type/pump_type）作为元数据：
@@ -15,6 +15,7 @@
 - 不更改原始文件；输出为新文件。
 """
 from __future__ import annotations
+
 import json
 import sys
 from pathlib import Path

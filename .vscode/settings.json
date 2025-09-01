@@ -70,5 +70,24 @@
     ]
   },
   "augment.mcpServers": [],
+  "augment.rules": {
+    "configPath": "rules/rules.yml",
+    "ideConfigPath": "rules/ide_rules.toml",
+    "enabled": true,
+    "autoLoad": true,
+    "categories": [
+      "coding_standards",
+      "architecture",
+      "logging",
+      "safety",
+      "mcp_workflow"
+    ]
+  },
+  "augment.projectRules": {
+    "rulesFile": "rules/ide_rules.toml",
+    "yamlConfig": "rules/rules.yml",
+    "enableInEditor": true,
+    "showInStatusBar": true
+  },
   "workbench.settings.editor": "json"
 }

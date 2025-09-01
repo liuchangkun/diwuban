@@ -1,0 +1,110 @@
+<!-- logs.html - 日志查询页面（中文注释） -->
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>泵站监控系统 - 日志查询</title>
+  <link rel="icon" href="/static/favicon.ico" />
+  <link rel="stylesheet" href="/static/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="/static/css/fontawesome.all.min.css" />
+  <link rel="stylesheet" href="/static/css/main.css" />
+  <link rel="stylesheet" href="/static/css/components.css" />
+</head>
+
+<body>
+  <!-- 导航栏：品牌 + 两个链接 -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/static/home.html">泵站监控系统</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+        aria-controls="navbarNav" aria-expanded="false" aria-label="切换导航">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item"><a class="nav-link" href="/static/index.html">数据展示</a></li>
+          <li class="nav-item"><a class="nav-link active" aria-current="page" href="/static/logs.html">日志查询</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container my-4 container-narrow">
+    <form id="log-query-form" class="card card-body card-shadow mb-3">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label">开始时间</label>
+          <input id="start-time" class="form-control" type="datetime-local" required />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">结束时间</label>
+          <input id="end-time" class="form-control" type="datetime-local" required />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">日志级别</label>
+          <div class="d-flex flex-wrap gap-2">
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="level" value="DEBUG"
+                id="lv-debug"><label class="form-check-label" for="lv-debug">DEBUG</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="level" value="INFO"
+                id="lv-info"><label class="form-check-label" for="lv-info">INFO</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="level" value="WARN"
+                id="lv-warn"><label class="form-check-label" for="lv-warn">WARN</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="level" value="ERROR"
+                id="lv-error"><label class="form-check-label" for="lv-error">ERROR</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="level" value="CRITICAL"
+                id="lv-critical"><label class="form-check-label" for="lv-critical">CRITICAL</label></div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">格式</label>
+          <div>
+            <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="fmt"
+                id="fmt-log" value="log"><label class="form-check-label" for="fmt-log">log</label></div>
+            <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="fmt"
+                id="fmt-json" value="json" checked><label class="form-check-label" for="fmt-json">json</label></div>
+            <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="fmt"
+                id="fmt-ndjson" value="ndjson"><label class="form-check-label" for="fmt-ndjson">ndjson</label></div>
+          </div>
+        </div>
+      </div>
+      <div class="row g-3 mt-1">
+        <div class="col-md-6">
+          <label class="form-label">关键词</label>
+          <input id="keyword" class="form-control" type="text" placeholder="可选，支持后端正则" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">最大返回条数</label>
+          <input id="max-rows" class="form-control" type="number" value="1000" min="1" max="10000" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">排序</label>
+          <select id="order" class="form-select">
+            <option value="desc">时间倒序</option>
+            <option value="asc">时间正序</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">视图</label>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="group-by-request" />
+            <label class="form-check-label" for="group-by-request">按 request_id 串联</label>
+          </div>
+        </div>
+      </div>
+      <div class="mt-3">
+        <button class="btn btn-primary" type="submit">查询</button>
+      </div>
+    </form>
+
+    <div id="log-list" class="card card-body card-shadow" style="min-height:200px; white-space:pre-wrap;"></div>
+  </main>
+
+  <script src="/static/js/bootstrap.bundle.min.js"></script>
+  <script src="/static/js/main.js"></script>
+  <script src="/static/js/api.js"></script>
+  <script src="/static/js/logs-page.js"></script>
+</body>
+
+</html>

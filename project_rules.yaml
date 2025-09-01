@@ -1,0 +1,84 @@
+<rules>
+  <always_on_rules>
+    <rule name="coding_standards">
+      <rule_content>
+编码规范规则（基于 docs/编码规范.md）
+
+核心要求：
+- 对外API必须有完整类型注解
+- 严禁字符串拼接SQL，必须使用%s占位符
+- 禁止裸except，仅捕获已知异常
+- 包/模块使用snake_case，类使用PascalCase
+- 公开API必须包含Google风格docstring
+      </rule_content>
+    </rule>
+    
+    <rule name="architecture_rules">
+      <rule_content>
+架构设计规范（基于 docs/体系结构总览.md）
+
+核心约束：
+- 跨层访问必须通过网关/适配器
+- 严格遵循单一职责原则
+- 代码必须放在正确目录：adapters/, services/, models/, api/, core/
+- 仅使用连接池访问数据库
+- 禁止直接DSN拼接，统一使用YAML配置
+      </rule_content>
+    </rule>
+    
+    <rule name="logging_standards">
+      <rule_content>
+日志规范（基于 docs/日志规范.md）
+
+格式要求：
+- 必须使用结构化JSON格式
+- UTF-8编码，UTC时间戳
+- 事件命名遵循 &lt;domain&gt;.&lt;action&gt;[.detail] 模式
+- 必须脱敏敏感信息
+- 单行限制8KB
+      </rule_content>
+    </rule>
+    
+    <rule name="safety_rules">
+      <rule_content>
+安全约束规则
+
+禁止操作：
+- 严禁访问 venv/, data/, .venv/ 等目录
+- 数据库迁移、部署等高风险操作需授权
+- 严禁在代码中硬编码DSN、密码等敏感信息
+
+风险分级：
+- 低风险：查看代码、阅读文档、单元测试
+- 中风险：修改代码、变更配置、生成脚本
+- 高风险：安装依赖、数据库迁移、部署
+      </rule_content>
+    </rule>
+    
+    <rule name="mcp_workflow">
+      <rule_content>
+MCP工具使用规范（基于 docs/智能助手行为控制.md）
+
+强制要求：
+- 必须使用Context7和Sequential_thinking工具
+- 完整工作流程：检索→规划→验证→审计
+- 复杂任务必须使用任务清单
+- 3步以上任务必须分解
+- 失败超过2次必须暂停请求决策
+      </rule_content>
+    </rule>
+  </always_on_rules>
+  
+  <model_decision_rules>
+    <rule name="risk_assessment" description="操作风险评估和分级管理"/>
+    <rule name="change_validation" description="代码变更验证和回滚策略"/>
+    <rule name="quality_gates" description="代码质量门禁和检查点"/>
+  </model_decision_rules>
+  
+  <glob_rules>
+    <rule name="python_files" glob="*.py"/>
+    <rule name="config_files" glob="configs/*.yaml"/>
+    <rule name="docs_files" glob="docs/*.md"/>
+    <rule name="rules_files" glob="rules/*.yml"/>
+  </glob_rules>
+</rules>

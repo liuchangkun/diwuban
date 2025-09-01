@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>特性曲线校准进度监控 - 深度分析工具</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+
+    <!-- 外部依赖模块 -->
+    <script src="../calibration_pump_query_module.js"></script>
+
+    <!-- 共享资源 -->
+    <link rel="stylesheet" href="../共享资源/common-styles.css">
+    <script src="../共享资源/common-utils.js"></script>
+
+    <!-- 分解后的样式和脚本文件 -->
+    <link rel="stylesheet" href="./calibration-monitor-styles.css">
+    <script src="./calibration-monitor-core.js"></script>
+    <script src="./calibration-monitor-charts.js"></script>
+    <script src="./calibration-monitor-pump-query.js"></script>
+    <script src="./calibration-monitor-utils.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <!-- 页面头部 -->
+        <div class="header">
+            <h1>
+                🎯 特性曲线校准进度监控
+                <span class="status-badge status-active">实时监控</span>
+            </h1>
+            <div class="status-info">
+                <span>💡 智能算法</span>
+                <span>⚡ 多算法并行</span>
+                <span>🎯 精度60%+提升</span>
+                <span>🔍 实时追溯</span>
+                <span>⏰ 最后更新: 14:32:18</span>
+            </div>
+        </div>
+
+        <!-- 校准控制面板 -->
+        <div class="calibration-control-panel">
+            <div class="control-header">
+                <div class="control-title">
+                    ⚙️ 校准控制中心
+                </div>
+                <div class="control-actions">
+                    <button class="btn btn-success" onclick="startCalibration()">▶️ 开始校准</button>
+                    <button class="btn btn-warning" onclick="pauseCalibration()">⏸️ 暂停</button>
+                    <button class="btn btn-danger" onclick="stopCalibration()">⏹️ 停止</button>
+                    <button class="btn btn-primary" onclick="exportCalibrationReport()">📊 导出报告</button>
+                </div>
+            </div>
+
+            <!-- 校准策略选择 -->
+            <div class="strategy-selector">
+                <div class="strategy-card active" data-strategy="multi-algorithm">
+                    <div class="strategy-name">🚀 多算法并行</div>
+                    <div class="strategy-desc">神经网络→随机森林→高斯过程→多项式降级</div>
+                </div>
+                <div class="strategy-card" data-strategy="precision-first">
+                    <div class="strategy-name">🎯 精度优先</div>
+                    <div class="strategy-desc">优先保证曲线精度，适当延长计算时间</div>
+                </div>
+                <div class="strategy-card" data-strategy="speed-first">
+                    <div class="strategy-name">⚡ 速度优先</div>
+                    <div class="strategy-desc">快速完成校准，适用紧急情况</div>
+                </div>
+                <div class="strategy-card" data-strategy="balanced">
+                    <div class="strategy-name">⚖️ 平衡模式</div>
+                    <div class="strategy-desc">精度与速度平衡，适合日常运维</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 算法性能对比面板 -->
+        <div class="algorithm-comparison-panel">
+            <div class="comparison-header">
+                <div class="comparison-title">🧮 算法性能实时对比</div>
+                <div class="comparison-controls">
+                    <select id="curveType" onchange="updateCurveComparison(this.value)">
+                        <option value="hq">H-Q 扬程-流量曲线</option>
+                        <option value="etaq">η-Q 效率-流量曲线</option>
+                        <option value="nq">N-Q 功率-流量曲线</option>
+                    </select>
+                    <button class="btn btn-sm btn-primary">🔄 刷新</button>
+                </div>
+            </div>
+            <div class="comparison-charts">
+                <div class="chart-container">
+                    <canvas id="curveComparisonChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <canvas id="accuracyTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 精度追踪和历史记录 -->
+        <div class="precision-tracking">
+            <div class="tracking-header">
+                <div class="tracking-title">🎯 精度追踪分析</div>
+                <div class="tracking-controls">
+                    <select id="precisionTimeRange">
+                        <option value="1h">最近1小时</option>
+                        <option value="6h">最近6小时</option>
+                        <option value="24h">最近24小时</option>
+                        <option value="7d">最近7天</option>
+                    </select>
+                    <button class="btn btn-sm btn-primary">📈 查看趋势</button>
+                </div>
+            </div>
+            <div class="precision-charts">
+                <div class="precision-trend">
+                    <canvas id="precisionTrendChart"></canvas>
+                </div>
+                <div class="precision-summary">
+                    <div class="precision-stat">
+                        <div class="stat-value accuracy-excellent">0.943</div>
+                        <div class="stat-label">最高R²值</div>
+                    </div>
+                    <div class="precision-stat">
+                        <div class="stat-value accuracy-good">0.897</div>
+                        <div class="stat-label">平均R²值</div>
+                    </div>
+                    <div class="precision-stat">
+                        <div class="stat-value accuracy-average">0.653</div>
+                        <div class="stat-label">最低R²值</div>
+                    </div>
+                    <div class="precision-stat">
+                        <div class="stat-value accuracy-excellent">+28%</div>
+                        <div class="stat-label">精度提升</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 校准历史记录 -->
+        <div class="calibration-history">
+            <div class="history-header">
+                <div class="tracking-title">📚 校准历史记录</div>
+                <div class="tracking-controls">
+                    <input type="text" placeholder="搜索历史记录..." id="historySearch">
+                    <button class="btn btn-sm btn-primary">🔍 搜索</button>
+                </div>
+            </div>
+            <div class="history-timeline">
+                <div class="history-entry">
+                    <div class="history-time">14:32:18 - 刚刚</div>
+                    <div class="history-action">🎯 效率-流量曲线校准完成</div>
+                    <div class="history-details">算法: 随机森林 | R²: 0.89 → 0.94 | 提升: +58%</div>
+                </div>
+                <div class="history-entry">
+                    <div class="history-time">14:28:35 - 4分钟前</div>
+                    <div class="history-action">🔄 神经网络算法切换</div>
+                    <div class="history-details">原因: 过拟合检测 | 降级至: 随机森林 | 数据集: 2847个样本</div>
+                </div>
+                <div class="history-entry">
+                    <div class="history-time">14:20:58 - 12分钟前</div>
+                    <div class="history-action">🎯 批量校准启动</div>
+                    <div class="history-details">策略: 多算法并行 | 目标曲线: 83种 | 预计耗时: 45分钟</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 进度监控区域 -->
+        <div class="progress-monitoring">
+            <!-- 实时校准进度 -->
+            <div class="progress-main">
+                <div class="card-title">
+                    📊 实时校准进度监控
+                    <div class="card-actions">
+                        <button class="btn btn-sm btn-primary">🔄 刷新</button>
+                        <button class="btn btn-sm btn-primary">🔍 详情</button>
+                    </div>
+                </div>
+                <div class="real-time-monitor">
+                    <div class="monitor-header">
+                        <span>当前正在校准: 泵组协调特性曲线 (65/83)</span>
+                        <span>进度: 78.3%</span>
+                    </div>
+                    <div class="monitor-content" id="calibrationSteps">
+                        <!-- 实时校准步骤将在这里显示 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 统计指标面板 -->
+            <div class="progress-sidebar">
+                <div class="card-title">📊 校准统计</div>
+                <div class="stats-panel">
+                    <div class="stats-summary">
+                        <div class="stat-card">
+                            <div class="stat-value" style="color: #27ae60;">65/83</div>
+                            <div class="stat-label">已完成曲线</div>
+                            <div class="stat-trend trend-up">↗ +5</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" style="color: #3498db;">0.89</div>
+                            <div class="stat-label">平均R²值</div>
+                            <div class="stat-trend trend-up">↗ +0.12</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" style="color: #f39c12;">58.2%</div>
+                            <div class="stat-label">精度提升</div>
+                            <div class="stat-trend trend-up">↗ +2.1%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 泵特性曲线查询模块 -->
+        <div class="pump-query-panel">
+            <div class="query-header">
+                <div class="query-title">🔍 泵特性曲线查询模块</div>
+                <div class="query-description">支持按泵、按曲线类型查询优化过程详情</div>
+            </div>
+
+            <!-- 泵选择和曲线类型选择 -->
+            <div class="query-selectors">
+                <div class="pump-selector">
+                    <h4>选择泵设备</h4>
+                    <div id="pumpListContainer" class="pump-list">
+                        <!-- 泵列表将在这里动态加载 -->
+                    </div>
+                </div>
+
+                <div class="curve-type-selector">
+                    <h4>选择曲线类型</h4>
+                    <div id="curveTypeContainer" class="curve-type-list">
+                        <!-- 曲线类型将在这里动态加载 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 查询结果面板 -->
+            <div id="queryResultsPanel" class="query-results-panel">
+                <div class="results-header">
+                    <h4 id="resultsTitle">查询结果</h4>
+                    <div class="results-tabs">
+                        <button class="tab-button active" onclick="switchQueryTab('optimization-history')">优化历史</button>
+                        <button class="tab-button" onclick="switchQueryTab('algorithm-comparison')">算法对比</button>
+                        <button class="tab-button" onclick="switchQueryTab('process-details')">过程详情</button>
+                        <button class="tab-button" onclick="switchQueryTab('quality-metrics')">质量指标</button>
+                        <button class="tab-button" onclick="switchQueryTab('detailed-analysis')">详细分析</button>
+                    </div>
+                </div>
+
+                <div class="results-content">
+                    <div id="optimization-history-tab" class="tab-content active">
+                        <div id="optimizationHistoryContainer">
+                            <!-- 优化历史内容 -->
+                        </div>
+                    </div>
+
+                    <div id="algorithm-comparison-tab" class="tab-content">
+                        <div id="algorithmComparisonContainer">
+                            <!-- 算法对比内容 -->
+                        </div>
+                    </div>
+
+                    <div id="process-details-tab" class="tab-content">
+                        <div id="processDetailsContainer">
+                            <!-- 过程详情内容 -->
+                        </div>
+                    </div>
+
+                    <div id="quality-metrics-tab" class="tab-content">
+                        <div id="qualityMetricsContainer">
+                            <!-- 质量指标内容 -->
+                        </div>
+                    </div>
+
+                    <div id="detailed-analysis-tab" class="tab-content">
+                        <div id="detailedAnalysisContainer">
+                            <!-- 详细分析内容 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 校准过程日志 -->
+        <div class="calibration-logs-panel">
+            <div class="logs-header">
+                <div class="logs-title">
+                    📜 校准过程日志追溯
+                    <div style="float: right; display: flex; gap: 10px;">
+                        <select id="logFilter" onchange="filterCalibrationLogs(this.value)">
+                            <option value="all">全部日志</option>
+                            <option value="curve_fitting">曲线拟合</option>
+                            <option value="algorithm_switch">算法切换</option>
+                            <option value="precision_check">精度验证</option>
+                            <option value="error_handling">异常处理</option>
+                        </select>
+                        <button class="btn btn-sm btn-primary">🔍 高级搜索</button>
+                        <button class="btn btn-sm btn-primary">📥 导出日志</button>
+                    </div>
+                </div>
+            </div>
+            <div id="calibrationLogs">
+                <!-- 校准日志将在这里动态加载 -->
+            </div>
+        </div>
+
+        <!-- RLS在线校准参数监控 -->
+        <div class="rls-monitoring-panel">
+            <div class="rls-header">
+                <div class="rls-title">📊 RLS在线校准参数监控</div>
+                <div class="rls-controls">
+                    <select id="rlsStation">
+                        <option value="station_a">泵站A</option>
+                        <option value="station_b">泵站B</option>
+                        <option value="station_c">泵站C</option>
+                    </select>
+                    <button class="btn btn-sm btn-primary">📈 实时监控</button>
+                </div>
+            </div>
+
+            <div class="rls-content">
+                <div class="rls-charts">
+                    <div class="chart-container">
+                        <h4>⚡ 参数变化趋势</h4>
+                        <canvas id="rlsChart"></canvas>
+                    </div>
+                    <div class="rls-parameters">
+                        <h4>🎯 当前参数值</h4>
+                        <div class="parameter-grid">
+                            <div class="parameter-item">
+                                <div class="param-label">功率分摊指数 α</div>
+                                <div class="param-value">1.02 ± 0.003</div>
+                                <div class="param-status status-stable">稳定</div>
+                            </div>
+                            <div class="parameter-item">
+                                <div class="param-label">频率分摊指数 β</div>
+                                <div class="param-value">0.98 ± 0.005</div>
+                                <div class="param-status status-stable">稳定</div>
+                            </div>
+                            <div class="parameter-item">
+                                <div class="param-label">流量缩放系数 C_Q</div>
+                                <div class="param-value">1.035 ± 0.008</div>
+                                <div class="param-status status-adjusting">微调中</div>
+                            </div>
+                            <div class="parameter-item">
+                                <div class="param-label">流量偏置 b_Q</div>
+                                <div class="param-value">-1.2 ± 0.4</div>
+                                <div class="param-status status-stable">稳定</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rls-progress">
+                    <h4>🔄 校准进度 (Gate → Resid → Update → Freeze → Log)</h4>
+                    <div class="progress-steps">
+                        <div class="step completed">
+                            <div class="step-circle">1</div>
+                            <div>Gate</div>
+                        </div>
+                        <div class="step-line"></div>
+                        <div class="step completed">
+                            <div class="step-circle">2</div>
+                            <div>Resid</div>
+                        </div>
+                        <div class="step-line"></div>
+                        <div class="step active">
+                            <div class="step-circle">3</div>
+                            <div>Update</div>
+                        </div>
+                        <div class="step-line"></div>
+                        <div class="step pending">
+                            <div class="step-circle">4</div>
+                            <div>Freeze</div>
+                        </div>
+                        <div class="step-line"></div>
+                        <div class="step pending">
+                            <div class="step-circle">5</div>
+                            <div>Log</div>
+                        </div>
+                    </div>
+
+                    <div class="progress-section">
+                        <div class="progress-item">
+                            <div class="progress-label">
+                                <span class="progress-text">扬程计算校准</span>
+                                <span class="progress-value">87%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 87%;"></div>
+                            </div>
+                        </div>
+                        <div class="progress-item">
+                            <div class="progress-label">
+                                <span class="progress-text">效率优化校准</span>
+                                <span class="progress-value">92%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 92%;"></div>
+                            </div>
+                        </div>
+                        <div class="progress-item">
+                            <div class="progress-label">
+                                <span class="progress-text">流量分配校准</span>
+                                <span class="progress-value">78%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 78%;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="current-parameters">
+                        <h4>📋 实时参数更新</h4>
+                        <div class="parameter-updates">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
+                                <div style="padding: 10px; background: #f8f9fa; border-radius: 8px;">
+                                    <div style="font-weight: bold; color: #2c3e50;">效率系数</div>
+                                    <div style="color: #667eea; font-size: 1.2rem;">0.847 ± 0.012</div>
+                                </div>
+                                <div style="padding: 10px; background: #f8f9fa; border-radius: 8px;">
+                                    <div style="font-weight: bold; color: #2c3e50;">扬程系数</div>
+                                    <div style="color: #667eea; font-size: 1.2rem;">1.023 ± 0.008</div>
+                                </div>
+                                <div style="padding: 10px; background: #f8f9fa; border-radius: 8px;">
+                                    <div style="font-weight: bold; color: #2c3e50;">流量系数</div>
+                                    <div style="color: #667eea; font-size: 1.2rem;">0.956 ± 0.015</div>
+                                </div>
+                                <div style="padding: 10px; background: #f8f9fa; border-radius: 8px;">
+                                    <div style="font-weight: bold; color: #2c3e50;">学习率</div>
+                                    <div style="color: #667eea; font-size: 1.2rem;">0.0125</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 设备校准状态概览 -->
+        <div class="calibration-card">
+            <div class="calibration-header">
+                <h4>🎛️ 设备校准状态概览</h4>
+                <div class="calibration-summary">
+                    <span class="summary-item">
+                        <span class="summary-label">总设备:</span>
+                        <span class="summary-value">12台</span>
+                    </span>
+                    <span class="summary-item">
+                        <span class="summary-label">校准中:</span>
+                        <span class="summary-value calibrating">4台</span>
+                    </span>
+                    <span class="summary-item">
+                        <span class="summary-label">已完成:</span>
+                        <span class="summary-value completed">8台</span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="device-calibration-grid">
+                <div class="device-card calibrating">
+                    <div class="device-header">
+                        <span class="device-name">泵站A-01</span>
+                        <span class="device-status">校准中</span>
+                    </div>
+                    <div class="device-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 68%;"></div>
+                        </div>
+                        <span class="progress-text">68% - Update阶段</span>
+                    </div>
+                    <div class="device-metrics">
+                        <span class="metric">精度: 0.87 (+15%)</span>
+                        <span class="metric">剩余: 3.2min</span>
+                    </div>
+                </div>
+
+                <div class="device-card calibrating">
+                    <div class="device-header">
+                        <span class="device-name">泵站A-02</span>
+                        <span class="device-status">校准中</span>
+                    </div>
+                    <div class="device-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 85%;"></div>
+                        </div>
+                        <span class="progress-text">85% - Freeze阶段</span>
+                    </div>
+                    <div class="device-metrics">
+                        <span class="metric">精度: 0.92 (+23%)</span>
+                        <span class="metric">剩余: 1.8min</span>
+                    </div>
+                </div>
+
+                <div class="device-card completed">
+                    <div class="device-header">
+                        <span class="device-name">泵站B-01</span>
+                        <span class="device-status">已完成</span>
+                    </div>
+                    <div class="device-metrics">
+                        <span class="metric">精度: 0.94 (+31%)</span>
+                        <span class="metric">耗时: 8.2min</span>
+                    </div>
+                </div>
+
+                <div class="device-card completed">
+                    <div class="device-header">
+                        <span class="device-name">泵站B-02</span>
+                        <span class="device-status">已完成</span>
+                    </div>
+                    <div class="device-metrics">
+                        <span class="metric">精度: 0.89 (+28%)</span>
+                        <span class="metric">耗时: 6.8min</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 日志监控面板 -->
+        <div class="log-monitoring-panel">
+            <div class="log-header">
+                <h4>📝 实时日志监控</h4>
+                <div class="log-controls">
+                    <select id="logLevel">
+                        <option value="all">全部级别</option>
+                        <option value="info">INFO</option>
+                        <option value="warn">WARN</option>
+                        <option value="error">ERROR</option>
+                        <option value="success">SUCCESS</option>
+                    </select>
+                    <button class="btn btn-sm btn-primary">🔄 刷新</button>
+                    <button class="btn btn-sm btn-primary">📥 导出</button>
+                </div>
+            </div>
+
+            <div class="log-content" id="realTimeLogContent">
+                <div class="log-item">
+                    <div class="log-time">2024-09-01 14:32:18</div>
+                    <div class="log-message">[INFO] 泵站A-02 参数收敛检测，连续15次变化 < 0.01，准备执行冻结</div>
+                    </div>
+
+                    <div class="log-item">
+                        <div class="log-time">2024-09-01 14:32:03</div>
+                        <div class="log-message">[SUCCESS] 泵站B-01 RLS校准完成，最终精度: R²=0.94，RMSE=1.18m</div>
+                    </div>
+
+                    <div class="log-item">
+                        <div class="log-time">2024-09-01 14:31:45</div>
+                        <div class="log-message">[SUCCESS] 泵站A-01 校准完成，总精度提升: 68.2%，参数已冻结</div>
+                    </div>
+
+                    <div class="log-item">
+                        <div class="log-time">2024-09-01 14:31:12</div>
+                        <div class="log-message">[INFO] 泵站A-02 Resid步骤完成，RMSE降至1.8m，性能良好</div>
+                    </div>
+
+                    <div class="log-item">
+                        <div class="log-time">2024-09-01 14:30:38</div>
+                        <div class="log-message">[INFO] 泵站A-01 参数收敛，连续10次小变化，执行冻结操作</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 初始化脚本 -->
+        <script>
+            // 页面加载完成后初始化
+            document.addEventListener('DOMContentLoaded', function () {
+                // 初始化所有功能模块
+                CalibrationMonitor.init();
+            });
+        </script>
+</body>
+
+</html>

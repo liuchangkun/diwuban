@@ -1,0 +1,775 @@
+{
+  "stations": [
+    {
+      "name": "二期供水泵房",
+      "devices": [
+        {
+          "name": "二期供水泵房1#泵",
+          "type": "pump",
+          "pump_type": "variable_frequency",
+          "metrics": [
+            {
+              "key": "pump_frequency",
+              "files": [
+                "_二期_供水泵房_1#加压泵__频率__反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_voltage_a",
+              "files": [
+                "二期_供水泵房_多功能电表_1#加压泵_A相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_a",
+              "files": [
+                "二期_供水泵房_多功能电表_1#加压泵_A相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_voltage_b",
+              "files": [
+                "二期_供水泵房_多功能电表_1#加压泵_B相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_b",
+              "files": [
+                "二期_供水泵房_多功能电表_1#加压泵_B相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_voltage_c",
+              "files": [
+                "二期_供水泵房_多功能电表_1#加压泵_C相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_c",
+              "files": [
+                "二期_供水泵房_多功能电表_1#加压泵_C相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_active_power",
+              "files": [
+                "二期_供水泵房_多功能电表_1#加压泵_有功功率_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_kwh",
+              "files": [
+                "二期_供水泵房_多功能电表_1#加压泵_正向有功电度_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_power_factor",
+              "files": [
+                "二期_供水泵房_多功能电表_1#加压泵_功率因数_反馈.csv"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "二期供水泵房2#泵",
+          "type": "pump",
+          "pump_type": "variable_frequency",
+          "metrics": [
+            {
+              "key": "pump_frequency",
+              "files": [
+                "_二期_供水泵房_2#加压泵__频率__反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_voltage_a",
+              "files": [
+                "二期_供水泵房_多功能电表_2#加压泵_A相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_a",
+              "files": [
+                "二期_供水泵房_多功能电表_2#加压泵_A相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_voltage_b",
+              "files": [
+                "二期_供水泵房_多功能电表_2#加压泵_B相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_b",
+              "files": [
+                "二期_供水泵房_多功能电表_2#加压泵_B相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_voltage_c",
+              "files": [
+                "二期_供水泵房_多功能电表_2#加压泵_C相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_c",
+              "files": [
+                "二期_供水泵房_多功能电表_2#加压泵_C相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_active_power",
+              "files": [
+                "二期_供水泵房_多功能电表_2#加压泵_有功功率_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_kwh",
+              "files": [
+                "二期_供水泵房_多功能电表_2#加压泵_正向有功电度_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_power_factor",
+              "files": [
+                "二期_供水泵房_多功能电表_2#加压泵_功率因数_反馈.csv"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "二期供水泵房3#泵",
+          "type": "pump",
+          "pump_type": "variable_frequency",
+          "metrics": [
+            {
+              "key": "pump_frequency",
+              "files": [
+                "_二期_供水泵房_3#加压泵__频率__反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_voltage_a",
+              "files": [
+                "二期_供水泵房_多功能电表_3#加压泵_A相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_a",
+              "files": [
+                "二期_供水泵房_多功能电表_3#加压泵_A相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_voltage_b",
+              "files": [
+                "二期_供水泵房_多功能电表_3#加压泵_B相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_b",
+              "files": [
+                "二期_供水泵房_多功能电表_3#加压泵_B相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_voltage_c",
+              "files": [
+                "二期_供水泵房_多功能电表_3#加压泵_C相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_c",
+              "files": [
+                "二期_供水泵房_多功能电表_3#加压泵_C相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_active_power",
+              "files": [
+                "二期_供水泵房_多功能电表_3#加压泵_有功功率_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_kwh",
+              "files": [
+                "二期_供水泵房_多功能电表_3#加压泵_正向有功电度_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_power_factor",
+              "files": [
+                "二期_供水泵房_多功能电表_3#加压泵_功率因数_反馈.csv"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "二期供水泵房4#泵",
+          "type": "pump",
+          "pump_type": "variable_frequency",
+          "metrics": [
+            {
+              "key": "pump_frequency",
+              "files": [
+                "_二期_供水泵房_4#加压泵__频率__反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_voltage_a",
+              "files": [
+                "二期_供水泵房_多功能电表_4#加压泵_A相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_a",
+              "files": [
+                "二期_供水泵房_多功能电表_4#加压泵_A相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_voltage_b",
+              "files": [
+                "二期_供水泵房_多功能电表_4#加压泵_B相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_b",
+              "files": [
+                "二期_供水泵房_多功能电表_4#加压泵_B相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_voltage_c",
+              "files": [
+                "二期_供水泵房_多功能电表_4#加压泵_C相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_c",
+              "files": [
+                "二期_供水泵房_多功能电表_4#加压泵_C相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_active_power",
+              "files": [
+                "二期_供水泵房_多功能电表_4#加压泵_有功功率_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_kwh",
+              "files": [
+                "二期_供水泵房_多功能电表_4#加压泵_正向有功电度_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_power_factor",
+              "files": [
+                "二期_供水泵房_多功能电表_4#加压泵_功率因数_反馈.csv"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "二期供水泵房5#泵",
+          "type": "pump",
+          "pump_type": "variable_frequency",
+          "metrics": [
+            {
+              "key": "pump_frequency",
+              "files": [
+                "_二期_供水泵房_6#加压泵__频率__反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_voltage_a",
+              "files": [
+                "二期_供水泵房_多功能电表_5#加压泵_A相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_a",
+              "files": [
+                "二期_供水泵房_多功能电表_5#加压泵_A相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_voltage_b",
+              "files": [
+                "二期_供水泵房_多功能电表_5#加压泵_B相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_b",
+              "files": [
+                "二期_供水泵房_多功能电表_5#加压泵_B相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_voltage_c",
+              "files": [
+                "二期_供水泵房_多功能电表_5#加压泵_C相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_c",
+              "files": [
+                "二期_供水泵房_多功能电表_5#加压泵_C相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_active_power",
+              "files": [
+                "二期_供水泵房_多功能电表_5#加压泵_有功功率_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_kwh",
+              "files": [
+                "二期_供水泵房_多功能电表_5#加压泵_正向有功电度_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_power_factor",
+              "files": [
+                "二期_供水泵房_多功能电表_5#加压泵_功率因数_反馈.csv"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "二期供水泵房6#泵",
+          "type": "pump",
+          "pump_type": "variable_frequency",
+          "metrics": [
+            {
+              "key": "pump_frequency",
+              "files": [
+                "_二期_供水泵房_6#加压泵__频率__反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_voltage_a",
+              "files": [
+                "二期_供水泵房_多功能电表_6#加压泵_A相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_a",
+              "files": [
+                "二期_供水泵房_多功能电表_6#加压泵_A相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_voltage_b",
+              "files": [
+                "二期_供水泵房_多功能电表_6#加压泵_B相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_b",
+              "files": [
+                "二期_供水泵房_多功能电表_6#加压泵_B相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_voltage_c",
+              "files": [
+                "二期_供水泵房_多功能电表_6#加压泵_C相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_c",
+              "files": [
+                "二期_供水泵房_多功能电表_6#加压泵_C相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_active_power",
+              "files": [
+                "二期_供水泵房_多功能电表_6#加压泵_有功功率_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_kwh",
+              "files": [
+                "二期_供水泵房_多功能电表_6#加压泵_正向有功电度_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_power_factor",
+              "files": [
+                "二期_供水泵房_多功能电表_6#加压泵_功率因数_反馈.csv"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "二期供水泵房总管",
+          "type": "Main_pipeline",
+          "metrics": [
+            {
+              "key": "main_pipeline_outlet_pressure",
+              "files": [
+                "_二期_供水泵房_1#出厂水总管__压力__反馈.csv"
+              ]
+            },
+            {
+              "key": "main_pipeline_flow_rate",
+              "files": [
+                "_二期_供水泵房_总__瞬时流量__反馈.csv"
+              ]
+            },
+            {
+              "key": "main_pipeline_cumulative_flow",
+              "files": [
+                "_二期_供水泵房_总__正向累计流量__反馈.csv"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "二期取水泵房",
+      "devices": [
+        {
+          "name": "二期取水泵房1#泵",
+          "type": "pump",
+          "pump_type": "soft_start",
+          "metrics": [
+            {
+              "key": "pump_voltage_a",
+              "files": [
+                "二期_取水泵房_多功能电表_1#取水泵_A相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_a",
+              "files": [
+                "二期_取水泵房_多功能电表_1#取水泵_A相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_voltage_b",
+              "files": [
+                "二期_取水泵房_多功能电表_1#取水泵_B相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_b",
+              "files": [
+                "二期_取水泵房_多功能电表_1#取水泵_B相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_voltage_c",
+              "files": [
+                "二期_取水泵房_多功能电表_1#取水泵_C相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_c",
+              "files": [
+                "二期_取水泵房_多功能电表_1#取水泵_C相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_active_power",
+              "files": [
+                "二期_取水泵房_多功能电表_1#取水泵_有功功率_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_kwh",
+              "files": [
+                "二期_取水泵房_多功能电表_1#取水泵_正向有功电度_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_power_factor",
+              "files": [
+                "二期_取水泵房_多功能电表_1#取水泵_功率因数_反馈.csv"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "二期取水泵房2#泵",
+          "type": "pump",
+          "pump_type": "variable_frequency",
+          "metrics": [
+            {
+              "key": "pump_frequency",
+              "files": [
+                "_二期_取水泵站__2#取水泵_频率反馈__反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_voltage_a",
+              "files": [
+                "二期_取水泵房_多功能电表_2#取水泵_A相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_a",
+              "files": [
+                "二期_取水泵房_多功能电表_2#取水泵_A相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_voltage_b",
+              "files": [
+                "二期_取水泵房_多功能电表_2#取水泵_B相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_b",
+              "files": [
+                "二期_取水泵房_多功能电表_2#取水泵_B相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_voltage_c",
+              "files": [
+                "二期_取水泵房_多功能电表_2#取水泵_C相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_c",
+              "files": [
+                "二期_取水泵房_多功能电表_2#取水泵_C相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_active_power",
+              "files": [
+                "二期_取水泵房_多功能电表_2#取水泵_有功功率_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_kwh",
+              "files": [
+                "二期_取水泵房_多功能电表_2#取水泵_正向有功电度_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_power_factor",
+              "files": [
+                "二期_取水泵房_多功能电表_2#取水泵_功率因数_反馈.csv"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "二期取水泵房3#泵",
+          "type": "pump",
+          "pump_type": "soft_start",
+          "metrics": [
+            {
+              "key": "pump_voltage_a",
+              "files": [
+                "二期_取水泵房_多功能电表_3#取水泵_A相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_a",
+              "files": [
+                "二期_取水泵房_多功能电表_3#取水泵_A相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_voltage_b",
+              "files": [
+                "二期_取水泵房_多功能电表_3#取水泵_B相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_b",
+              "files": [
+                "二期_取水泵房_多功能电表_3#取水泵_B相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_voltage_c",
+              "files": [
+                "二期_取水泵房_多功能电表_3#取水泵_C相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_c",
+              "files": [
+                "二期_取水泵房_多功能电表_3#取水泵_C相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_active_power",
+              "files": [
+                "二期_取水泵房_多功能电表_3#取水泵_有功功率_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_kwh",
+              "files": [
+                "二期_取水泵房_多功能电表_3#取水泵_正向有功电度_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_power_factor",
+              "files": [
+                "二期_取水泵房_多功能电表_3#取水泵_功率因数_反馈.csv"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "二期取水泵房4#泵",
+          "type": "pump",
+          "pump_type": "soft_start",
+          "metrics": [
+            {
+              "key": "pump_voltage_a",
+              "files": [
+                "二期_取水泵房_多功能电表_4#取水泵_A相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_a",
+              "files": [
+                "二期_取水泵房_多功能电表_4#取水泵_A相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_voltage_b",
+              "files": [
+                "二期_取水泵房_多功能电表_4#取水泵_B相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_b",
+              "files": [
+                "二期_取水泵房_多功能电表_4#取水泵_B相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_voltage_c",
+              "files": [
+                "二期_取水泵房_多功能电表_4#取水泵_C相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_c",
+              "files": [
+                "二期_取水泵房_多功能电表_4#取水泵_C相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_active_power",
+              "files": [
+                "二期_取水泵房_多功能电表_4#取水泵_有功功率_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_kwh",
+              "files": [
+                "二期_取水泵房_多功能电表_4#取水泵_正向有功电度_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_power_factor",
+              "files": [
+                "二期_取水泵房_多功能电表_4#取水泵_功率因数_反馈.csv"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "二期取水泵房5#泵",
+          "type": "pump",
+          "pump_type": "variable_frequency",
+          "metrics": [
+            {
+              "key": "pump_frequency",
+              "files": [
+                "_二期_取水泵站__5#取水泵_频率反馈__反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_voltage_a",
+              "files": [
+                "二期_取水泵房_多功能电表_5#取水泵_A相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_a",
+              "files": [
+                "二期_取水泵房_多功能电表_5#取水泵_A相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_voltage_b",
+              "files": [
+                "二期_取水泵房_多功能电表_5#取水泵_B相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_b",
+              "files": [
+                "二期_取水泵房_多功能电表_5#取水泵_B相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_voltage_c",
+              "files": [
+                "二期_取水泵房_多功能电表_5#取水泵_C相电压_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_current_c",
+              "files": [
+                "二期_取水泵房_多功能电表_5#取水泵_C相电流_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_active_power",
+              "files": [
+                "二期_取水泵房_多功能电表_5#取水泵_有功功率_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_kwh",
+              "files": [
+                "二期_取水泵房_多功能电表_5#取水泵_正向有功电度_反馈.csv"
+              ]
+            },
+            {
+              "key": "pump_power_factor",
+              "files": [
+                "二期_取水泵房_多功能电表_5#取水泵_功率因数_反馈.csv"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "总管",
+          "type": "Main_pipeline",
+          "metrics": [
+            {
+              "key": "main_pipeline_flow_rate",
+              "files": [
+                "_二期_取水泵站__进厂水总管_瞬时流量__反馈.csv"
+              ]
+            },
+            {
+              "key": "main_pipeline_cumulative_flow",
+              "files": [
+                "_二期_取水泵站__进厂水总管_正向累计流量_485_反馈.csv"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

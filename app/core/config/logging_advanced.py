@@ -16,17 +16,19 @@ from dataclasses import dataclass
 class StartupCleanupSettings:
     """
     启动清理配置
-    
+
     用于控制程序启动时的清理行为，确保干净的运行环境。
-    
+
     属性：
         clear_logs: 启动时清空logs目录
         clear_database: 启动时清空数据库
         logs_backup_count: 清理前保留的日志备份数
         confirm_clear: 是否需要确认清理操作
     """
-    clear_logs: bool = True
-    clear_database: bool = True
+
+    # 默认关闭启动清理，避免误删数据；仅在显式启用时才执行
+    clear_logs: bool = False
+    clear_database: bool = False
     logs_backup_count: int = 3
     confirm_clear: bool = False
 
@@ -35,9 +37,9 @@ class StartupCleanupSettings:
 class DetailedLoggingSettings:
     """
     详细日志记录配置
-    
+
     用于控制日志记录的详细程度，支持函数级别的日志跟踪。
-    
+
     属性：
         enable_function_entry: 记录函数进入
         enable_function_exit: 记录函数退出
@@ -57,6 +59,7 @@ class DetailedLoggingSettings:
         internal_steps_interval: 内部步骤日志输出间隔（秒）
         loop_log_interval: 循环日志输出间隔（次数）
     """
+
     enable_function_entry: bool = True
     enable_function_exit: bool = True
     enable_parameter_logging: bool = True
@@ -80,9 +83,9 @@ class DetailedLoggingSettings:
 class KeyMetricsSettings:
     """
     关键指标日志配置
-    
+
     用于配置关键业务指标的日志记录。
-    
+
     属性：
         enable_file_count: 记录文件数量
         enable_data_time_range: 记录数据时间范围
@@ -102,6 +105,7 @@ class KeyMetricsSettings:
         progress_report_interval: 进度报告间隔（行数）
         metrics_summary_interval: 指标汇总间隔（秒）
     """
+
     enable_file_count: bool = True
     enable_data_time_range: bool = True
     enable_processing_progress: bool = True
@@ -125,9 +129,9 @@ class KeyMetricsSettings:
 class SqlExecutionSettings:
     """
     SQL执行日志配置
-    
+
     用于配置SQL执行过程的详细日志记录。
-    
+
     属性：
         enable_statement_logging: 记录完整SQL语句
         enable_execution_metrics: 记录执行指标
@@ -138,6 +142,7 @@ class SqlExecutionSettings:
         max_sql_length: SQL语句最大记录长度
         sensitive_fields: 敏感字段列表（用于脱敏）
     """
+
     enable_statement_logging: bool = True
     enable_execution_metrics: bool = True
     enable_parameter_logging: bool = True
@@ -152,9 +157,9 @@ class SqlExecutionSettings:
 class InternalExecutionSettings:
     """
     内部执行日志配置
-    
+
     用于配置程序内部执行过程的详细日志记录。
-    
+
     属性：
         enable_step_logging: 记录执行步骤
         enable_checkpoint_logging: 记录检查点
@@ -166,6 +171,7 @@ class InternalExecutionSettings:
         iteration_log_frequency: 迭代日志频率
         checkpoint_auto_interval: 自动检查点间隔
     """
+
     enable_step_logging: bool = True
     enable_checkpoint_logging: bool = True
     enable_branch_logging: bool = True

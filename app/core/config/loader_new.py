@@ -24,8 +24,8 @@
 - configs/system.yaml：系统通用配置
 """
 
-import os
 import logging
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Tuple
@@ -33,24 +33,50 @@ from typing import Any, Dict, Tuple
 import yaml  # type: ignore[import-untyped]
 
 # 导入拆分的配置模块
-from .database import DbSettings, DbPoolSettings, DbTimeoutSettings, DbRetrySettings
-from .web import WebSettings, WebServerSettings, WebApiSettings, WebAppSettings, WebPerformanceSettings
-from .system import SystemSettings, SystemDirectoriesSettings, SystemTimezoneSettings, SystemGeneralSettings
+from .database import DbPoolSettings, DbRetrySettings, DbSettings, DbTimeoutSettings
 from .ingest import (
-    IngestSettings, CsvSettings, BatchSettingsExt, ErrorHandlingSettings,
-    IngestPerformance, IngestBackpressure, BackpressureThresholds,
-    DefaultPathSettings, DefaultWindowSettings
+    BackpressureThresholds,
+    BatchSettingsExt,
+    CsvSettings,
+    DefaultPathSettings,
+    DefaultWindowSettings,
+    ErrorHandlingSettings,
+    IngestBackpressure,
+    IngestPerformance,
+    IngestSettings,
 )
-from .merge import MergeSettings, MergeTzPolicy, SegmentedMergeSettings, IngestWindow
 from .logging import LoggingSettings
-from .logging_base import LoggingSql, LoggingRotation, LoggingFormatting, LoggingPerformance, SamplingSettings
 from .logging_advanced import (
-    StartupCleanupSettings, DetailedLoggingSettings, KeyMetricsSettings,
-    SqlExecutionSettings, InternalExecutionSettings
+    DetailedLoggingSettings,
+    InternalExecutionSettings,
+    KeyMetricsSettings,
+    SqlExecutionSettings,
+    StartupCleanupSettings,
 )
-from .logging_output import LoggingOutputSettings
+from .logging_base import (
+    LoggingFormatting,
+    LoggingPerformance,
+    LoggingRotation,
+    LoggingSql,
+    SamplingSettings,
+)
 from .logging_filters import LoggingFiltersSettings
+from .logging_output import LoggingOutputSettings
+from .merge import IngestWindow, MergeSettings, MergeTzPolicy, SegmentedMergeSettings
+from .system import (
+    SystemDirectoriesSettings,
+    SystemGeneralSettings,
+    SystemSettings,
+    SystemTimezoneSettings,
+)
 from .validation import ConfigValidator, log_validation_result
+from .web import (
+    WebApiSettings,
+    WebAppSettings,
+    WebPerformanceSettings,
+    WebServerSettings,
+    WebSettings,
+)
 
 # 模块日志记录器
 logger = logging.getLogger(__name__)
@@ -60,10 +86,10 @@ logger = logging.getLogger(__name__)
 class Settings:
     """
     应用程序主配置类
-    
+
     集成所有子系统的配置，提供统一的配置访问接口。
     所有配置对象都是 frozen dataclass，确保配置的不可变性。
-    
+
     配置组织结构：
     - db: 数据库连接和池配置
     - ingest: 数据导入和处理配置
@@ -71,20 +97,21 @@ class Settings:
     - logging: 日志系统配置
     - web: Web服务配置
     - system: 系统通用配置
-    
+
     使用示例：
         settings = load_settings(Path("configs"))
-        
+
         # 访问数据库配置
         db_host = settings.db.host
         pool_size = settings.db.pool.max_size
-        
+
         # 访问Web服务配置
         port = settings.web.server.port
-        
+
         # 访问系统配置
         timezone = settings.system.timezone.default
     """
+
     db: DbSettings = DbSettings()
     ingest: IngestSettings = IngestSettings()
     merge: MergeSettings = MergeSettings()
@@ -109,19 +136,19 @@ def load_settings(config_dir: Path) -> Settings:
     - 支持文件：database.yaml、logging.yaml、ingest.yaml、web.yaml、system.yaml
     - 合并策略：ingest 支持 CLI/ENV > YAML > 默认；db/logging 仅 YAML > 默认
     - 硬编码消除：所有默认值均从 system.yaml 读取
-    
+
     参数：
         config_dir: 配置文件目录路径
-        
+
     返回：
         Settings: 完整的应用配置对象
     """
     cdir = _first_existing_dir(config_dir)
-    
+
     # 加载各个配置文件
     config_files = {
         "database": cdir / "database.yaml",
-        "logging": cdir / "logging.yaml", 
+        "logging": cdir / "logging.yaml",
         "ingest": cdir / "ingest.yaml",
         "merge": cdir / "merge.yaml",
         "web": cdir / "web.yaml",
@@ -146,7 +173,7 @@ def load_settings(config_dir: Path) -> Settings:
     # 验证配置
     validation_result = ConfigValidator.validate_complete_config(data)
     log_validation_result(validation_result, logger)
-    
+
     if not validation_result.is_valid:
         raise ValueError(f"配置验证失败: {len(validation_result.errors)} 个错误")
 
@@ -155,37 +182,34 @@ def load_settings(config_dir: Path) -> Settings:
     timezone_config = system_config.get("timezone", {})
     directories_config = system_config.get("directories", {})
     general_config = system_config.get("general", {})
-    
+
     # 获取系统级别默认值
     default_timezone = timezone_config.get("default", "Asia/Shanghai")
     data_dir = directories_config.get("data", "data")
     logs_dir = directories_config.get("logs", "logs")
-    configs_dir = directories_config.get("configs", "configs")
+    # configs_dir 未直接使用，移除以降低未使用告警
     default_encoding = general_config.get("encoding", "utf-8")
-    
+
     # 构建系统配置
     system_settings = _build_system_settings(system_config)
-    
+
     # 构建数据库配置（仅从 YAML 加载）
     db_settings = _build_database_settings(data.get("database", {}))
-    
+
     # 构建 Web 配置
     web_settings = _build_web_settings(data.get("web", {}))
-    
+
     # 构建导入配置（支持 ENV 覆盖，使用系统默认值）
     ingest_settings = _build_ingest_settings(
-        data.get("ingest", {}), 
-        data_dir, 
-        default_timezone,
-        default_encoding
+        data.get("ingest", {}), data_dir, default_timezone, default_encoding
     )
-    
+
     # 构建合并配置（使用系统默认时区）
     merge_settings = _build_merge_settings(data.get("merge", {}), default_timezone)
-    
+
     # 构建日志配置（仅从 YAML 加载，使用系统默认值）
     logging_settings = _build_logging_settings(data.get("logging", {}), logs_dir)
-    
+
     # 构建最终配置对象
     settings = Settings(
         db=db_settings,
@@ -195,28 +219,30 @@ def load_settings(config_dir: Path) -> Settings:
         web=web_settings,
         system=system_settings,
     )
-    
-    logger.info(f"配置加载完成，数据目录: {settings.system.directories.data}, "
-                f"Web端口: {settings.web.server.port}, 默认时区: {settings.system.timezone.default}")
-    
+
+    logger.info(
+        f"配置加载完成，数据目录: {settings.system.directories.data}, "
+        f"Web端口: {settings.web.server.port}, 默认时区: {settings.system.timezone.default}"
+    )
+
     return settings
 
 
 def load_settings_with_sources(config_dir: Path) -> Tuple[Settings, Dict[str, Any]]:
     """
     加载配置并返回配置来源信息。
-    
+
     参数：
         config_dir: 配置文件目录路径
-        
+
     返回：
         Tuple[Settings, Dict]: 配置对象和来源信息
     """
     settings = load_settings(config_dir)
-    
+
     # 实现配置来源追踪逻辑
     sources = _build_config_sources(config_dir)
-    
+
     return settings, sources
 
 
@@ -224,12 +250,13 @@ def load_settings_with_sources(config_dir: Path) -> Tuple[Settings, Dict[str, An
 # 配置构建辅助函数
 # ================================
 
+
 def _build_system_settings(system_config: Dict[str, Any]) -> SystemSettings:
     """构建系统配置"""
     directories = system_config.get("directories", {})
     timezone = system_config.get("timezone", {})
     general = system_config.get("general", {})
-    
+
     return SystemSettings(
         directories=SystemDirectoriesSettings(
             data=str(directories.get("data", "data")),
@@ -256,10 +283,10 @@ def _build_database_settings(db_config: Dict[str, Any]) -> DbSettings:
     pool_config = db_config.get("pool", {})
     timeouts_config = db_config.get("timeouts", {})
     retry_config = db_config.get("retry", {})
-    
+
     return DbSettings(
         host=str(db_config.get("host", "localhost")),
-        name=str(db_config.get("name", "pump_station_optimization")),
+        name=str(db_config.get("dbname", "pump_station_optimization")),
         user=str(db_config.get("user", "postgres")),
         dsn_read=db_config.get("dsn_read"),
         dsn_write=db_config.get("dsn_write"),
@@ -272,7 +299,9 @@ def _build_database_settings(db_config: Dict[str, Any]) -> DbSettings:
         ),
         timeouts=DbTimeoutSettings(
             connect_timeout_ms=int(timeouts_config.get("connect_timeout_ms", 5000)),
-            statement_timeout_ms=int(timeouts_config.get("statement_timeout_ms", 30000)),
+            statement_timeout_ms=int(
+                timeouts_config.get("statement_timeout_ms", 30000)
+            ),
             query_timeout_ms=int(timeouts_config.get("query_timeout_ms", 60000)),
         ),
         retry=DbRetrySettings(
@@ -289,7 +318,7 @@ def _build_web_settings(web_config: Dict[str, Any]) -> WebSettings:
     api_config = web_config.get("api", {})
     app_config = web_config.get("app", {})
     performance_config = web_config.get("performance", {})
-    
+
     return WebSettings(
         server=WebServerSettings(
             host=str(server_config.get("host", "127.0.0.1")),
@@ -303,6 +332,8 @@ def _build_web_settings(web_config: Dict[str, Any]) -> WebSettings:
             version=str(api_config.get("version", "1.0.0")),
             docs_url=str(api_config.get("docs_url", "/docs")),
             redoc_url=str(api_config.get("redoc_url", "/redoc")),
+            # 新增：从配置读取最小默认时间窗（分钟），默认 60
+            minimal_window_minutes=int(api_config.get("minimal_window_minutes", 60)),
         ),
         app=WebAppSettings(
             debug=bool(app_config.get("debug", False)),
@@ -319,10 +350,10 @@ def _build_web_settings(web_config: Dict[str, Any]) -> WebSettings:
 
 
 def _build_ingest_settings(
-    ingest_config: Dict[str, Any], 
-    data_dir: str, 
+    ingest_config: Dict[str, Any],
+    data_dir: str,
     default_timezone: str,
-    default_encoding: str
+    default_encoding: str,
 ) -> IngestSettings:
     """构建导入配置（支持 ENV 覆盖，使用系统默认值）"""
     # CSV 配置
@@ -334,7 +365,7 @@ def _build_ingest_settings(
         escape_char=str(csv_config.get("escape_char", "\\")),
         allow_bom=bool(csv_config.get("allow_bom", True)),
     )
-    
+
     # 批处理配置
     batch_config = ingest_config.get("batch", {})
     batch_settings = BatchSettingsExt(
@@ -342,7 +373,7 @@ def _build_ingest_settings(
         max_memory_mb=int(batch_config.get("max_memory_mb", 256)),
         parallel_batches=int(batch_config.get("parallel_batches", 2)),
     )
-    
+
     # 错误处理配置
     error_config = ingest_config.get("error_handling", {})
     error_settings = ErrorHandlingSettings(
@@ -350,7 +381,7 @@ def _build_ingest_settings(
         error_threshold_percent=float(error_config.get("error_threshold_percent", 5.0)),
         continue_on_error=bool(error_config.get("continue_on_error", True)),
     )
-    
+
     # 性能配置
     performance_config = ingest_config.get("performance", {})
     performance_settings = IngestPerformance(
@@ -358,7 +389,7 @@ def _build_ingest_settings(
         write_buffer_size=int(performance_config.get("write_buffer_size", 65536)),
         connection_pool_size=int(performance_config.get("connection_pool_size", 5)),
     )
-    
+
     # 背压配置
     backpressure_config = ingest_config.get("backpressure", {})
     thresholds_config = backpressure_config.get("thresholds", {})
@@ -370,14 +401,20 @@ def _build_ingest_settings(
             min_workers=int(thresholds_config.get("min_workers", 1)),
         )
     )
-    
+
     # 默认路径配置（解决硬编码问题）
     paths_config = ingest_config.get("default_paths", {})
     paths_settings = DefaultPathSettings(
-        mapping_file=str(paths_config.get("mapping_file", "config/data_mapping.v2.json")),
-        dim_metric_config=str(paths_config.get("dim_metric_config", "config/dim_metric_config.json")),
+        mapping_file=str(
+            paths_config.get(
+                "mapping_file", "configs/data_mapping.v2.json"
+            )  # 默认路径统一至 configs/
+        ),
+        dim_metric_config=str(
+            paths_config.get("dim_metric_config", "config/dim_metric_config.json")
+        ),
     )
-    
+
     # 默认窗口配置
     window_config = ingest_config.get("default_window", {})
     window_settings = DefaultWindowSettings(
@@ -385,15 +422,28 @@ def _build_ingest_settings(
         start_utc=str(window_config.get("start_utc", "2025-02-27T18:00:00Z")),
         end_utc=str(window_config.get("end_utc", "2025-02-27T19:59:59Z")),
     )
-    
+
     return IngestSettings(
         base_dir=data_dir,  # 使用系统配置中的值，解决硬编码
         # 支持环境变量覆盖的字段
         workers=int(os.getenv("INGEST_WORKERS", ingest_config.get("workers", 6))),
-        commit_interval=int(os.getenv("INGEST_COMMIT_INTERVAL", ingest_config.get("commit_interval", 1000000))),
-        p95_window=int(os.getenv("INGEST_P95_WINDOW", ingest_config.get("p95_window", 20))),
-        enhanced_source_hint=_get_bool_env("INGEST_ENHANCED_SOURCE_HINT", ingest_config.get("enhanced_source_hint", True)),
-        batch_id_mode=str(os.getenv("INGEST_BATCH_ID_MODE", ingest_config.get("batch_id_mode", "run_id"))),
+        commit_interval=int(
+            os.getenv(
+                "INGEST_COMMIT_INTERVAL", ingest_config.get("commit_interval", 1000000)
+            )
+        ),
+        p95_window=int(
+            os.getenv("INGEST_P95_WINDOW", ingest_config.get("p95_window", 20))
+        ),
+        enhanced_source_hint=_get_bool_env(
+            "INGEST_ENHANCED_SOURCE_HINT",
+            ingest_config.get("enhanced_source_hint", True),
+        ),
+        batch_id_mode=str(
+            os.getenv(
+                "INGEST_BATCH_ID_MODE", ingest_config.get("batch_id_mode", "run_id")
+            )
+        ),
         csv=csv_settings,
         batch=batch_settings,
         error_handling=error_settings,
@@ -404,12 +454,14 @@ def _build_ingest_settings(
     )
 
 
-def _build_merge_settings(merge_config: Dict[str, Any], default_timezone: str) -> MergeSettings:
+def _build_merge_settings(
+    merge_config: Dict[str, Any], default_timezone: str
+) -> MergeSettings:
     """构建合并配置（使用系统默认时区）"""
     window_config = merge_config.get("window", {})
     tz_config = merge_config.get("tz", {})
     segmented_config = merge_config.get("segmented", {})
-    
+
     return MergeSettings(
         window=IngestWindow(
             size=window_config.get("size", "7d"),
@@ -417,7 +469,9 @@ def _build_merge_settings(merge_config: Dict[str, Any], default_timezone: str) -
             end=window_config.get("end"),
         ),
         tz=MergeTzPolicy(
-            default_station_tz=str(tz_config.get("default_station_tz", default_timezone)),  # 使用系统默认时区
+            default_station_tz=str(
+                tz_config.get("default_station_tz", default_timezone)
+            ),  # 使用系统默认时区
             allow_missing_tz=bool(tz_config.get("allow_missing_tz", True)),
             missing_tz_policy=str(tz_config.get("missing_tz_policy", "default")),
         ),
@@ -428,7 +482,9 @@ def _build_merge_settings(merge_config: Dict[str, Any], default_timezone: str) -
     )
 
 
-def _build_logging_settings(logging_config: Dict[str, Any], logs_dir: str) -> LoggingSettings:
+def _build_logging_settings(
+    logging_config: Dict[str, Any], logs_dir: str
+) -> LoggingSettings:
     """构建日志配置（仅从 YAML 加载，使用系统默认值）"""
     # SQL 配置
     sql_config = logging_config.get("sql", {})
@@ -437,7 +493,7 @@ def _build_logging_settings(logging_config: Dict[str, Any], logs_dir: str) -> Lo
         explain=str(sql_config.get("explain", "ERROR")),
         top_n_slow=int(sql_config.get("top_n_slow", 10)),
     )
-    
+
     # 采样配置
     sampling_config = logging_config.get("sampling", {})
     sampling_settings = SamplingSettings(
@@ -447,7 +503,7 @@ def _build_logging_settings(logging_config: Dict[str, Any], logs_dir: str) -> Lo
         high_frequency_events=sampling_config.get("high_frequency_events", {}),
         burst_limit=int(sampling_config.get("burst_limit", 10)),
     )
-    
+
     # 轮转配置
     rotation_config = logging_config.get("rotation", {})
     rotation_settings = LoggingRotation(
@@ -455,24 +511,31 @@ def _build_logging_settings(logging_config: Dict[str, Any], logs_dir: str) -> Lo
         backup_count=int(rotation_config.get("backup_count", 5)),
         rotation_interval=int(rotation_config.get("rotation_interval", 3600)),  # 1小时
     )
-    
+
     # 格式化配置
     formatting_config = logging_config.get("formatting", {})
     formatting_settings = LoggingFormatting(
-        timestamp_format=str(formatting_config.get("timestamp_format", "%Y-%m-%d %H:%M:%S")),
+        timestamp_format=str(
+            formatting_config.get("timestamp_format", "%Y-%m-%d %H:%M:%S")
+        ),
         max_message_length=int(formatting_config.get("max_message_length", 1000)),
-        field_order=tuple(formatting_config.get("field_order", 
-                         ["timestamp", "level", "logger", "message", "run_id"])),
+        field_order=tuple(
+            formatting_config.get(
+                "field_order", ["timestamp", "level", "logger", "message", "run_id"]
+            )
+        ),
     )
-    
+
     # 性能配置
     performance_config = logging_config.get("performance", {})
     performance_settings = LoggingPerformance(
         buffer_size=int(performance_config.get("buffer_size", 8192)),
         flush_interval=float(performance_config.get("flush_interval", 1.0)),
-        async_handler_queue_size=int(performance_config.get("async_handler_queue_size", 1000)),
+        async_handler_queue_size=int(
+            performance_config.get("async_handler_queue_size", 1000)
+        ),
     )
-    
+
     # 启动清理配置
     startup_config = logging_config.get("startup_cleanup", {})
     startup_settings = StartupCleanupSettings(
@@ -481,85 +544,152 @@ def _build_logging_settings(logging_config: Dict[str, Any], logs_dir: str) -> Lo
         logs_backup_count=int(startup_config.get("logs_backup_count", 3)),
         confirm_clear=bool(startup_config.get("confirm_clear", False)),
     )
-    
+
     # 详细日志配置
     detailed_config = logging_config.get("detailed_logging", {})
     detailed_settings = DetailedLoggingSettings(
         enable_function_entry=bool(detailed_config.get("enable_function_entry", True)),
         enable_function_exit=bool(detailed_config.get("enable_function_exit", True)),
-        enable_parameter_logging=bool(detailed_config.get("enable_parameter_logging", True)),
-        enable_context_logging=bool(detailed_config.get("enable_context_logging", True)),
-        enable_business_logging=bool(detailed_config.get("enable_business_logging", True)),
-        enable_progress_logging=bool(detailed_config.get("enable_progress_logging", True)),
-        enable_performance_logging=bool(detailed_config.get("enable_performance_logging", True)),
+        enable_parameter_logging=bool(
+            detailed_config.get("enable_parameter_logging", True)
+        ),
+        enable_context_logging=bool(
+            detailed_config.get("enable_context_logging", True)
+        ),
+        enable_business_logging=bool(
+            detailed_config.get("enable_business_logging", True)
+        ),
+        enable_progress_logging=bool(
+            detailed_config.get("enable_progress_logging", True)
+        ),
+        enable_performance_logging=bool(
+            detailed_config.get("enable_performance_logging", True)
+        ),
         enable_error_details=bool(detailed_config.get("enable_error_details", True)),
         enable_internal_steps=bool(detailed_config.get("enable_internal_steps", True)),
-        enable_condition_branches=bool(detailed_config.get("enable_condition_branches", True)),
-        enable_loop_iterations=bool(detailed_config.get("enable_loop_iterations", True)),
-        enable_intermediate_results=bool(detailed_config.get("enable_intermediate_results", True)),
-        enable_data_validation=bool(detailed_config.get("enable_data_validation", True)),
+        enable_condition_branches=bool(
+            detailed_config.get("enable_condition_branches", True)
+        ),
+        enable_loop_iterations=bool(
+            detailed_config.get("enable_loop_iterations", True)
+        ),
+        enable_intermediate_results=bool(
+            detailed_config.get("enable_intermediate_results", True)
+        ),
+        enable_data_validation=bool(
+            detailed_config.get("enable_data_validation", True)
+        ),
         enable_resource_usage=bool(detailed_config.get("enable_resource_usage", True)),
         enable_timing_details=bool(detailed_config.get("enable_timing_details", True)),
         internal_steps_interval=int(detailed_config.get("internal_steps_interval", 10)),
         loop_log_interval=int(detailed_config.get("loop_log_interval", 100)),
     )
-    
+
     # 关键指标配置
     metrics_config = logging_config.get("key_metrics", {})
     metrics_settings = KeyMetricsSettings(
         enable_file_count=bool(metrics_config.get("enable_file_count", True)),
         enable_data_time_range=bool(metrics_config.get("enable_data_time_range", True)),
-        enable_processing_progress=bool(metrics_config.get("enable_processing_progress", True)),
-        enable_merge_statistics=bool(metrics_config.get("enable_merge_statistics", True)),
-        enable_performance_metrics=bool(metrics_config.get("enable_performance_metrics", True)),
+        enable_processing_progress=bool(
+            metrics_config.get("enable_processing_progress", True)
+        ),
+        enable_merge_statistics=bool(
+            metrics_config.get("enable_merge_statistics", True)
+        ),
+        enable_performance_metrics=bool(
+            metrics_config.get("enable_performance_metrics", True)
+        ),
         enable_memory_usage=bool(metrics_config.get("enable_memory_usage", True)),
         enable_database_stats=bool(metrics_config.get("enable_database_stats", True)),
         enable_file_size_info=bool(metrics_config.get("enable_file_size_info", True)),
-        enable_throughput_metrics=bool(metrics_config.get("enable_throughput_metrics", True)),
-        enable_error_statistics=bool(metrics_config.get("enable_error_statistics", True)),
+        enable_throughput_metrics=bool(
+            metrics_config.get("enable_throughput_metrics", True)
+        ),
+        enable_error_statistics=bool(
+            metrics_config.get("enable_error_statistics", True)
+        ),
         enable_quality_metrics=bool(metrics_config.get("enable_quality_metrics", True)),
         enable_pipeline_stages=bool(metrics_config.get("enable_pipeline_stages", True)),
-        enable_batch_statistics=bool(metrics_config.get("enable_batch_statistics", True)),
-        enable_resource_consumption=bool(metrics_config.get("enable_resource_consumption", True)),
-        enable_data_distribution=bool(metrics_config.get("enable_data_distribution", True)),
-        progress_report_interval=int(metrics_config.get("progress_report_interval", 1000)),
-        metrics_summary_interval=int(metrics_config.get("metrics_summary_interval", 300)),
+        enable_batch_statistics=bool(
+            metrics_config.get("enable_batch_statistics", True)
+        ),
+        enable_resource_consumption=bool(
+            metrics_config.get("enable_resource_consumption", True)
+        ),
+        enable_data_distribution=bool(
+            metrics_config.get("enable_data_distribution", True)
+        ),
+        progress_report_interval=int(
+            metrics_config.get("progress_report_interval", 1000)
+        ),
+        metrics_summary_interval=int(
+            metrics_config.get("metrics_summary_interval", 300)
+        ),
     )
-    
+
     # SQL 执行配置
     sql_exec_config = logging_config.get("sql_execution", {})
     sql_exec_settings = SqlExecutionSettings(
-        enable_statement_logging=bool(sql_exec_config.get("enable_statement_logging", True)),
-        enable_execution_metrics=bool(sql_exec_config.get("enable_execution_metrics", True)),
-        enable_parameter_logging=bool(sql_exec_config.get("enable_parameter_logging", True)),
+        enable_statement_logging=bool(
+            sql_exec_config.get("enable_statement_logging", True)
+        ),
+        enable_execution_metrics=bool(
+            sql_exec_config.get("enable_execution_metrics", True)
+        ),
+        enable_parameter_logging=bool(
+            sql_exec_config.get("enable_parameter_logging", True)
+        ),
         enable_result_summary=bool(sql_exec_config.get("enable_result_summary", True)),
-        enable_slow_query_detection=bool(sql_exec_config.get("enable_slow_query_detection", True)),
-        slow_query_threshold_ms=int(sql_exec_config.get("slow_query_threshold_ms", 1000)),
+        enable_slow_query_detection=bool(
+            sql_exec_config.get("enable_slow_query_detection", True)
+        ),
+        slow_query_threshold_ms=int(
+            sql_exec_config.get("slow_query_threshold_ms", 1000)
+        ),
         max_sql_length=int(sql_exec_config.get("max_sql_length", 2000)),
-        sensitive_fields=tuple(sql_exec_config.get("sensitive_fields", 
-                              ["password", "token", "secret", "key"])),
+        sensitive_fields=tuple(
+            sql_exec_config.get(
+                "sensitive_fields", ["password", "token", "secret", "key"]
+            )
+        ),
     )
-    
+
     # 内部执行配置
     internal_exec_config = logging_config.get("internal_execution", {})
     internal_exec_settings = InternalExecutionSettings(
         enable_step_logging=bool(internal_exec_config.get("enable_step_logging", True)),
-        enable_checkpoint_logging=bool(internal_exec_config.get("enable_checkpoint_logging", True)),
-        enable_branch_logging=bool(internal_exec_config.get("enable_branch_logging", True)),
-        enable_iteration_logging=bool(internal_exec_config.get("enable_iteration_logging", True)),
-        enable_validation_logging=bool(internal_exec_config.get("enable_validation_logging", True)),
-        enable_transformation_logging=bool(internal_exec_config.get("enable_transformation_logging", True)),
-        step_detail_level=str(internal_exec_config.get("step_detail_level", "detailed")),
-        iteration_log_frequency=int(internal_exec_config.get("iteration_log_frequency", 100)),
-        checkpoint_auto_interval=int(internal_exec_config.get("checkpoint_auto_interval", 1000)),
+        enable_checkpoint_logging=bool(
+            internal_exec_config.get("enable_checkpoint_logging", True)
+        ),
+        enable_branch_logging=bool(
+            internal_exec_config.get("enable_branch_logging", True)
+        ),
+        enable_iteration_logging=bool(
+            internal_exec_config.get("enable_iteration_logging", True)
+        ),
+        enable_validation_logging=bool(
+            internal_exec_config.get("enable_validation_logging", True)
+        ),
+        enable_transformation_logging=bool(
+            internal_exec_config.get("enable_transformation_logging", True)
+        ),
+        step_detail_level=str(
+            internal_exec_config.get("step_detail_level", "detailed")
+        ),
+        iteration_log_frequency=int(
+            internal_exec_config.get("iteration_log_frequency", 100)
+        ),
+        checkpoint_auto_interval=int(
+            internal_exec_config.get("checkpoint_auto_interval", 1000)
+        ),
     )
-    
+
     # 输出配置
     output_settings = LoggingOutputSettings()  # 使用默认值，后续可从 YAML 加载
-    
+
     # 过滤配置
     filters_settings = LoggingFiltersSettings()  # 使用默认值，后续可从 YAML 加载
-    
+
     return LoggingSettings(
         level=str(logging_config.get("level", "INFO")),
         format=str(logging_config.get("format", "json")),
@@ -585,14 +715,18 @@ def _build_logging_settings(logging_config: Dict[str, Any], logs_dir: str) -> Lo
 def _build_config_sources(config_dir: Path) -> Dict[str, Any]:
     """构建配置来源信息"""
     cdir = _first_existing_dir(config_dir)
-    
+
     def _get_source_info(file_name: str) -> str:
         config_path = cdir / file_name
         return "YAML" if config_path.exists() else "DEFAULT"
-    
+
     def _get_env_source(env_key: str, yaml_exists: bool) -> str:
-        return "ENV" if os.getenv(env_key) is not None else ("YAML" if yaml_exists else "DEFAULT")
-    
+        return (
+            "ENV"
+            if os.getenv(env_key) is not None
+            else ("YAML" if yaml_exists else "DEFAULT")
+        )
+
     def _get_yaml_field_source(yaml_data: Dict[str, Any], field_path: str) -> str:
         """检查YAML中的字段是否存在"""
         keys = field_path.split(".")
@@ -602,7 +736,7 @@ def _build_config_sources(config_dir: Path) -> Dict[str, Any]:
                 return "DEFAULT"
             current = current[key]
         return "YAML"
-    
+
     # 加载YAML数据用于来源追踪
     yaml_data = {}
     for config_name in ["database", "logging", "ingest", "merge", "web", "system"]:
@@ -615,76 +749,176 @@ def _build_config_sources(config_dir: Path) -> Dict[str, Any]:
                 yaml_data[config_name] = {}
         else:
             yaml_data[config_name] = {}
-    
+
     sources = {
         "database": {
             "host": _get_yaml_field_source(yaml_data.get("database", {}), "host"),
-            "name": _get_yaml_field_source(yaml_data.get("database", {}), "name"),
+            "dbname": _get_yaml_field_source(yaml_data.get("database", {}), "dbname"),
             "user": _get_yaml_field_source(yaml_data.get("database", {}), "user"),
-            "dsn_read": _get_yaml_field_source(yaml_data.get("database", {}), "dsn_read"),
-            "dsn_write": _get_yaml_field_source(yaml_data.get("database", {}), "dsn_write"),
-            "pool.min_size": _get_yaml_field_source(yaml_data.get("database", {}), "pool.min_size"),
-            "pool.max_size": _get_yaml_field_source(yaml_data.get("database", {}), "pool.max_size"),
-            "timeouts.connect_timeout_ms": _get_yaml_field_source(yaml_data.get("database", {}), "timeouts.connect_timeout_ms"),
-            "retry.max_retries": _get_yaml_field_source(yaml_data.get("database", {}), "retry.max_retries"),
+            "dsn_read": _get_yaml_field_source(
+                yaml_data.get("database", {}), "dsn_read"
+            ),
+            "dsn_write": _get_yaml_field_source(
+                yaml_data.get("database", {}), "dsn_write"
+            ),
+            "pool.min_size": _get_yaml_field_source(
+                yaml_data.get("database", {}), "pool.min_size"
+            ),
+            "pool.max_size": _get_yaml_field_source(
+                yaml_data.get("database", {}), "pool.max_size"
+            ),
+            "timeouts.connect_timeout_ms": _get_yaml_field_source(
+                yaml_data.get("database", {}), "timeouts.connect_timeout_ms"
+            ),
+            "retry.max_retries": _get_yaml_field_source(
+                yaml_data.get("database", {}), "retry.max_retries"
+            ),
         },
         "web": {
-            "server.host": _get_yaml_field_source(yaml_data.get("web", {}), "server.host"),
-            "server.port": _get_yaml_field_source(yaml_data.get("web", {}), "server.port"),
-            "server.reload": _get_yaml_field_source(yaml_data.get("web", {}), "server.reload"),
+            "server.host": _get_yaml_field_source(
+                yaml_data.get("web", {}), "server.host"
+            ),
+            "server.port": _get_yaml_field_source(
+                yaml_data.get("web", {}), "server.port"
+            ),
+            "server.reload": _get_yaml_field_source(
+                yaml_data.get("web", {}), "server.reload"
+            ),
             "api.title": _get_yaml_field_source(yaml_data.get("web", {}), "api.title"),
-            "api.version": _get_yaml_field_source(yaml_data.get("web", {}), "api.version"),
+            "api.version": _get_yaml_field_source(
+                yaml_data.get("web", {}), "api.version"
+            ),
             "app.debug": _get_yaml_field_source(yaml_data.get("web", {}), "app.debug"),
-            "performance.request_timeout": _get_yaml_field_source(yaml_data.get("web", {}), "performance.request_timeout"),
+            "performance.request_timeout": _get_yaml_field_source(
+                yaml_data.get("web", {}), "performance.request_timeout"
+            ),
         },
         "system": {
-            "timezone.default": _get_yaml_field_source(yaml_data.get("system", {}), "timezone.default"),
-            "timezone.storage": _get_yaml_field_source(yaml_data.get("system", {}), "timezone.storage"),
-            "directories.data": _get_yaml_field_source(yaml_data.get("system", {}), "directories.data"),
-            "directories.logs": _get_yaml_field_source(yaml_data.get("system", {}), "directories.logs"),
-            "directories.configs": _get_yaml_field_source(yaml_data.get("system", {}), "directories.configs"),
-            "general.encoding": _get_yaml_field_source(yaml_data.get("system", {}), "general.encoding"),
-            "general.max_workers": _get_yaml_field_source(yaml_data.get("system", {}), "general.max_workers"),
+            "timezone.default": _get_yaml_field_source(
+                yaml_data.get("system", {}), "timezone.default"
+            ),
+            "timezone.storage": _get_yaml_field_source(
+                yaml_data.get("system", {}), "timezone.storage"
+            ),
+            "directories.data": _get_yaml_field_source(
+                yaml_data.get("system", {}), "directories.data"
+            ),
+            "directories.logs": _get_yaml_field_source(
+                yaml_data.get("system", {}), "directories.logs"
+            ),
+            "directories.configs": _get_yaml_field_source(
+                yaml_data.get("system", {}), "directories.configs"
+            ),
+            "general.encoding": _get_yaml_field_source(
+                yaml_data.get("system", {}), "general.encoding"
+            ),
+            "general.max_workers": _get_yaml_field_source(
+                yaml_data.get("system", {}), "general.max_workers"
+            ),
         },
         "ingest": {
             "base_dir": "SYSTEM",  # 来自系统配置
-            "workers": _get_env_source("INGEST_WORKERS", _get_yaml_field_source(yaml_data.get("ingest", {}), "workers") == "YAML"),
-            "commit_interval": _get_env_source("INGEST_COMMIT_INTERVAL", _get_yaml_field_source(yaml_data.get("ingest", {}), "commit_interval") == "YAML"),
-            "p95_window": _get_env_source("INGEST_P95_WINDOW", _get_yaml_field_source(yaml_data.get("ingest", {}), "p95_window") == "YAML"),
-            "enhanced_source_hint": _get_env_source("INGEST_ENHANCED_SOURCE_HINT", _get_yaml_field_source(yaml_data.get("ingest", {}), "enhanced_source_hint") == "YAML"),
-            "batch_id_mode": _get_env_source("INGEST_BATCH_ID_MODE", _get_yaml_field_source(yaml_data.get("ingest", {}), "batch_id_mode") == "YAML"),
-            "csv.delimiter": _get_yaml_field_source(yaml_data.get("ingest", {}), "csv.delimiter"),
-            "csv.encoding": _get_yaml_field_source(yaml_data.get("ingest", {}), "csv.encoding"),
-            "batch.size": _get_yaml_field_source(yaml_data.get("ingest", {}), "batch.size"),
-            "default_paths.mapping_file": _get_yaml_field_source(yaml_data.get("ingest", {}), "default_paths.mapping_file"),
+            "workers": _get_env_source(
+                "INGEST_WORKERS",
+                _get_yaml_field_source(yaml_data.get("ingest", {}), "workers")
+                == "YAML",
+            ),
+            "commit_interval": _get_env_source(
+                "INGEST_COMMIT_INTERVAL",
+                _get_yaml_field_source(yaml_data.get("ingest", {}), "commit_interval")
+                == "YAML",
+            ),
+            "p95_window": _get_env_source(
+                "INGEST_P95_WINDOW",
+                _get_yaml_field_source(yaml_data.get("ingest", {}), "p95_window")
+                == "YAML",
+            ),
+            "enhanced_source_hint": _get_env_source(
+                "INGEST_ENHANCED_SOURCE_HINT",
+                _get_yaml_field_source(
+                    yaml_data.get("ingest", {}), "enhanced_source_hint"
+                )
+                == "YAML",
+            ),
+            "batch_id_mode": _get_env_source(
+                "INGEST_BATCH_ID_MODE",
+                _get_yaml_field_source(yaml_data.get("ingest", {}), "batch_id_mode")
+                == "YAML",
+            ),
+            "csv.delimiter": _get_yaml_field_source(
+                yaml_data.get("ingest", {}), "csv.delimiter"
+            ),
+            "csv.encoding": _get_yaml_field_source(
+                yaml_data.get("ingest", {}), "csv.encoding"
+            ),
+            "batch.size": _get_yaml_field_source(
+                yaml_data.get("ingest", {}), "batch.size"
+            ),
+            "default_paths.mapping_file": _get_yaml_field_source(
+                yaml_data.get("ingest", {}), "default_paths.mapping_file"
+            ),
         },
         "merge": {
             "tz.default_station_tz": "SYSTEM",  # 来自系统时区配置
-            "window.size": _get_yaml_field_source(yaml_data.get("merge", {}), "window.size"),
-            "window.start": _get_yaml_field_source(yaml_data.get("merge", {}), "window.start"),
-            "window.end": _get_yaml_field_source(yaml_data.get("merge", {}), "window.end"),
-            "tz.allow_missing_tz": _get_yaml_field_source(yaml_data.get("merge", {}), "tz.allow_missing_tz"),
-            "segmented.enabled": _get_yaml_field_source(yaml_data.get("merge", {}), "segmented.enabled"),
-            "segmented.granularity": _get_yaml_field_source(yaml_data.get("merge", {}), "segmented.granularity"),
+            "window.size": _get_yaml_field_source(
+                yaml_data.get("merge", {}), "window.size"
+            ),
+            "window.start": _get_yaml_field_source(
+                yaml_data.get("merge", {}), "window.start"
+            ),
+            "window.end": _get_yaml_field_source(
+                yaml_data.get("merge", {}), "window.end"
+            ),
+            "tz.allow_missing_tz": _get_yaml_field_source(
+                yaml_data.get("merge", {}), "tz.allow_missing_tz"
+            ),
+            "segmented.enabled": _get_yaml_field_source(
+                yaml_data.get("merge", {}), "segmented.enabled"
+            ),
+            "segmented.granularity": _get_yaml_field_source(
+                yaml_data.get("merge", {}), "segmented.granularity"
+            ),
         },
         "logging": {
             "level": _get_yaml_field_source(yaml_data.get("logging", {}), "level"),
             "format": _get_yaml_field_source(yaml_data.get("logging", {}), "format"),
             "routing": _get_yaml_field_source(yaml_data.get("logging", {}), "routing"),
-            "queue_handler": _get_yaml_field_source(yaml_data.get("logging", {}), "performance.queue_handler"),
-            "sql.text": _get_yaml_field_source(yaml_data.get("logging", {}), "sql.text"),
-            "sql.explain": _get_yaml_field_source(yaml_data.get("logging", {}), "sql.explain"),
-            "sampling.loop_log_every_n": _get_yaml_field_source(yaml_data.get("logging", {}), "sampling.loop_log_every_n"),
-            "redaction.enable": _get_yaml_field_source(yaml_data.get("logging", {}), "redaction.enable"),
-            "retention_days": _get_yaml_field_source(yaml_data.get("logging", {}), "retention_days"),
-            "startup_cleanup.clear_logs": _get_yaml_field_source(yaml_data.get("logging", {}), "startup_cleanup.clear_logs"),
-            "detailed_logging.enable_function_entry": _get_yaml_field_source(yaml_data.get("logging", {}), "detailed_logging.enable_function_entry"),
-            "key_metrics.enable_file_count": _get_yaml_field_source(yaml_data.get("logging", {}), "key_metrics.enable_file_count"),
-            "sql_execution.enable_statement_logging": _get_yaml_field_source(yaml_data.get("logging", {}), "sql_execution.enable_statement_logging"),
-            "internal_execution.enable_step_logging": _get_yaml_field_source(yaml_data.get("logging", {}), "internal_execution.enable_step_logging"),
+            "queue_handler": _get_yaml_field_source(
+                yaml_data.get("logging", {}), "performance.queue_handler"
+            ),
+            "sql.text": _get_yaml_field_source(
+                yaml_data.get("logging", {}), "sql.text"
+            ),
+            "sql.explain": _get_yaml_field_source(
+                yaml_data.get("logging", {}), "sql.explain"
+            ),
+            "sampling.loop_log_every_n": _get_yaml_field_source(
+                yaml_data.get("logging", {}), "sampling.loop_log_every_n"
+            ),
+            "redaction.enable": _get_yaml_field_source(
+                yaml_data.get("logging", {}), "redaction.enable"
+            ),
+            "retention_days": _get_yaml_field_source(
+                yaml_data.get("logging", {}), "retention_days"
+            ),
+            "startup_cleanup.clear_logs": _get_yaml_field_source(
+                yaml_data.get("logging", {}), "startup_cleanup.clear_logs"
+            ),
+            "detailed_logging.enable_function_entry": _get_yaml_field_source(
+                yaml_data.get("logging", {}), "detailed_logging.enable_function_entry"
+            ),
+            "key_metrics.enable_file_count": _get_yaml_field_source(
+                yaml_data.get("logging", {}), "key_metrics.enable_file_count"
+            ),
+            "sql_execution.enable_statement_logging": _get_yaml_field_source(
+                yaml_data.get("logging", {}), "sql_execution.enable_statement_logging"
+            ),
+            "internal_execution.enable_step_logging": _get_yaml_field_source(
+                yaml_data.get("logging", {}), "internal_execution.enable_step_logging"
+            ),
         },
     }
-    
+
     return sources
 
 

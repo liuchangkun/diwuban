@@ -15,6 +15,7 @@ api:
   version: "1.0.0"
   docs_url: "/docs"          # Swagger文档路径
   redoc_url: "/redoc"        # ReDoc文档路径
+  minimal_window_minutes: 60  # 测量接口最小默认时间窗口（分钟），用于控制默认查询范围
 
 # 应用配置
 app:

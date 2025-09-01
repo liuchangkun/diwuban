@@ -41,9 +41,9 @@ backpressure:
 # 默认文件路径配置
 default_paths:
   # data_mapping.json 默认路径（相对于项目根目录）
-  mapping_file: "config/data_mapping.v2.json"
+  mapping_file: "configs/data_mapping.v2.json"  # 迁移自 config/，统一到 configs/
   # dim_metric_config.json 默认路径（可选，用于指标配置扩展）
-  dim_metric_config: "config/dim_metric_config.json"
+  dim_metric_config: "config/dim_metric_config.json"  # 后续若迁移到 configs/，需同步更新此路径
 
 # 默认时间窗口设置
 default_window:

@@ -84,7 +84,7 @@
 
 - [ ] 若未使用 MCP：说明豁免理由（仅文档/极小变更）
 
-  - 示例：`python -m app.cli.main run-all config/data_mapping.v2.json --window-start ...Z --window-end ...Z --log-run --log-dir logs/runs/pr-verify --log-format text --log-routing by_module --log-level INFO`
+  - 示例：`python -m app.cli.main run-all configs/data_mapping.v2.json --window-start ...Z --window-end ...Z --log-run --log-dir logs/runs/pr-verify --log-format text --log-routing by_module --log-level INFO`
 
 - [ ] env.json 核验：包含 args_summary/config_snapshot/sources/ts/run_id/run_dir
 

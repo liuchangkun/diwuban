@@ -6,7 +6,8 @@ from pathlib import Path
 
 import typer
 
-from app.core.config.loader import load_settings
+from app.adapters.db import init_database
+from app.core.config.loader_new import load_settings
 from app.services.ingest.copy_workers import copy_from_mapping
 from app.services.ingest.create_staging import create_staging
 from app.services.ingest.merge_service import merge_window
@@ -40,6 +41,17 @@ ingest_commit_interval_option = typer.Option(
     None, help="覆盖提交批大小（INGEST_COMMIT_INTERVAL）", show_default=False
 )
 
+
+def initialize_app():
+    """初始化应用程序，包括数据库连接池"""
+    try:
+        settings = load_settings(Path("configs"))
+        init_database(settings)
+        print("数据库连接池初始化成功")
+    except Exception as e:
+        print(f"数据库连接池初始化失败: {e}")
+
+
 app = typer.Typer(
     help="CSV 高性能导入（方案A）：prepare-dim / create-staging / ingest:copy / merge:fact / run-all"
 )
@@ -58,6 +70,7 @@ def version(
     示例：python -m app.cli.main version --log-run --log-dir logs/runs/demo
     常见问题：无
     """
+    initialize_app()
     if log_run:
         from pathlib import Path as _P
 
@@ -66,7 +79,7 @@ def version(
         # 初始化日志（可复用目录）
         run_dir = _P(log_dir) if log_dir else compute_run_dir()
         from app.adapters.logging.init import write_run_snapshot
-        from app.core.config.loader import load_settings as _ls
+        from app.core.config.loader_new import load_settings as _ls
 
         settings0 = _ls(Path("configs"))
         init_logging(
@@ -97,7 +110,8 @@ def cmd_prepare_dim(
     console_level: str | None = log_console_level_option,
     quiet: bool | None = quiet_option,
 ) -> None:
-    from app.core.config.loader import load_settings_with_sources as _lss
+    initialize_app()
+    from app.core.config.loader_new import load_settings_with_sources as _lss
 
     settings, _sources = _lss(Path("configs"))
     if log_run:
@@ -130,6 +144,7 @@ def cmd_create_staging(
     console_level: str | None = log_console_level_option,
     quiet: bool | None = quiet_option,
 ) -> None:
+    initialize_app()
     settings = load_settings(Path("configs"))
     if log_run:
         from pathlib import Path as _P
@@ -161,6 +176,7 @@ def cmd_ingest_copy(
     console_level: str | None = log_console_level_option,
     quiet: bool | None = quiet_option,
 ) -> None:
+    initialize_app()
     settings = load_settings(Path("configs"))
     if log_run:
         from pathlib import Path as _P
@@ -194,6 +210,7 @@ def cmd_merge_fact(
     console_level: str | None = log_console_level_option,
     quiet: bool | None = quiet_option,
 ) -> None:
+    initialize_app()
     settings = load_settings(Path("configs"))
     if log_run:
         from pathlib import Path as _P
@@ -212,107 +229,6 @@ def cmd_merge_fact(
     ws = datetime.fromisoformat(window_start.replace("Z", "+00:00"))
     we = datetime.fromisoformat(window_end.replace("Z", "+00:00"))
     merge_window(settings, ws, we)
-
-
-@app.command(
-    name="run-all",
-    help="一键执行：prepare-dim → create-staging → ingest-copy → merge-fact；支持 --log-run/--log-dir",
-)
-def cmd_run_all(
-    mapping: str | None = typer.Argument(None, help="data_mapping.json 路径（可选，默认使用 ingest.yaml 配置）"),
-    window_start: str | None = typer.Option(None, help="UTC 起始（YYYY-MM-DDTHH:MM:SSZ），可选，默认处理全量数据"),
-    window_end: str | None = typer.Option(None, help="UTC 结束（YYYY-MM-DDTHH:MM:SSZ），可选，默认处理全量数据"),
-    log_run: bool | None = log_run_option,
-    log_dir: str | None = log_dir_option,
-    log_format: str | None = log_format_option,
-    log_routing: str | None = log_routing_option,
-    console_level: str | None = log_console_level_option,
-    quiet: bool | None = quiet_option,
-    ingest_workers: int | None = ingest_workers_option,
-    ingest_commit_interval: int | None = ingest_commit_interval_option,
-) -> None:
-    """按顺序执行：prepare-dim → create-staging → ingest-copy → merge-fact。
-    可选：--log-run 在每次执行前初始化日志目录；--log-dir 指定现有目录以复用。
-    
-    参数说明：
-    - mapping: 可选，不指定时使用 ingest.yaml 中的 default_paths.mapping_file
-    - window_start/window_end: 可选，不指定时根据 ingest.yaml 中的 default_window 配置处理全量或默认窗口数据
-    """
-    from app.core.config.loader import load_settings_with_sources as _lss
-
-    settings, _sources = _lss(Path("configs"))
-    
-    # 1. 处理 mapping 文件路径
-    if mapping is None:
-        # 从配置文件读取默认路径
-        mapping_path = settings.ingest.default_paths.mapping_file
-        mapping = str(mapping_path)
-        typer.echo(f"使用默认映射文件: {mapping}")
-    
-    # 2. 处理时间窗口
-    ws = None
-    we = None
-    process_all_data = False
-    
-    if window_start is None or window_end is None:
-        # 检查配置文件中的默认窗口设置
-        default_window = settings.ingest.default_window
-        process_all_data = default_window.process_all_data
-        
-        if process_all_data:
-            typer.echo("处理模式: 全量数据（忽略时间窗口限制）")
-            # 设置一个足够大的时间窗口来包含所有数据
-            ws = datetime.fromisoformat("1900-01-01T00:00:00+00:00")
-            we = datetime.fromisoformat("2100-12-31T23:59:59+00:00")
-        else:
-            # 使用配置文件中的默认时间窗口
-            default_start = default_window.start_utc
-            default_end = default_window.end_utc
-            ws = datetime.fromisoformat(default_start.replace("Z", "+00:00"))
-            we = datetime.fromisoformat(default_end.replace("Z", "+00:00"))
-            typer.echo(f"使用默认时间窗口: {default_start} 到 {default_end}")
-    else:
-        # 使用用户提供的时间窗口
-        ws = datetime.fromisoformat(window_start.replace("Z", "+00:00"))
-        we = datetime.fromisoformat(window_end.replace("Z", "+00:00"))
-        typer.echo(f"使用指定时间窗口: {window_start} 到 {window_end}")
-    
-    from pathlib import Path as _P
-    from app.services.ingest.run_all import run_all
-
-    run_dir = None
-    if log_run:
-        from app.adapters.logging.init import (
-            compute_run_dir,
-            init_logging,
-            write_run_snapshot_with_sources,
-        )
-
-        run_dir = _P(log_dir) if log_dir else compute_run_dir()
-        # 日志配置仅来自 YAML；DB 连接仅来自 YAML，不支持 CLI 覆盖
-        init_logging(
-            settings,
-            run_dir,
-            override_format=log_format,
-            override_routing=log_routing,
-            override_console_level=console_level,
-            quiet=quiet,
-        )
-        # 启动快照（不脱敏）：参数与配置
-        write_run_snapshot_with_sources(
-            settings,
-            run_dir,
-            args_summary={
-                "command": "run-all",
-                "mapping": mapping,
-                "window_start": window_start or "全量数据" if process_all_data else ws.isoformat(),
-                "window_end": window_end or "全量数据" if process_all_data else we.isoformat(),
-                "process_all_data": process_all_data,
-            },
-            sources=_sources,
-        )
-
-    run_all(settings, Path(mapping), ws, we, run_dir=run_dir)
 
 
 @app.command(
@@ -338,6 +254,7 @@ def cmd_data_report(
     console_level: str | None = log_console_level_option,
     quiet: bool | None = quiet_option,
 ) -> None:
+    initialize_app()
     settings = load_settings(Path("configs"))
     run_dir = None
     if log_run:
@@ -507,7 +424,134 @@ def db_ping(
         typer.echo(f"db:ping ok ({val})")
     except Exception as e:
         typer.echo(f"db:ping failed: {e}", err=True)
-        raise typer.Exit(1)
+
+
+@app.command(
+    name="run-all",
+    help="一键执行完整流程：prepare-dim → create-staging → ingest-copy → merge-fact；可选自动窗口 --use-staging-time-range",
+)
+def cmd_run_all(
+    mapping: str = typer.Argument(
+        "configs/data_mapping.v2.json", help="data_mapping.json 路径"
+    ),
+    use_staging_time_range: bool = typer.Option(
+        False, "--use-staging-time-range", help="自动探测 staging 时间范围作为合并窗口"
+    ),
+    window_start: str | None = typer.Option(
+        None, help="UTC 起始（YYYY-MM-DDTHH:MM:SSZ）"
+    ),
+    window_end: str | None = typer.Option(
+        None, help="UTC 结束（YYYY-MM-DDTHH:MM:SSZ）"
+    ),
+    summary_json: str | None = typer.Option(
+        None,
+        "--summary-json",
+        help="将执行摘要写入 JSON 文件（rows_loaded/rows_merged/window 等）",
+    ),
+    log_run: bool | None = log_run_option,
+    log_dir: str | None = log_dir_option,
+    log_format: str | None = log_format_option,
+    log_routing: str | None = log_routing_option,
+    console_level: str | None = log_console_level_option,
+    quiet: bool | None = quiet_option,
+) -> None:
+    """完整流程执行：
+    - 默认使用 mapping 文件路径
+    - 若指定 --use-staging-time-range，将从 staging_raw 中计算窗口（min(ts_raw)~max(ts_raw)）
+    - 否则使用 --window-start/--window-end
+    - 若指定 --summary-json，写入执行摘要（便于 CI/采集）
+    """
+    initialize_app()
+    settings = load_settings(Path("configs"))
+
+    if log_run:
+        from pathlib import Path as _P
+
+        from app.adapters.logging.init import compute_run_dir, init_logging
+
+        run_dir = _P(log_dir) if log_dir else compute_run_dir()
+        init_logging(
+            settings,
+            run_dir,
+            override_format=log_format,
+            override_routing=log_routing,
+            override_console_level=console_level,
+            quiet=quiet,
+        )
+
+    # 1) prepare-dim
+    prepare_dim(settings, Path(mapping))
+    # 2) create-staging
+    create_staging(settings)
+    # 3) ingest-copy（采集统计）
+    copy_stats = copy_from_mapping(settings, Path(mapping))
+
+    # 4) merge-fact（确定窗口与统计）
+    ws: str
+    we: str
+    if use_staging_time_range:
+        from app.adapters.db.gateway import get_conn
+
+        with get_conn(settings) as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT
+                      MIN(to_timestamp(rtrim(replace(split_part(sr."DataTime", '.', 1), 'T', ' '), 'Z'), 'YYYY-MM-DD HH24:MI:SS')) AS ws,
+                      MAX(to_timestamp(rtrim(replace(split_part(sr."DataTime", '.', 1), 'T', ' '), 'Z'), 'YYYY-MM-DD HH24:MI:SS')) AS we
+                    FROM public.staging_raw sr
+                    """
+                )
+                row = cur.fetchone()
+                if not row or not row[0] or not row[1]:
+                    typer.echo("staging_raw 无数据，跳过 merge-fact", err=True)
+                    raise typer.Exit(code=1)
+                ws = row[0].strftime("%Y-%m-%dT%H:%M:%SZ")
+                we = row[1].strftime("%Y-%m-%dT%H:%M:%SZ")
+    else:
+        if not window_start or not window_end:
+            typer.echo("未指定窗口且未启用 --use-staging-time-range", err=True)
+            raise typer.Exit(code=2)
+        ws, we = window_start, window_end
+
+    merge_stats = merge_window(
+        settings,
+        datetime.fromisoformat(ws.replace("Z", "+00:00")),
+        datetime.fromisoformat(we.replace("Z", "+00:00")),
+    )
+
+    # 5) 可选写入摘要 JSON（包含窗口与拷贝/合并统计）
+    if summary_json:
+        try:
+            import json as _json
+            from pathlib import Path as _P
+
+            _p = _P(summary_json)
+            _p.parent.mkdir(parents=True, exist_ok=True)
+            summary = {
+                "mapping_file": str(mapping),
+                "window": {"start": ws, "end": we},
+                "copy_stats": {
+                    "files_total": int(copy_stats.get("files_total", 0)),
+                    "files_succeeded": int(copy_stats.get("files_succeeded", 0)),
+                    "files_failed": int(copy_stats.get("files_failed", 0)),
+                    "rows_read": int(copy_stats.get("rows_read", 0)),
+                    "rows_loaded": int(copy_stats.get("rows_loaded", 0)),
+                    "rows_rejected": int(copy_stats.get("rows_rejected", 0)),
+                },
+                "merge_stats": {
+                    k: int(v) if isinstance(v, (int, float)) else v
+                    for k, v in (merge_stats or {}).items()
+                },
+            }
+            _p.write_text(
+                _json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8"
+            )
+            typer.echo(f"summary json written: {summary_json}")
+        except Exception as e:
+            typer.echo(f"failed to write summary json: {e}", err=True)
+
+    typer.echo("run-all 完成")
 
 
 @app.command(

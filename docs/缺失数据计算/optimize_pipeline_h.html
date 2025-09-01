@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>优化流程 · 全过程横向监控</title>
+<style>
+:root{--bg:#0b1220;--card:#0f172a;--line:#1f2937;--txt:#e5e7eb;--sub:#9ca3af;--ok:#10b981;--warn:#f59e0b;--bad:#ef4444;--info:#60a5fa;--mut:#334155}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.55 system-ui,-apple-system,Segoe UI,Roboto}
+header{padding:14px 18px;border-bottom:1px solid var(--line);background:#0a0f1a;position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between}
+h1{margin:0;font-size:18px}
+.actions{display:flex;gap:12px;align-items:center}
+.actions .id{color:#cbd5e1;font-family:ui-monospace,Consolas,monospace}
+.actions a{color:#fff;text-decoration:none;background:#334155;border:1px solid #475569;padding:6px 10px;border-radius:8px}
+.wrap{max-width:1500px;margin:auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.sec-title{font-size:15px;margin:0 0 8px}
+.small{color:var(--sub);font-size:12px}
+.hflow{display:flex;gap:14px;overflow-x:auto;padding-bottom:8px}
+.hstep{min-width:340px;max-width:380px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;position:relative}
+.hstep .title{font-weight:700;margin-bottom:6px}
+.badge{padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid var(--line)}
+.badge.ok{background:#052e26;color:#34d399;border-color:#065f46}
+.badge.warn{background:#341b00;color:#f59e0b;border-color:#92400e}
+.badge.err{background:#3b0a0a;color:#ef4444;border-color:#7f1d1d}
+.hstep .status{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.ctx{background:#0a0f1a;border:1px solid var(--line);padding:8px;border-radius:8px}
+pre{margin:6px 0;background:#0a0f1a;border:1px solid var(--line);border-radius:8px;padding:8px;white-space:pre-wrap;color:#cbd5e1}
+.arrow{align-self:center;min-width:40px;color:#64748b;display:flex;align-items:center;justify-content:center}
+.arrow:after{content:"→";font-size:22px}
+.rule{display:flex;gap:8px;align-items:center;margin:2px 0}
+.rule .expr{font-family:ui-monospace,Consolas,monospace;color:#cbd5e1}
+.rule .res.ok{color:#34d399}.rule .res.err{color:#ef4444}
+.kv{display:grid;grid-template-columns:120px 1fr;gap:8px}
+</style>
+</head>
+<body>
+<header>
+  <h1>优化流程 · 全过程横向监控</h1>
+  <div class="actions">
+    <span class="id">运行ID：<span id="runid">—</span></span>
+    <a id="traceLink" href="#" target="_blank">查看 Trace</a>
+  </div>
+</header>
+<div class="wrap">
+  <section class="card">
+    <div class="small" id="summary">—</div>
+    <div class="kv" style="margin:8px 0 12px">
+      <div class="small">时间窗</div><div id="window">—</div>
+      <div class="small">曲线版本</div><div id="curve">—</div>
+    </div>
+    <div class="hflow" id="flow"></div>
+  </section>
+</div>
+<script>
+const job={
+  run_id:'opt-20250829-003', trace_id:'trace-opt-3', trace_url:'#/trace/trace-opt-3',
+  window:'2025-08-29 11:15:00 ~ 11:16:00', curve:'v1.3.2',
+  steps:[
+    {key:'gate', name:'门控（边界/MAD/稳态）', status:'ok', ms:120, ctx:'η∈[0,1]、压力/流量非负、MAD 阈值通过', output:{pass:1},
+     rules:[{name:'物理边界',expr:'η∈[0,1] ∧ Q≥0 ∧ H≥0', pass:true},{name:'MAD 阈值',expr:'|r| ≤ 3·MAD', pass:true}]},
+    {key:'resid', name:'残差计算', status:'ok', ms:220, ctx:'r_Qbal, r_HQ, r_QP 计算并存档', output:{r_Qbal:-1.9, r_HQ:0.7, r_QP:-1.6}},
+    {key:'update', name:'参数递推更新', status:'ok', ms:320, ctx:'RLS 更新 C_Q,b_Q；数值梯度更新 α,β；中位数方向更新 b_H,b_pout（带限幅）', input:{alpha:1.00,beta:1.00,C_Q:1.00,b_Q:0.0,b_H:0.0,b_pout:0.000}, output:{alpha:1.02,beta:0.99,C_Q:1.01,b_Q:-0.5,b_H:0.2,b_pout:0.003},
+     rules:[{name:'限幅',expr:'C_Q∈[0.8,1.2], b_Q∈[-10,10], b_H∈[-10,10], b_pout∈[-0.05,0.05]', pass:true}]},
+    {key:'freeze', name:'限幅/冻结/降级', status:'ok', ms:60, ctx:'全部在安全范围；未触发冻结与降级'},
+    {key:'log', name:'记录与追踪', status:'ok', ms:80, ctx:'写入 calibration_log；绑定 trace_id'},
+    {key:'offline', name:'曲线闭环（离线）', status:'warn', ms:100, ctx:'样本偏少，推迟到离线任务：H–Q/P–Q/η–Q 拟合与验证'}
+  ]
+}
+
+function badge(status){return `<span class="badge ${status==='ok'?'ok':status==='warn'?'warn':'err'}">${status==='ok'?'正常':status==='warn'?'警告':'错误'}</span>`}
+function rulesHTML(rules){
+  if(!rules||!rules.length) return '';
+  return '<div class="small" style="margin-top:6px"><b>阈值命中明细</b></div>' +
+    rules.map(r=>`<div class="rule"><span class="res ${r.pass?'ok':'err'}">${r.pass?'✓':'✗'}</span><span>${r.name}</span><span class="expr">${r.expr}</span></div>`).join('')
+}
+function stepCard(s){
+  return `<div class="hstep">
+    <div class="title">${s.name}</div>
+    <div class="status">${badge(s.status)}<span class="small">耗时 ${((s.ms||0)/1000).toFixed(2)}s</span></div>
+    <div class="ctx">${s.ctx||''}</div>
+    ${rulesHTML(s.rules)}
+    ${s.input?`<div class="small" style="margin-top:8px"><b>输入</b></div><pre>${typeof s.input==='string'?s.input:JSON.stringify(s.input,null,2)}</pre>`:''}
+    ${s.output?`<div class="small" style="margin-top:6px"><b>输出</b></div><pre>${typeof s.output==='string'?s.output:JSON.stringify(s.output,null,2)}</pre>`:''}
+  </div>`
+}
+function render(){
+  document.getElementById('runid').textContent=job.run_id;
+  const a=document.getElementById('traceLink'); a.href=job.trace_url; a.textContent='查看 Trace（'+job.trace_id+'）';
+  document.getElementById('window').textContent=job.window;
+  document.getElementById('curve').textContent=job.curve;
+  document.getElementById('summary').textContent='总步数 '+job.steps.length+' ｜ 成功 '+job.steps.filter(s=>s.status==='ok').length+' ｜ 警告 '+job.steps.filter(s=>s.status==='warn').length
+  const flow=document.getElementById('flow');
+  const arr=[]; job.steps.forEach((s,i)=>{arr.push(stepCard(s)); if(i<job.steps.length-1) arr.push('<div class="arrow"></div>')});
+  flow.innerHTML=arr.join('');
+}
+render();
+</script>
+</body>
+</html>
+

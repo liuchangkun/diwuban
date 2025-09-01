@@ -7,6 +7,7 @@ from collections import Counter
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Iterable
+
 from zoneinfo import ZoneInfo
 
 # 为可导入 app 包，加入仓库根目录
@@ -14,7 +15,6 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from app.core.config.loader import load_settings  # noqa: E402
-
 
 LOCAL_TZ = ZoneInfo("Asia/Shanghai")
 
@@ -47,7 +47,7 @@ def parse_dt_to_utc_hour(s: str) -> str | None:
 def main() -> None:
     s = load_settings(Path("config"))
     base_dir = Path(s.ingest.base_dir)
-    mapping_path = Path("config/data_mapping.v2.json")
+    mapping_path = Path("configs/data_mapping.v2.json")  # 路径已统一到 configs/ 目录
 
     hour_counter: Counter[str] = Counter()
     total_rows = 0
@@ -66,7 +66,11 @@ def main() -> None:
                 continue
             # 找 DataTime 列（大小写兼容）
             try:
-                idx_dt = [i for i, h in enumerate(header) if str(h).strip().lower() == "datetime"][0]
+                idx_dt = [
+                    i
+                    for i, h in enumerate(header)
+                    if str(h).strip().lower() == "datetime"
+                ][0]
             except Exception:
                 # 找不到 DataTime 列，跳过此文件
                 continue
@@ -102,4 +106,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

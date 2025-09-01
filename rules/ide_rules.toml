@@ -1,0 +1,100 @@
+# IDE Rules Configuration for Qoder diwuban Project
+# This file defines rules that can be accessed via the IDE settings window
+
+[rules_config]
+version = "1.0"
+enabled = true
+auto_reload = true
+
+[rules.coding_standards]
+name = "编码规范规则"
+description = "基于 docs/编码规范.md 的编码质量规则"
+category = "development"
+severity = "error"
+source_file = "docs/编码规范.md"
+
+[rules.coding_standards.type_annotations]
+required_for_public_api = true
+mypy_strict_mode = true
+description = "对外API必须有完整类型注解，关键模块启用mypy严格模式"
+
+[rules.coding_standards.sql_safety]
+parameterized_only = true
+placeholder_style = "%s"
+no_string_concat = true
+description = "严禁字符串拼接SQL，必须使用%s占位符"
+
+[rules.coding_standards.error_handling]
+no_bare_except = true
+specific_exceptions_only = true
+no_swallow_exceptions = true
+description = "禁止裸except，仅捕获已知异常，不得吞异常"
+
+[rules.architecture]
+name = "架构设计规则"
+description = "基于 docs/体系结构总览.md 的架构约束"
+category = "architecture"
+severity = "error"
+source_file = "docs/体系结构总览.md"
+
+[rules.architecture.layer_separation]
+adapter_gateway_required = true
+single_responsibility = true
+no_circular_dependencies = true
+description = "跨层访问必须走网关/适配器，单一职责原则，禁止循环依赖"
+
+[rules.architecture.database_access]
+pool_only = true
+gateway_pattern = true
+no_direct_dsn = true
+description = "仅使用连接池，使用网关模式，禁止直接DSN拼接"
+
+[rules.logging_standards]
+name = "日志规范规则"
+description = "基于 docs/日志规范.md 的日志记录规范"
+category = "logging"
+severity = "warning"
+source_file = "docs/日志规范.md"
+
+[rules.logging_standards.format]
+structured_only = true
+encoding = "utf-8"
+timezone = "UTC"
+description = "必须结构化JSON格式，UTF-8编码，UTC时间"
+
+[rules.logging_standards.event_naming]
+pattern = "<domain>.<action>[.detail]"
+domains = ["ingest", "align", "db", "mv", "audit", "task", "guardrail", "backpressure", "quality", "cli", "pool"]
+description = "事件命名必须遵循域.动作.详情模式"
+
+[rules.safety]
+name = "安全规则"
+description = "项目安全约束和风险控制规则"
+category = "security"
+severity = "error"
+
+[rules.safety.forbidden_operations]
+database_migration = "禁止数据库迁移"
+data_directory_write = "禁止写入data/目录"
+venv_modification = "禁止操作venv/"
+
+[rules.safety.risk_levels]
+low = ["view_code", "read_docs", "unit_test", "readonly_command"]
+medium = ["modify_code", "change_config", "generate_script", "add_dependency"]
+high = ["install_dependency", "database_migration", "deploy", "data_write"]
+
+[rules.mcp_requirements]
+name = "MCP工具规则"
+description = "基于 docs/智能助手行为控制.md 的MCP工具使用规则"
+category = "workflow"
+severity = "error"
+source_file = "docs/智能助手行为控制.md"
+
+[rules.mcp_requirements.mandatory_tools]
+context7 = true
+sequential_thinking = true
+description = "必须使用Context7和Sequential_thinking工具"
+
+[rules.mcp_requirements.workflow_stages]
+required_stages = ["retrieve", "plan", "verify", "audit"]
+description = "必须完成检索→规划→验证→审计完整流程"

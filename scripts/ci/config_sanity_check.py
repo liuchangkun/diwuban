@@ -46,12 +46,13 @@ assert s.ingest.backpressure.thresholds.p95_ms > 0
 
 print("[CONFIG_SANITY] load_settings(configs): OK")
 print("[CONFIG_SANITY] SUMMARY:")
-print({
-    "db.host": s.db.host,
-    "logging.level": s.logging.level,
-    "ingest.batch.size": s.ingest.batch.size,
-    "ingest.backpressure.p95_ms": s.ingest.backpressure.thresholds.p95_ms,
-})
+print(
+    {
+        "db.host": s.db.host,
+        "logging.level": s.logging.level,
+        "ingest.batch.size": s.ingest.batch.size,
+        "ingest.backpressure.p95_ms": s.ingest.backpressure.thresholds.p95_ms,
+    }
+)
 
 sys.exit(0)
-

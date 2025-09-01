@@ -1,9 +1,11 @@
 # 数据库连接配置（仅 YAML；严禁 ENV/CLI 覆盖）
-# - 使用 libpq 的 .pgpass/pg_hba 免密时，仅需 host/name/user；dsn_* 可留空
+# - 使用 libpq 的 .pgpass/pg_hba 免密时，仅需 host/dbname/user；dsn_* 可留空
 # - 如需 DSN，仅在此处填写 dsn_read/dsn_write；代码中严禁拼接 DSN
 host: localhost
-name: pump_station_optimization
+port: 5432
+dbname: pump_station_optimization
 user: postgres
+# password: q507073 已移除，使用 pgpass.conf 免密登录
 dsn_read: null              # 可选：postgresql://user:password@host:port/dbname
 dsn_write: null             # 可选：postgresql://user:password@host:port/dbname
 

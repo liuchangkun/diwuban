@@ -32,9 +32,9 @@ from .logging_filters import LoggingFiltersSettings
 class LoggingSettings:
     """
     日志系统完整配置
-    
+
     集成所有日志相关配置，提供统一的配置访问接口。
-    
+
     属性：
         level: 日志级别
         format: 日志格式 ("json" | "text")
@@ -55,6 +55,7 @@ class LoggingSettings:
         output: 输出配置
         filters: 过滤配置
     """
+
     level: str = "INFO"
     format: str = "json"  # json|text
     routing: str = "by_run"  # by_run|by_module

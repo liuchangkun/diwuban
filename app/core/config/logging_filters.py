@@ -16,29 +16,31 @@ from typing import Dict, List
 class LevelFilterSettings:
     """
     级别过滤配置
-    
+
     用于配置基于日志级别的过滤规则。
-    
+
     属性：
         global_level: 全局日志级别
         module_levels: 模块特定的日志级别
         dynamic_adjustment: 是否启用动态调整
         level_hierarchy: 级别层次结构
     """
+
     global_level: str = "INFO"
     module_levels: Dict[str, str] = field(default_factory=dict)
     dynamic_adjustment: bool = False
-    level_hierarchy: List[str] = field(default_factory=lambda: 
-                                     ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"])
+    level_hierarchy: List[str] = field(
+        default_factory=lambda: ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+    )
 
 
 @dataclass(frozen=True)
 class ModuleFilterSettings:
     """
     模块过滤配置
-    
+
     用于配置基于模块名的过滤规则。
-    
+
     属性：
         whitelist: 白名单模块列表
         blacklist: 黑名单模块列表
@@ -46,6 +48,7 @@ class ModuleFilterSettings:
         pattern_matching: 是否启用模式匹配
         case_sensitive: 是否区分大小写
     """
+
     whitelist: List[str] = field(default_factory=list)
     blacklist: List[str] = field(default_factory=list)
     use_whitelist: bool = False
@@ -57,9 +60,9 @@ class ModuleFilterSettings:
 class ContentFilterSettings:
     """
     内容过滤配置
-    
+
     用于配置基于日志内容的过滤规则。
-    
+
     属性：
         keyword_filters: 关键词过滤列表
         regex_filters: 正则表达式过滤列表
@@ -67,10 +70,12 @@ class ContentFilterSettings:
         max_message_size: 最大消息大小
         truncate_long_messages: 是否截断长消息
     """
+
     keyword_filters: List[str] = field(default_factory=list)
     regex_filters: List[str] = field(default_factory=list)
-    sensitive_patterns: List[str] = field(default_factory=lambda: 
-                                        ["password", "token", "secret", "key"])
+    sensitive_patterns: List[str] = field(
+        default_factory=lambda: ["password", "token", "secret", "key"]
+    )
     max_message_size: int = 10000
     truncate_long_messages: bool = True
 
@@ -79,9 +84,9 @@ class ContentFilterSettings:
 class FrequencyFilterSettings:
     """
     频率过滤配置
-    
+
     用于配置基于频率的日志过滤规则。
-    
+
     属性：
         rate_limit_enabled: 是否启用频率限制
         max_messages_per_second: 每秒最大消息数
@@ -90,6 +95,7 @@ class FrequencyFilterSettings:
         duplicate_detection: 是否启用重复检测
         duplicate_window: 重复检测窗口（秒）
     """
+
     rate_limit_enabled: bool = False
     max_messages_per_second: float = 100.0
     burst_limit: int = 500
@@ -102,15 +108,16 @@ class FrequencyFilterSettings:
 class LoggingFiltersSettings:
     """
     日志过滤完整配置
-    
+
     集成所有日志过滤相关配置，提供统一的配置访问接口。
-    
+
     属性：
         level: 级别过滤配置
         module: 模块过滤配置
         content: 内容过滤配置
         frequency: 频率过滤配置
     """
+
     level: LevelFilterSettings = LevelFilterSettings()
     module: ModuleFilterSettings = ModuleFilterSettings()
     content: ContentFilterSettings = ContentFilterSettings()

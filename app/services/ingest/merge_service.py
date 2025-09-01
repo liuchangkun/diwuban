@@ -17,7 +17,6 @@ from app.core.config.loader import Settings
 from app.core.types import MergeStats
 from app.utils.logging_decorators import (
     business_logger,
-    database_operation_logger,
     log_key_metrics,
     create_internal_step_logger,
 )
@@ -63,10 +62,10 @@ def merge_window(
     """
     # 创建内部步骤日志记录器
     step_logger = create_internal_step_logger("merge_window", logger, settings)
-    
+
     # 使用普通字典累加，末尾再 cast 为 MergeStats，避免 TypedDict 的字面量键限制
     stats: Dict[str, Any] = {}
-    
+
     step_logger.step("解析合并配置")
     enabled = (
         getattr(settings.merge, "segmented", None) and settings.merge.segmented.enabled
@@ -77,19 +76,27 @@ def merge_window(
         or "1h"
     )
     step = _parse_granularity(str(gran))
-    
-    step_logger.step("合并参数确定", 
-                    result=f"分段模式: {enabled}, 粒度: {gran}",
-                    segmented=enabled, granularity=gran, step_seconds=step)
+
+    step_logger.step(
+        "合并参数确定",
+        result=f"分段模式: {enabled}, 粒度: {gran}",
+        segmented=enabled,
+        granularity=gran,
+        step_seconds=step,
+    )
 
     # 记录合并开始信息
-    log_key_metrics("合并窗口开始", {
-        "window_start": window_start_utc.isoformat(),
-        "window_end": window_end_utc.isoformat(),
-        "segmented_enabled": enabled,
-        "granularity": gran,
-        "step_seconds": step
-    }, logger)
+    log_key_metrics(
+        "合并窗口开始",
+        {
+            "window_start": window_start_utc.isoformat(),
+            "window_end": window_end_utc.isoformat(),
+            "segmented_enabled": enabled,
+            "granularity": gran,
+            "step_seconds": step,
+        },
+        logger,
+    )
 
     # 运行时导入，避免测试工具函数时强依赖 psycopg
     from app.adapters.db.gateway import get_conn, run_merge_window
@@ -169,17 +176,21 @@ def merge_window(
         "合并完成",
         extra={"event": "align.merge.window", "extra": extra_payload},
     )
-    
+
     # 记录合并结果指标
-    log_key_metrics("合并窗口完成", {
-        "affected_rows": stats.get("affected_rows", 0),
-        "rows_input": stats.get("rows_input", 0),
-        "rows_merged": stats.get("rows_merged", 0),
-        "rows_deduped": stats.get("rows_deduped", 0),
-        "dedup_ratio": round(stats.get("dedup_ratio", 0), 4),
-        "sql_cost_ms": stats.get("sql_cost_ms", 0),
-        "segmented": enabled,
-        "granularity": gran
-    }, logger)
-    
+    log_key_metrics(
+        "合并窗口完成",
+        {
+            "affected_rows": stats.get("affected_rows", 0),
+            "rows_input": stats.get("rows_input", 0),
+            "rows_merged": stats.get("rows_merged", 0),
+            "rows_deduped": stats.get("rows_deduped", 0),
+            "dedup_ratio": round(stats.get("dedup_ratio", 0), 4),
+            "sql_cost_ms": stats.get("sql_cost_ms", 0),
+            "segmented": enabled,
+            "granularity": gran,
+        },
+        logger,
+    )
+
     return cast(MergeStats, stats)

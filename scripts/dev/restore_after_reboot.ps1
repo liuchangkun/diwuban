@@ -66,4 +66,3 @@ $results | ForEach-Object {
     $status = if ($_.ok) { 'OK' } else { 'FAILED' }
     Write-Host (" - {0}: {1}" -f $_.name, $status)
 }
-
