@@ -339,7 +339,7 @@ def get_device_detail(device_id: int) -> Dict[str, Any]:
                 # 查询设备基本信息
                 cur.execute(
                     """
-                    SELECT 
+                    SELECT
                         d.device_id,
                         d.name,
                         d.type,
@@ -362,7 +362,7 @@ def get_device_detail(device_id: int) -> Dict[str, Any]:
                 # 查询最近24小时的数据趋势
                 cur.execute(
                     """
-                    SELECT 
+                    SELECT
                         timestamp,
                         flow_rate,
                         pressure,

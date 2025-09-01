@@ -21,4 +21,3 @@ ALTER TABLE IF EXISTS public.device_rated_params
 -- CREATE INDEX IF NOT EXISTS idx_rated_params_value_json ON public.device_rated_params USING GIN (value_json);
 
 COMMIT;
-

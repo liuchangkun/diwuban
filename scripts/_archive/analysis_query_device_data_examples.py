@@ -6,4 +6,3 @@
 原路径：scripts/analysis/query_device_data_examples.py
 """
 print("[archive] 此脚本已归档。")
-

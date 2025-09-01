@@ -581,5 +581,3 @@
     window.addEventListener('resize', applyResponsiveLayout);
   });
 })();
-
-

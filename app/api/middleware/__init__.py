@@ -9,8 +9,4 @@ API 中间件包
 
 from .logging import APILoggingMiddleware, DatabaseLoggingMixin, setup_api_logging
 
-__all__ = [
-    "APILoggingMiddleware", 
-    "DatabaseLoggingMixin", 
-    "setup_api_logging"
-]
+__all__ = ["APILoggingMiddleware", "DatabaseLoggingMixin", "setup_api_logging"]

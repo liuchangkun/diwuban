@@ -897,8283 +897,9938 @@
 ## 索引（简要）
 
 - monitoring.ab_test_runs :: ab_test_runs_pkey
+
 ```sql
 CREATE UNIQUE INDEX ab_test_runs_pkey ON monitoring.ab_test_runs USING btree (id)
 ```
 
 - public.device_rated_params :: device_rated_params_pkey
+
 ```sql
 CREATE UNIQUE INDEX device_rated_params_pkey ON public.device_rated_params USING btree (id)
 ```
 
 - public.device_rated_params :: idx_rated_params_device
+
 ```sql
 CREATE INDEX idx_rated_params_device ON public.device_rated_params USING btree (device_id)
 ```
 
 - public.device_rated_params :: uq_device_param
+
 ```sql
 CREATE UNIQUE INDEX uq_device_param ON public.device_rated_params USING btree (device_id, param_key)
 ```
 
 - public.dim_devices :: dim_devices_pkey
+
 ```sql
 CREATE UNIQUE INDEX dim_devices_pkey ON public.dim_devices USING btree (id)
 ```
 
 - public.dim_devices :: dim_devices_station_id_name_key
+
 ```sql
 CREATE UNIQUE INDEX dim_devices_station_id_name_key ON public.dim_devices USING btree (station_id, name)
 ```
 
 - public.dim_mapping_items :: dim_mapping_items_pkey
+
 ```sql
 CREATE UNIQUE INDEX dim_mapping_items_pkey ON public.dim_mapping_items USING btree (id)
 ```
 
 - public.dim_metric_config :: dim_metric_config_metric_key_key
+
 ```sql
 CREATE UNIQUE INDEX dim_metric_config_metric_key_key ON public.dim_metric_config USING btree (metric_key)
 ```
 
 - public.dim_metric_config :: dim_metric_config_pkey
+
 ```sql
 CREATE UNIQUE INDEX dim_metric_config_pkey ON public.dim_metric_config USING btree (id)
 ```
 
 - public.dim_stations :: dim_stations_name_key
+
 ```sql
 CREATE UNIQUE INDEX dim_stations_name_key ON public.dim_stations USING btree (name)
 ```
 
 - public.dim_stations :: dim_stations_pkey
+
 ```sql
 CREATE UNIQUE INDEX dim_stations_pkey ON public.dim_stations USING btree (id)
 ```
 
 - public.fact_measurements :: fact_measurements_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_pkey ON ONLY public.fact_measurements USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements :: idx_fm_brin_ts
+
 ```sql
 CREATE INDEX idx_fm_brin_ts ON ONLY public.fact_measurements USING brin (ts_bucket)
 ```
 
 - public.fact_measurements :: idx_fm_device_time
+
 ```sql
 CREATE INDEX idx_fm_device_time ON ONLY public.fact_measurements USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements :: idx_fm_station_time_device_metric
+
 ```sql
 CREATE INDEX idx_fm_station_time_device_metric ON ONLY public.fact_measurements USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01 :: fact_measurements_1900w01_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_device_id_ts_bucket_idx ON ONLY public.fact_measurements_1900w01 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01 :: fact_measurements_1900w01_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_1900w01_pkey ON ONLY public.fact_measurements_1900w01 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01 :: fact_measurements_1900w01_station_id_ts_bucket_device_id_me_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_station_id_ts_bucket_device_id_me_idx ON ONLY public.fact_measurements_1900w01 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01 :: fact_measurements_1900w01_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_ts_bucket_idx ON ONLY public.fact_measurements_1900w01 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p0 :: fact_measurements_1900w01_p0_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p0_device_id_ts_bucket_idx ON public.fact_measurements_1900w01_p0 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p0 :: fact_measurements_1900w01_p0_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_1900w01_p0_pkey ON public.fact_measurements_1900w01_p0 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p0 :: fact_measurements_1900w01_p0_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p0_station_id_ts_bucket_device_id_idx ON public.fact_measurements_1900w01_p0 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01_p0 :: fact_measurements_1900w01_p0_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p0_ts_bucket_idx ON public.fact_measurements_1900w01_p0 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p0 :: idx_fact_measurements_1900w01_p0_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_1900w01_p0_sdm_tb ON public.fact_measurements_1900w01_p0 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01_p1 :: fact_measurements_1900w01_p1_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p1_device_id_ts_bucket_idx ON public.fact_measurements_1900w01_p1 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p1 :: fact_measurements_1900w01_p1_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_1900w01_p1_pkey ON public.fact_measurements_1900w01_p1 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p1 :: fact_measurements_1900w01_p1_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p1_station_id_ts_bucket_device_id_idx ON public.fact_measurements_1900w01_p1 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01_p1 :: fact_measurements_1900w01_p1_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p1_ts_bucket_idx ON public.fact_measurements_1900w01_p1 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p1 :: idx_fact_measurements_1900w01_p1_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_1900w01_p1_sdm_tb ON public.fact_measurements_1900w01_p1 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01_p10 :: fact_measurements_1900w01_p10_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p10_device_id_ts_bucket_idx ON public.fact_measurements_1900w01_p10 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p10 :: fact_measurements_1900w01_p10_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_1900w01_p10_pkey ON public.fact_measurements_1900w01_p10 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p10 :: fact_measurements_1900w01_p10_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p10_station_id_ts_bucket_device_i_idx ON public.fact_measurements_1900w01_p10 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01_p10 :: fact_measurements_1900w01_p10_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p10_ts_bucket_idx ON public.fact_measurements_1900w01_p10 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p10 :: idx_fact_measurements_1900w01_p10_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_1900w01_p10_sdm_tb ON public.fact_measurements_1900w01_p10 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01_p11 :: fact_measurements_1900w01_p11_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p11_device_id_ts_bucket_idx ON public.fact_measurements_1900w01_p11 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p11 :: fact_measurements_1900w01_p11_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_1900w01_p11_pkey ON public.fact_measurements_1900w01_p11 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p11 :: fact_measurements_1900w01_p11_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p11_station_id_ts_bucket_device_i_idx ON public.fact_measurements_1900w01_p11 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01_p11 :: fact_measurements_1900w01_p11_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p11_ts_bucket_idx ON public.fact_measurements_1900w01_p11 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p11 :: idx_fact_measurements_1900w01_p11_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_1900w01_p11_sdm_tb ON public.fact_measurements_1900w01_p11 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01_p12 :: fact_measurements_1900w01_p12_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p12_device_id_ts_bucket_idx ON public.fact_measurements_1900w01_p12 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p12 :: fact_measurements_1900w01_p12_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_1900w01_p12_pkey ON public.fact_measurements_1900w01_p12 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p12 :: fact_measurements_1900w01_p12_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p12_station_id_ts_bucket_device_i_idx ON public.fact_measurements_1900w01_p12 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01_p12 :: fact_measurements_1900w01_p12_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p12_ts_bucket_idx ON public.fact_measurements_1900w01_p12 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p12 :: idx_fact_measurements_1900w01_p12_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_1900w01_p12_sdm_tb ON public.fact_measurements_1900w01_p12 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01_p13 :: fact_measurements_1900w01_p13_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p13_device_id_ts_bucket_idx ON public.fact_measurements_1900w01_p13 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p13 :: fact_measurements_1900w01_p13_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_1900w01_p13_pkey ON public.fact_measurements_1900w01_p13 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p13 :: fact_measurements_1900w01_p13_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p13_station_id_ts_bucket_device_i_idx ON public.fact_measurements_1900w01_p13 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01_p13 :: fact_measurements_1900w01_p13_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p13_ts_bucket_idx ON public.fact_measurements_1900w01_p13 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p13 :: idx_fact_measurements_1900w01_p13_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_1900w01_p13_sdm_tb ON public.fact_measurements_1900w01_p13 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01_p14 :: fact_measurements_1900w01_p14_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p14_device_id_ts_bucket_idx ON public.fact_measurements_1900w01_p14 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p14 :: fact_measurements_1900w01_p14_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_1900w01_p14_pkey ON public.fact_measurements_1900w01_p14 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p14 :: fact_measurements_1900w01_p14_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p14_station_id_ts_bucket_device_i_idx ON public.fact_measurements_1900w01_p14 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01_p14 :: fact_measurements_1900w01_p14_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p14_ts_bucket_idx ON public.fact_measurements_1900w01_p14 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p14 :: idx_fact_measurements_1900w01_p14_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_1900w01_p14_sdm_tb ON public.fact_measurements_1900w01_p14 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01_p15 :: fact_measurements_1900w01_p15_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p15_device_id_ts_bucket_idx ON public.fact_measurements_1900w01_p15 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p15 :: fact_measurements_1900w01_p15_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_1900w01_p15_pkey ON public.fact_measurements_1900w01_p15 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p15 :: fact_measurements_1900w01_p15_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p15_station_id_ts_bucket_device_i_idx ON public.fact_measurements_1900w01_p15 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01_p15 :: fact_measurements_1900w01_p15_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p15_ts_bucket_idx ON public.fact_measurements_1900w01_p15 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p15 :: idx_fact_measurements_1900w01_p15_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_1900w01_p15_sdm_tb ON public.fact_measurements_1900w01_p15 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01_p2 :: fact_measurements_1900w01_p2_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p2_device_id_ts_bucket_idx ON public.fact_measurements_1900w01_p2 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p2 :: fact_measurements_1900w01_p2_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_1900w01_p2_pkey ON public.fact_measurements_1900w01_p2 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p2 :: fact_measurements_1900w01_p2_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p2_station_id_ts_bucket_device_id_idx ON public.fact_measurements_1900w01_p2 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01_p2 :: fact_measurements_1900w01_p2_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p2_ts_bucket_idx ON public.fact_measurements_1900w01_p2 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p2 :: idx_fact_measurements_1900w01_p2_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_1900w01_p2_sdm_tb ON public.fact_measurements_1900w01_p2 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01_p3 :: fact_measurements_1900w01_p3_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p3_device_id_ts_bucket_idx ON public.fact_measurements_1900w01_p3 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p3 :: fact_measurements_1900w01_p3_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_1900w01_p3_pkey ON public.fact_measurements_1900w01_p3 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p3 :: fact_measurements_1900w01_p3_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p3_station_id_ts_bucket_device_id_idx ON public.fact_measurements_1900w01_p3 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01_p3 :: fact_measurements_1900w01_p3_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p3_ts_bucket_idx ON public.fact_measurements_1900w01_p3 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p3 :: idx_fact_measurements_1900w01_p3_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_1900w01_p3_sdm_tb ON public.fact_measurements_1900w01_p3 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01_p4 :: fact_measurements_1900w01_p4_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p4_device_id_ts_bucket_idx ON public.fact_measurements_1900w01_p4 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p4 :: fact_measurements_1900w01_p4_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_1900w01_p4_pkey ON public.fact_measurements_1900w01_p4 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p4 :: fact_measurements_1900w01_p4_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p4_station_id_ts_bucket_device_id_idx ON public.fact_measurements_1900w01_p4 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01_p4 :: fact_measurements_1900w01_p4_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p4_ts_bucket_idx ON public.fact_measurements_1900w01_p4 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p4 :: idx_fact_measurements_1900w01_p4_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_1900w01_p4_sdm_tb ON public.fact_measurements_1900w01_p4 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01_p5 :: fact_measurements_1900w01_p5_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p5_device_id_ts_bucket_idx ON public.fact_measurements_1900w01_p5 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p5 :: fact_measurements_1900w01_p5_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_1900w01_p5_pkey ON public.fact_measurements_1900w01_p5 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p5 :: fact_measurements_1900w01_p5_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p5_station_id_ts_bucket_device_id_idx ON public.fact_measurements_1900w01_p5 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01_p5 :: fact_measurements_1900w01_p5_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p5_ts_bucket_idx ON public.fact_measurements_1900w01_p5 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p5 :: idx_fact_measurements_1900w01_p5_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_1900w01_p5_sdm_tb ON public.fact_measurements_1900w01_p5 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01_p6 :: fact_measurements_1900w01_p6_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p6_device_id_ts_bucket_idx ON public.fact_measurements_1900w01_p6 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p6 :: fact_measurements_1900w01_p6_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_1900w01_p6_pkey ON public.fact_measurements_1900w01_p6 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p6 :: fact_measurements_1900w01_p6_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p6_station_id_ts_bucket_device_id_idx ON public.fact_measurements_1900w01_p6 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01_p6 :: fact_measurements_1900w01_p6_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p6_ts_bucket_idx ON public.fact_measurements_1900w01_p6 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p6 :: idx_fact_measurements_1900w01_p6_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_1900w01_p6_sdm_tb ON public.fact_measurements_1900w01_p6 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01_p7 :: fact_measurements_1900w01_p7_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p7_device_id_ts_bucket_idx ON public.fact_measurements_1900w01_p7 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p7 :: fact_measurements_1900w01_p7_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_1900w01_p7_pkey ON public.fact_measurements_1900w01_p7 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p7 :: fact_measurements_1900w01_p7_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p7_station_id_ts_bucket_device_id_idx ON public.fact_measurements_1900w01_p7 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01_p7 :: fact_measurements_1900w01_p7_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p7_ts_bucket_idx ON public.fact_measurements_1900w01_p7 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p7 :: idx_fact_measurements_1900w01_p7_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_1900w01_p7_sdm_tb ON public.fact_measurements_1900w01_p7 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01_p8 :: fact_measurements_1900w01_p8_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p8_device_id_ts_bucket_idx ON public.fact_measurements_1900w01_p8 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p8 :: fact_measurements_1900w01_p8_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_1900w01_p8_pkey ON public.fact_measurements_1900w01_p8 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p8 :: fact_measurements_1900w01_p8_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p8_station_id_ts_bucket_device_id_idx ON public.fact_measurements_1900w01_p8 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01_p8 :: fact_measurements_1900w01_p8_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p8_ts_bucket_idx ON public.fact_measurements_1900w01_p8 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p8 :: idx_fact_measurements_1900w01_p8_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_1900w01_p8_sdm_tb ON public.fact_measurements_1900w01_p8 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01_p9 :: fact_measurements_1900w01_p9_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p9_device_id_ts_bucket_idx ON public.fact_measurements_1900w01_p9 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p9 :: fact_measurements_1900w01_p9_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_1900w01_p9_pkey ON public.fact_measurements_1900w01_p9 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p9 :: fact_measurements_1900w01_p9_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p9_station_id_ts_bucket_device_id_idx ON public.fact_measurements_1900w01_p9 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_1900w01_p9 :: fact_measurements_1900w01_p9_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_1900w01_p9_ts_bucket_idx ON public.fact_measurements_1900w01_p9 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_1900w01_p9 :: idx_fact_measurements_1900w01_p9_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_1900w01_p9_sdm_tb ON public.fact_measurements_1900w01_p9 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01 :: fact_measurements_2024w01_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_device_id_ts_bucket_idx ON ONLY public.fact_measurements_2024w01 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01 :: fact_measurements_2024w01_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2024w01_pkey ON ONLY public.fact_measurements_2024w01 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01 :: fact_measurements_2024w01_station_id_ts_bucket_device_id_me_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_station_id_ts_bucket_device_id_me_idx ON ONLY public.fact_measurements_2024w01 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01 :: fact_measurements_2024w01_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_ts_bucket_idx ON ONLY public.fact_measurements_2024w01 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p0 :: fact_measurements_2024w01_p0_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p0_device_id_ts_bucket_idx ON public.fact_measurements_2024w01_p0 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p0 :: fact_measurements_2024w01_p0_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2024w01_p0_pkey ON public.fact_measurements_2024w01_p0 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p0 :: fact_measurements_2024w01_p0_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p0_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2024w01_p0 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01_p0 :: fact_measurements_2024w01_p0_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p0_ts_bucket_idx ON public.fact_measurements_2024w01_p0 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p0 :: idx_fact_measurements_2024w01_p0_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2024w01_p0_sdm_tb ON public.fact_measurements_2024w01_p0 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01_p1 :: fact_measurements_2024w01_p1_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p1_device_id_ts_bucket_idx ON public.fact_measurements_2024w01_p1 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p1 :: fact_measurements_2024w01_p1_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2024w01_p1_pkey ON public.fact_measurements_2024w01_p1 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p1 :: fact_measurements_2024w01_p1_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p1_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2024w01_p1 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01_p1 :: fact_measurements_2024w01_p1_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p1_ts_bucket_idx ON public.fact_measurements_2024w01_p1 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p1 :: idx_fact_measurements_2024w01_p1_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2024w01_p1_sdm_tb ON public.fact_measurements_2024w01_p1 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01_p10 :: fact_measurements_2024w01_p10_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p10_device_id_ts_bucket_idx ON public.fact_measurements_2024w01_p10 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p10 :: fact_measurements_2024w01_p10_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2024w01_p10_pkey ON public.fact_measurements_2024w01_p10 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p10 :: fact_measurements_2024w01_p10_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p10_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2024w01_p10 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01_p10 :: fact_measurements_2024w01_p10_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p10_ts_bucket_idx ON public.fact_measurements_2024w01_p10 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p10 :: idx_fact_measurements_2024w01_p10_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2024w01_p10_sdm_tb ON public.fact_measurements_2024w01_p10 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01_p11 :: fact_measurements_2024w01_p11_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p11_device_id_ts_bucket_idx ON public.fact_measurements_2024w01_p11 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p11 :: fact_measurements_2024w01_p11_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2024w01_p11_pkey ON public.fact_measurements_2024w01_p11 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p11 :: fact_measurements_2024w01_p11_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p11_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2024w01_p11 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01_p11 :: fact_measurements_2024w01_p11_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p11_ts_bucket_idx ON public.fact_measurements_2024w01_p11 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p11 :: idx_fact_measurements_2024w01_p11_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2024w01_p11_sdm_tb ON public.fact_measurements_2024w01_p11 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01_p12 :: fact_measurements_2024w01_p12_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p12_device_id_ts_bucket_idx ON public.fact_measurements_2024w01_p12 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p12 :: fact_measurements_2024w01_p12_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2024w01_p12_pkey ON public.fact_measurements_2024w01_p12 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p12 :: fact_measurements_2024w01_p12_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p12_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2024w01_p12 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01_p12 :: fact_measurements_2024w01_p12_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p12_ts_bucket_idx ON public.fact_measurements_2024w01_p12 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p12 :: idx_fact_measurements_2024w01_p12_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2024w01_p12_sdm_tb ON public.fact_measurements_2024w01_p12 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01_p13 :: fact_measurements_2024w01_p13_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p13_device_id_ts_bucket_idx ON public.fact_measurements_2024w01_p13 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p13 :: fact_measurements_2024w01_p13_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2024w01_p13_pkey ON public.fact_measurements_2024w01_p13 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p13 :: fact_measurements_2024w01_p13_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p13_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2024w01_p13 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01_p13 :: fact_measurements_2024w01_p13_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p13_ts_bucket_idx ON public.fact_measurements_2024w01_p13 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p13 :: idx_fact_measurements_2024w01_p13_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2024w01_p13_sdm_tb ON public.fact_measurements_2024w01_p13 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01_p14 :: fact_measurements_2024w01_p14_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p14_device_id_ts_bucket_idx ON public.fact_measurements_2024w01_p14 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p14 :: fact_measurements_2024w01_p14_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2024w01_p14_pkey ON public.fact_measurements_2024w01_p14 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p14 :: fact_measurements_2024w01_p14_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p14_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2024w01_p14 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01_p14 :: fact_measurements_2024w01_p14_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p14_ts_bucket_idx ON public.fact_measurements_2024w01_p14 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p14 :: idx_fact_measurements_2024w01_p14_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2024w01_p14_sdm_tb ON public.fact_measurements_2024w01_p14 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01_p15 :: fact_measurements_2024w01_p15_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p15_device_id_ts_bucket_idx ON public.fact_measurements_2024w01_p15 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p15 :: fact_measurements_2024w01_p15_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2024w01_p15_pkey ON public.fact_measurements_2024w01_p15 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p15 :: fact_measurements_2024w01_p15_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p15_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2024w01_p15 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01_p15 :: fact_measurements_2024w01_p15_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p15_ts_bucket_idx ON public.fact_measurements_2024w01_p15 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p15 :: idx_fact_measurements_2024w01_p15_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2024w01_p15_sdm_tb ON public.fact_measurements_2024w01_p15 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01_p2 :: fact_measurements_2024w01_p2_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p2_device_id_ts_bucket_idx ON public.fact_measurements_2024w01_p2 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p2 :: fact_measurements_2024w01_p2_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2024w01_p2_pkey ON public.fact_measurements_2024w01_p2 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p2 :: fact_measurements_2024w01_p2_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p2_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2024w01_p2 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01_p2 :: fact_measurements_2024w01_p2_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p2_ts_bucket_idx ON public.fact_measurements_2024w01_p2 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p2 :: idx_fact_measurements_2024w01_p2_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2024w01_p2_sdm_tb ON public.fact_measurements_2024w01_p2 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01_p3 :: fact_measurements_2024w01_p3_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p3_device_id_ts_bucket_idx ON public.fact_measurements_2024w01_p3 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p3 :: fact_measurements_2024w01_p3_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2024w01_p3_pkey ON public.fact_measurements_2024w01_p3 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p3 :: fact_measurements_2024w01_p3_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p3_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2024w01_p3 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01_p3 :: fact_measurements_2024w01_p3_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p3_ts_bucket_idx ON public.fact_measurements_2024w01_p3 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p3 :: idx_fact_measurements_2024w01_p3_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2024w01_p3_sdm_tb ON public.fact_measurements_2024w01_p3 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01_p4 :: fact_measurements_2024w01_p4_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p4_device_id_ts_bucket_idx ON public.fact_measurements_2024w01_p4 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p4 :: fact_measurements_2024w01_p4_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2024w01_p4_pkey ON public.fact_measurements_2024w01_p4 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p4 :: fact_measurements_2024w01_p4_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p4_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2024w01_p4 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01_p4 :: fact_measurements_2024w01_p4_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p4_ts_bucket_idx ON public.fact_measurements_2024w01_p4 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p4 :: idx_fact_measurements_2024w01_p4_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2024w01_p4_sdm_tb ON public.fact_measurements_2024w01_p4 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01_p5 :: fact_measurements_2024w01_p5_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p5_device_id_ts_bucket_idx ON public.fact_measurements_2024w01_p5 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p5 :: fact_measurements_2024w01_p5_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2024w01_p5_pkey ON public.fact_measurements_2024w01_p5 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p5 :: fact_measurements_2024w01_p5_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p5_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2024w01_p5 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01_p5 :: fact_measurements_2024w01_p5_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p5_ts_bucket_idx ON public.fact_measurements_2024w01_p5 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p5 :: idx_fact_measurements_2024w01_p5_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2024w01_p5_sdm_tb ON public.fact_measurements_2024w01_p5 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01_p6 :: fact_measurements_2024w01_p6_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p6_device_id_ts_bucket_idx ON public.fact_measurements_2024w01_p6 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p6 :: fact_measurements_2024w01_p6_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2024w01_p6_pkey ON public.fact_measurements_2024w01_p6 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p6 :: fact_measurements_2024w01_p6_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p6_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2024w01_p6 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01_p6 :: fact_measurements_2024w01_p6_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p6_ts_bucket_idx ON public.fact_measurements_2024w01_p6 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p6 :: idx_fact_measurements_2024w01_p6_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2024w01_p6_sdm_tb ON public.fact_measurements_2024w01_p6 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01_p7 :: fact_measurements_2024w01_p7_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p7_device_id_ts_bucket_idx ON public.fact_measurements_2024w01_p7 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p7 :: fact_measurements_2024w01_p7_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2024w01_p7_pkey ON public.fact_measurements_2024w01_p7 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p7 :: fact_measurements_2024w01_p7_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p7_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2024w01_p7 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01_p7 :: fact_measurements_2024w01_p7_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p7_ts_bucket_idx ON public.fact_measurements_2024w01_p7 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p7 :: idx_fact_measurements_2024w01_p7_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2024w01_p7_sdm_tb ON public.fact_measurements_2024w01_p7 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01_p8 :: fact_measurements_2024w01_p8_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p8_device_id_ts_bucket_idx ON public.fact_measurements_2024w01_p8 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p8 :: fact_measurements_2024w01_p8_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2024w01_p8_pkey ON public.fact_measurements_2024w01_p8 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p8 :: fact_measurements_2024w01_p8_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p8_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2024w01_p8 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01_p8 :: fact_measurements_2024w01_p8_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p8_ts_bucket_idx ON public.fact_measurements_2024w01_p8 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p8 :: idx_fact_measurements_2024w01_p8_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2024w01_p8_sdm_tb ON public.fact_measurements_2024w01_p8 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01_p9 :: fact_measurements_2024w01_p9_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p9_device_id_ts_bucket_idx ON public.fact_measurements_2024w01_p9 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p9 :: fact_measurements_2024w01_p9_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2024w01_p9_pkey ON public.fact_measurements_2024w01_p9 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p9 :: fact_measurements_2024w01_p9_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p9_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2024w01_p9 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2024w01_p9 :: fact_measurements_2024w01_p9_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2024w01_p9_ts_bucket_idx ON public.fact_measurements_2024w01_p9 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2024w01_p9 :: idx_fact_measurements_2024w01_p9_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2024w01_p9_sdm_tb ON public.fact_measurements_2024w01_p9 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09 :: fact_measurements_2025w09_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_device_id_ts_bucket_idx ON ONLY public.fact_measurements_2025w09 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09 :: fact_measurements_2025w09_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w09_pkey ON ONLY public.fact_measurements_2025w09 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09 :: fact_measurements_2025w09_station_id_ts_bucket_device_id_me_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_station_id_ts_bucket_device_id_me_idx ON ONLY public.fact_measurements_2025w09 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09 :: fact_measurements_2025w09_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_ts_bucket_idx ON ONLY public.fact_measurements_2025w09 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p0 :: fact_measurements_2025w09_p0_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p0_device_id_ts_bucket_idx ON public.fact_measurements_2025w09_p0 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p0 :: fact_measurements_2025w09_p0_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w09_p0_pkey ON public.fact_measurements_2025w09_p0 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p0 :: fact_measurements_2025w09_p0_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p0_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w09_p0 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09_p0 :: fact_measurements_2025w09_p0_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p0_ts_bucket_idx ON public.fact_measurements_2025w09_p0 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p0 :: idx_fact_measurements_2025w09_p0_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2025w09_p0_sdm_tb ON public.fact_measurements_2025w09_p0 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09_p1 :: fact_measurements_2025w09_p1_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p1_device_id_ts_bucket_idx ON public.fact_measurements_2025w09_p1 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p1 :: fact_measurements_2025w09_p1_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w09_p1_pkey ON public.fact_measurements_2025w09_p1 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p1 :: fact_measurements_2025w09_p1_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p1_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w09_p1 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09_p1 :: fact_measurements_2025w09_p1_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p1_ts_bucket_idx ON public.fact_measurements_2025w09_p1 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p1 :: idx_fact_measurements_2025w09_p1_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2025w09_p1_sdm_tb ON public.fact_measurements_2025w09_p1 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09_p10 :: fact_measurements_2025w09_p10_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p10_device_id_ts_bucket_idx ON public.fact_measurements_2025w09_p10 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p10 :: fact_measurements_2025w09_p10_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w09_p10_pkey ON public.fact_measurements_2025w09_p10 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p10 :: fact_measurements_2025w09_p10_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p10_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w09_p10 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09_p10 :: fact_measurements_2025w09_p10_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p10_ts_bucket_idx ON public.fact_measurements_2025w09_p10 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p10 :: idx_fact_measurements_2025w09_p10_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2025w09_p10_sdm_tb ON public.fact_measurements_2025w09_p10 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09_p11 :: fact_measurements_2025w09_p11_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p11_device_id_ts_bucket_idx ON public.fact_measurements_2025w09_p11 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p11 :: fact_measurements_2025w09_p11_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w09_p11_pkey ON public.fact_measurements_2025w09_p11 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p11 :: fact_measurements_2025w09_p11_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p11_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w09_p11 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09_p11 :: fact_measurements_2025w09_p11_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p11_ts_bucket_idx ON public.fact_measurements_2025w09_p11 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p11 :: idx_fact_measurements_2025w09_p11_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2025w09_p11_sdm_tb ON public.fact_measurements_2025w09_p11 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09_p12 :: fact_measurements_2025w09_p12_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p12_device_id_ts_bucket_idx ON public.fact_measurements_2025w09_p12 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p12 :: fact_measurements_2025w09_p12_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w09_p12_pkey ON public.fact_measurements_2025w09_p12 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p12 :: fact_measurements_2025w09_p12_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p12_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w09_p12 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09_p12 :: fact_measurements_2025w09_p12_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p12_ts_bucket_idx ON public.fact_measurements_2025w09_p12 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p12 :: idx_fact_measurements_2025w09_p12_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2025w09_p12_sdm_tb ON public.fact_measurements_2025w09_p12 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09_p13 :: fact_measurements_2025w09_p13_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p13_device_id_ts_bucket_idx ON public.fact_measurements_2025w09_p13 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p13 :: fact_measurements_2025w09_p13_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w09_p13_pkey ON public.fact_measurements_2025w09_p13 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p13 :: fact_measurements_2025w09_p13_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p13_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w09_p13 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09_p13 :: fact_measurements_2025w09_p13_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p13_ts_bucket_idx ON public.fact_measurements_2025w09_p13 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p13 :: idx_fact_measurements_2025w09_p13_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2025w09_p13_sdm_tb ON public.fact_measurements_2025w09_p13 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09_p14 :: fact_measurements_2025w09_p14_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p14_device_id_ts_bucket_idx ON public.fact_measurements_2025w09_p14 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p14 :: fact_measurements_2025w09_p14_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w09_p14_pkey ON public.fact_measurements_2025w09_p14 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p14 :: fact_measurements_2025w09_p14_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p14_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w09_p14 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09_p14 :: fact_measurements_2025w09_p14_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p14_ts_bucket_idx ON public.fact_measurements_2025w09_p14 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p14 :: idx_fact_measurements_2025w09_p14_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2025w09_p14_sdm_tb ON public.fact_measurements_2025w09_p14 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09_p15 :: fact_measurements_2025w09_p15_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p15_device_id_ts_bucket_idx ON public.fact_measurements_2025w09_p15 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p15 :: fact_measurements_2025w09_p15_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w09_p15_pkey ON public.fact_measurements_2025w09_p15 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p15 :: fact_measurements_2025w09_p15_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p15_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w09_p15 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09_p15 :: fact_measurements_2025w09_p15_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p15_ts_bucket_idx ON public.fact_measurements_2025w09_p15 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p15 :: idx_fact_measurements_2025w09_p15_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2025w09_p15_sdm_tb ON public.fact_measurements_2025w09_p15 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09_p2 :: fact_measurements_2025w09_p2_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p2_device_id_ts_bucket_idx ON public.fact_measurements_2025w09_p2 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p2 :: fact_measurements_2025w09_p2_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w09_p2_pkey ON public.fact_measurements_2025w09_p2 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p2 :: fact_measurements_2025w09_p2_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p2_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w09_p2 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09_p2 :: fact_measurements_2025w09_p2_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p2_ts_bucket_idx ON public.fact_measurements_2025w09_p2 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p2 :: idx_fact_measurements_2025w09_p2_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2025w09_p2_sdm_tb ON public.fact_measurements_2025w09_p2 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09_p3 :: fact_measurements_2025w09_p3_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p3_device_id_ts_bucket_idx ON public.fact_measurements_2025w09_p3 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p3 :: fact_measurements_2025w09_p3_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w09_p3_pkey ON public.fact_measurements_2025w09_p3 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p3 :: fact_measurements_2025w09_p3_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p3_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w09_p3 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09_p3 :: fact_measurements_2025w09_p3_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p3_ts_bucket_idx ON public.fact_measurements_2025w09_p3 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p3 :: idx_fact_measurements_2025w09_p3_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2025w09_p3_sdm_tb ON public.fact_measurements_2025w09_p3 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09_p4 :: fact_measurements_2025w09_p4_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p4_device_id_ts_bucket_idx ON public.fact_measurements_2025w09_p4 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p4 :: fact_measurements_2025w09_p4_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w09_p4_pkey ON public.fact_measurements_2025w09_p4 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p4 :: fact_measurements_2025w09_p4_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p4_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w09_p4 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09_p4 :: fact_measurements_2025w09_p4_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p4_ts_bucket_idx ON public.fact_measurements_2025w09_p4 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p4 :: idx_fact_measurements_2025w09_p4_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2025w09_p4_sdm_tb ON public.fact_measurements_2025w09_p4 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09_p5 :: fact_measurements_2025w09_p5_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p5_device_id_ts_bucket_idx ON public.fact_measurements_2025w09_p5 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p5 :: fact_measurements_2025w09_p5_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w09_p5_pkey ON public.fact_measurements_2025w09_p5 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p5 :: fact_measurements_2025w09_p5_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p5_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w09_p5 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09_p5 :: fact_measurements_2025w09_p5_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p5_ts_bucket_idx ON public.fact_measurements_2025w09_p5 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p5 :: idx_fact_measurements_2025w09_p5_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2025w09_p5_sdm_tb ON public.fact_measurements_2025w09_p5 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09_p6 :: fact_measurements_2025w09_p6_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p6_device_id_ts_bucket_idx ON public.fact_measurements_2025w09_p6 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p6 :: fact_measurements_2025w09_p6_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w09_p6_pkey ON public.fact_measurements_2025w09_p6 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p6 :: fact_measurements_2025w09_p6_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p6_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w09_p6 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09_p6 :: fact_measurements_2025w09_p6_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p6_ts_bucket_idx ON public.fact_measurements_2025w09_p6 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p6 :: idx_fact_measurements_2025w09_p6_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2025w09_p6_sdm_tb ON public.fact_measurements_2025w09_p6 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09_p7 :: fact_measurements_2025w09_p7_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p7_device_id_ts_bucket_idx ON public.fact_measurements_2025w09_p7 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p7 :: fact_measurements_2025w09_p7_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w09_p7_pkey ON public.fact_measurements_2025w09_p7 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p7 :: fact_measurements_2025w09_p7_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p7_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w09_p7 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09_p7 :: fact_measurements_2025w09_p7_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p7_ts_bucket_idx ON public.fact_measurements_2025w09_p7 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p7 :: idx_fact_measurements_2025w09_p7_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2025w09_p7_sdm_tb ON public.fact_measurements_2025w09_p7 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09_p8 :: fact_measurements_2025w09_p8_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p8_device_id_ts_bucket_idx ON public.fact_measurements_2025w09_p8 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p8 :: fact_measurements_2025w09_p8_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w09_p8_pkey ON public.fact_measurements_2025w09_p8 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p8 :: fact_measurements_2025w09_p8_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p8_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w09_p8 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09_p8 :: fact_measurements_2025w09_p8_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p8_ts_bucket_idx ON public.fact_measurements_2025w09_p8 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p8 :: idx_fact_measurements_2025w09_p8_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2025w09_p8_sdm_tb ON public.fact_measurements_2025w09_p8 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09_p9 :: fact_measurements_2025w09_p9_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p9_device_id_ts_bucket_idx ON public.fact_measurements_2025w09_p9 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p9 :: fact_measurements_2025w09_p9_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w09_p9_pkey ON public.fact_measurements_2025w09_p9 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p9 :: fact_measurements_2025w09_p9_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p9_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w09_p9 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w09_p9 :: fact_measurements_2025w09_p9_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w09_p9_ts_bucket_idx ON public.fact_measurements_2025w09_p9 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w09_p9 :: idx_fact_measurements_2025w09_p9_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2025w09_p9_sdm_tb ON public.fact_measurements_2025w09_p9 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10 :: fact_measurements_2025w10_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_device_id_ts_bucket_idx ON ONLY public.fact_measurements_2025w10 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10 :: fact_measurements_2025w10_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w10_pkey ON ONLY public.fact_measurements_2025w10 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10 :: fact_measurements_2025w10_station_id_ts_bucket_device_id_me_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_station_id_ts_bucket_device_id_me_idx ON ONLY public.fact_measurements_2025w10 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10 :: fact_measurements_2025w10_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_ts_bucket_idx ON ONLY public.fact_measurements_2025w10 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p0 :: fact_measurements_2025w10_p0_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p0_device_id_ts_bucket_idx ON public.fact_measurements_2025w10_p0 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p0 :: fact_measurements_2025w10_p0_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w10_p0_pkey ON public.fact_measurements_2025w10_p0 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p0 :: fact_measurements_2025w10_p0_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p0_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w10_p0 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10_p0 :: fact_measurements_2025w10_p0_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p0_ts_bucket_idx ON public.fact_measurements_2025w10_p0 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p0 :: idx_fact_measurements_2025w10_p0_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2025w10_p0_sdm_tb ON public.fact_measurements_2025w10_p0 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10_p1 :: fact_measurements_2025w10_p1_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p1_device_id_ts_bucket_idx ON public.fact_measurements_2025w10_p1 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p1 :: fact_measurements_2025w10_p1_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w10_p1_pkey ON public.fact_measurements_2025w10_p1 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p1 :: fact_measurements_2025w10_p1_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p1_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w10_p1 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10_p1 :: fact_measurements_2025w10_p1_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p1_ts_bucket_idx ON public.fact_measurements_2025w10_p1 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p1 :: idx_fact_measurements_2025w10_p1_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2025w10_p1_sdm_tb ON public.fact_measurements_2025w10_p1 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10_p10 :: fact_measurements_2025w10_p10_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p10_device_id_ts_bucket_idx ON public.fact_measurements_2025w10_p10 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p10 :: fact_measurements_2025w10_p10_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w10_p10_pkey ON public.fact_measurements_2025w10_p10 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p10 :: fact_measurements_2025w10_p10_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p10_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w10_p10 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10_p10 :: fact_measurements_2025w10_p10_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p10_ts_bucket_idx ON public.fact_measurements_2025w10_p10 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p10 :: idx_fact_measurements_2025w10_p10_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2025w10_p10_sdm_tb ON public.fact_measurements_2025w10_p10 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10_p11 :: fact_measurements_2025w10_p11_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p11_device_id_ts_bucket_idx ON public.fact_measurements_2025w10_p11 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p11 :: fact_measurements_2025w10_p11_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w10_p11_pkey ON public.fact_measurements_2025w10_p11 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p11 :: fact_measurements_2025w10_p11_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p11_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w10_p11 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10_p11 :: fact_measurements_2025w10_p11_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p11_ts_bucket_idx ON public.fact_measurements_2025w10_p11 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p11 :: idx_fact_measurements_2025w10_p11_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2025w10_p11_sdm_tb ON public.fact_measurements_2025w10_p11 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10_p12 :: fact_measurements_2025w10_p12_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p12_device_id_ts_bucket_idx ON public.fact_measurements_2025w10_p12 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p12 :: fact_measurements_2025w10_p12_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w10_p12_pkey ON public.fact_measurements_2025w10_p12 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p12 :: fact_measurements_2025w10_p12_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p12_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w10_p12 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10_p12 :: fact_measurements_2025w10_p12_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p12_ts_bucket_idx ON public.fact_measurements_2025w10_p12 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p12 :: idx_fact_measurements_2025w10_p12_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2025w10_p12_sdm_tb ON public.fact_measurements_2025w10_p12 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10_p13 :: fact_measurements_2025w10_p13_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p13_device_id_ts_bucket_idx ON public.fact_measurements_2025w10_p13 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p13 :: fact_measurements_2025w10_p13_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w10_p13_pkey ON public.fact_measurements_2025w10_p13 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p13 :: fact_measurements_2025w10_p13_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p13_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w10_p13 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10_p13 :: fact_measurements_2025w10_p13_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p13_ts_bucket_idx ON public.fact_measurements_2025w10_p13 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p13 :: idx_fact_measurements_2025w10_p13_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2025w10_p13_sdm_tb ON public.fact_measurements_2025w10_p13 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10_p14 :: fact_measurements_2025w10_p14_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p14_device_id_ts_bucket_idx ON public.fact_measurements_2025w10_p14 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p14 :: fact_measurements_2025w10_p14_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w10_p14_pkey ON public.fact_measurements_2025w10_p14 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p14 :: fact_measurements_2025w10_p14_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p14_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w10_p14 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10_p14 :: fact_measurements_2025w10_p14_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p14_ts_bucket_idx ON public.fact_measurements_2025w10_p14 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p14 :: idx_fact_measurements_2025w10_p14_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2025w10_p14_sdm_tb ON public.fact_measurements_2025w10_p14 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10_p15 :: fact_measurements_2025w10_p15_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p15_device_id_ts_bucket_idx ON public.fact_measurements_2025w10_p15 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p15 :: fact_measurements_2025w10_p15_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w10_p15_pkey ON public.fact_measurements_2025w10_p15 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p15 :: fact_measurements_2025w10_p15_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p15_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w10_p15 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10_p15 :: fact_measurements_2025w10_p15_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p15_ts_bucket_idx ON public.fact_measurements_2025w10_p15 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p15 :: idx_fact_measurements_2025w10_p15_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2025w10_p15_sdm_tb ON public.fact_measurements_2025w10_p15 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10_p2 :: fact_measurements_2025w10_p2_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p2_device_id_ts_bucket_idx ON public.fact_measurements_2025w10_p2 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p2 :: fact_measurements_2025w10_p2_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w10_p2_pkey ON public.fact_measurements_2025w10_p2 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p2 :: fact_measurements_2025w10_p2_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p2_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w10_p2 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10_p2 :: fact_measurements_2025w10_p2_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p2_ts_bucket_idx ON public.fact_measurements_2025w10_p2 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p2 :: idx_fact_measurements_2025w10_p2_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2025w10_p2_sdm_tb ON public.fact_measurements_2025w10_p2 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10_p3 :: fact_measurements_2025w10_p3_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p3_device_id_ts_bucket_idx ON public.fact_measurements_2025w10_p3 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p3 :: fact_measurements_2025w10_p3_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w10_p3_pkey ON public.fact_measurements_2025w10_p3 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p3 :: fact_measurements_2025w10_p3_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p3_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w10_p3 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10_p3 :: fact_measurements_2025w10_p3_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p3_ts_bucket_idx ON public.fact_measurements_2025w10_p3 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p3 :: idx_fact_measurements_2025w10_p3_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2025w10_p3_sdm_tb ON public.fact_measurements_2025w10_p3 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10_p4 :: fact_measurements_2025w10_p4_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p4_device_id_ts_bucket_idx ON public.fact_measurements_2025w10_p4 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p4 :: fact_measurements_2025w10_p4_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w10_p4_pkey ON public.fact_measurements_2025w10_p4 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p4 :: fact_measurements_2025w10_p4_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p4_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w10_p4 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10_p4 :: fact_measurements_2025w10_p4_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p4_ts_bucket_idx ON public.fact_measurements_2025w10_p4 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p4 :: idx_fact_measurements_2025w10_p4_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2025w10_p4_sdm_tb ON public.fact_measurements_2025w10_p4 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10_p5 :: fact_measurements_2025w10_p5_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p5_device_id_ts_bucket_idx ON public.fact_measurements_2025w10_p5 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p5 :: fact_measurements_2025w10_p5_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w10_p5_pkey ON public.fact_measurements_2025w10_p5 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p5 :: fact_measurements_2025w10_p5_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p5_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w10_p5 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10_p5 :: fact_measurements_2025w10_p5_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p5_ts_bucket_idx ON public.fact_measurements_2025w10_p5 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p5 :: idx_fact_measurements_2025w10_p5_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2025w10_p5_sdm_tb ON public.fact_measurements_2025w10_p5 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10_p6 :: fact_measurements_2025w10_p6_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p6_device_id_ts_bucket_idx ON public.fact_measurements_2025w10_p6 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p6 :: fact_measurements_2025w10_p6_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w10_p6_pkey ON public.fact_measurements_2025w10_p6 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p6 :: fact_measurements_2025w10_p6_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p6_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w10_p6 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10_p6 :: fact_measurements_2025w10_p6_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p6_ts_bucket_idx ON public.fact_measurements_2025w10_p6 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p6 :: idx_fact_measurements_2025w10_p6_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2025w10_p6_sdm_tb ON public.fact_measurements_2025w10_p6 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10_p7 :: fact_measurements_2025w10_p7_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p7_device_id_ts_bucket_idx ON public.fact_measurements_2025w10_p7 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p7 :: fact_measurements_2025w10_p7_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w10_p7_pkey ON public.fact_measurements_2025w10_p7 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p7 :: fact_measurements_2025w10_p7_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p7_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w10_p7 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10_p7 :: fact_measurements_2025w10_p7_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p7_ts_bucket_idx ON public.fact_measurements_2025w10_p7 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p7 :: idx_fact_measurements_2025w10_p7_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2025w10_p7_sdm_tb ON public.fact_measurements_2025w10_p7 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10_p8 :: fact_measurements_2025w10_p8_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p8_device_id_ts_bucket_idx ON public.fact_measurements_2025w10_p8 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p8 :: fact_measurements_2025w10_p8_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w10_p8_pkey ON public.fact_measurements_2025w10_p8 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p8 :: fact_measurements_2025w10_p8_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p8_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w10_p8 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10_p8 :: fact_measurements_2025w10_p8_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p8_ts_bucket_idx ON public.fact_measurements_2025w10_p8 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p8 :: idx_fact_measurements_2025w10_p8_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2025w10_p8_sdm_tb ON public.fact_measurements_2025w10_p8 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10_p9 :: fact_measurements_2025w10_p9_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p9_device_id_ts_bucket_idx ON public.fact_measurements_2025w10_p9 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p9 :: fact_measurements_2025w10_p9_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w10_p9_pkey ON public.fact_measurements_2025w10_p9 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p9 :: fact_measurements_2025w10_p9_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p9_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w10_p9 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w10_p9 :: fact_measurements_2025w10_p9_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w10_p9_ts_bucket_idx ON public.fact_measurements_2025w10_p9 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w10_p9 :: idx_fact_measurements_2025w10_p9_sdm_tb
+
 ```sql
 CREATE INDEX idx_fact_measurements_2025w10_p9_sdm_tb ON public.fact_measurements_2025w10_p9 USING btree (station_id, device_id, metric_id, ts_bucket) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33 :: fact_measurements_2025w33_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_device_id_ts_bucket_idx ON ONLY public.fact_measurements_2025w33 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33 :: fact_measurements_2025w33_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w33_pkey ON ONLY public.fact_measurements_2025w33 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33 :: fact_measurements_2025w33_station_id_ts_bucket_device_id_me_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_station_id_ts_bucket_device_id_me_idx ON ONLY public.fact_measurements_2025w33 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33 :: fact_measurements_2025w33_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_ts_bucket_idx ON ONLY public.fact_measurements_2025w33 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p0 :: fact_measurements_2025w33_p0_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p0_device_id_ts_bucket_idx ON public.fact_measurements_2025w33_p0 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p0 :: fact_measurements_2025w33_p0_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w33_p0_pkey ON public.fact_measurements_2025w33_p0 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p0 :: fact_measurements_2025w33_p0_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p0_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w33_p0 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33_p0 :: fact_measurements_2025w33_p0_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p0_ts_bucket_idx ON public.fact_measurements_2025w33_p0 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p0 :: idx_fm_dev_t_2025w33_p0
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w33_p0 ON public.fact_measurements_2025w33_p0 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p0 :: idx_fm_s_t_d_m_2025w33_p0
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w33_p0 ON public.fact_measurements_2025w33_p0 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33_p1 :: fact_measurements_2025w33_p1_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p1_device_id_ts_bucket_idx ON public.fact_measurements_2025w33_p1 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p1 :: fact_measurements_2025w33_p1_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w33_p1_pkey ON public.fact_measurements_2025w33_p1 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p1 :: fact_measurements_2025w33_p1_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p1_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w33_p1 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33_p1 :: fact_measurements_2025w33_p1_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p1_ts_bucket_idx ON public.fact_measurements_2025w33_p1 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p1 :: idx_fm_dev_t_2025w33_p1
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w33_p1 ON public.fact_measurements_2025w33_p1 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p1 :: idx_fm_s_t_d_m_2025w33_p1
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w33_p1 ON public.fact_measurements_2025w33_p1 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33_p10 :: fact_measurements_2025w33_p10_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p10_device_id_ts_bucket_idx ON public.fact_measurements_2025w33_p10 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p10 :: fact_measurements_2025w33_p10_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w33_p10_pkey ON public.fact_measurements_2025w33_p10 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p10 :: fact_measurements_2025w33_p10_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p10_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w33_p10 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33_p10 :: fact_measurements_2025w33_p10_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p10_ts_bucket_idx ON public.fact_measurements_2025w33_p10 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p10 :: idx_fm_dev_t_2025w33_p10
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w33_p10 ON public.fact_measurements_2025w33_p10 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p10 :: idx_fm_s_t_d_m_2025w33_p10
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w33_p10 ON public.fact_measurements_2025w33_p10 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33_p11 :: fact_measurements_2025w33_p11_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p11_device_id_ts_bucket_idx ON public.fact_measurements_2025w33_p11 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p11 :: fact_measurements_2025w33_p11_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w33_p11_pkey ON public.fact_measurements_2025w33_p11 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p11 :: fact_measurements_2025w33_p11_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p11_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w33_p11 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33_p11 :: fact_measurements_2025w33_p11_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p11_ts_bucket_idx ON public.fact_measurements_2025w33_p11 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p11 :: idx_fm_dev_t_2025w33_p11
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w33_p11 ON public.fact_measurements_2025w33_p11 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p11 :: idx_fm_s_t_d_m_2025w33_p11
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w33_p11 ON public.fact_measurements_2025w33_p11 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33_p12 :: fact_measurements_2025w33_p12_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p12_device_id_ts_bucket_idx ON public.fact_measurements_2025w33_p12 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p12 :: fact_measurements_2025w33_p12_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w33_p12_pkey ON public.fact_measurements_2025w33_p12 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p12 :: fact_measurements_2025w33_p12_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p12_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w33_p12 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33_p12 :: fact_measurements_2025w33_p12_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p12_ts_bucket_idx ON public.fact_measurements_2025w33_p12 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p12 :: idx_fm_dev_t_2025w33_p12
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w33_p12 ON public.fact_measurements_2025w33_p12 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p12 :: idx_fm_s_t_d_m_2025w33_p12
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w33_p12 ON public.fact_measurements_2025w33_p12 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33_p13 :: fact_measurements_2025w33_p13_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p13_device_id_ts_bucket_idx ON public.fact_measurements_2025w33_p13 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p13 :: fact_measurements_2025w33_p13_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w33_p13_pkey ON public.fact_measurements_2025w33_p13 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p13 :: fact_measurements_2025w33_p13_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p13_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w33_p13 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33_p13 :: fact_measurements_2025w33_p13_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p13_ts_bucket_idx ON public.fact_measurements_2025w33_p13 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p13 :: idx_fm_dev_t_2025w33_p13
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w33_p13 ON public.fact_measurements_2025w33_p13 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p13 :: idx_fm_s_t_d_m_2025w33_p13
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w33_p13 ON public.fact_measurements_2025w33_p13 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33_p14 :: fact_measurements_2025w33_p14_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p14_device_id_ts_bucket_idx ON public.fact_measurements_2025w33_p14 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p14 :: fact_measurements_2025w33_p14_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w33_p14_pkey ON public.fact_measurements_2025w33_p14 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p14 :: fact_measurements_2025w33_p14_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p14_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w33_p14 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33_p14 :: fact_measurements_2025w33_p14_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p14_ts_bucket_idx ON public.fact_measurements_2025w33_p14 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p14 :: idx_fm_dev_t_2025w33_p14
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w33_p14 ON public.fact_measurements_2025w33_p14 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p14 :: idx_fm_s_t_d_m_2025w33_p14
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w33_p14 ON public.fact_measurements_2025w33_p14 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33_p15 :: fact_measurements_2025w33_p15_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p15_device_id_ts_bucket_idx ON public.fact_measurements_2025w33_p15 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p15 :: fact_measurements_2025w33_p15_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w33_p15_pkey ON public.fact_measurements_2025w33_p15 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p15 :: fact_measurements_2025w33_p15_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p15_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w33_p15 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33_p15 :: fact_measurements_2025w33_p15_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p15_ts_bucket_idx ON public.fact_measurements_2025w33_p15 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p15 :: idx_fm_dev_t_2025w33_p15
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w33_p15 ON public.fact_measurements_2025w33_p15 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p15 :: idx_fm_s_t_d_m_2025w33_p15
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w33_p15 ON public.fact_measurements_2025w33_p15 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33_p2 :: fact_measurements_2025w33_p2_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p2_device_id_ts_bucket_idx ON public.fact_measurements_2025w33_p2 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p2 :: fact_measurements_2025w33_p2_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w33_p2_pkey ON public.fact_measurements_2025w33_p2 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p2 :: fact_measurements_2025w33_p2_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p2_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w33_p2 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33_p2 :: fact_measurements_2025w33_p2_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p2_ts_bucket_idx ON public.fact_measurements_2025w33_p2 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p2 :: idx_fm_dev_t_2025w33_p2
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w33_p2 ON public.fact_measurements_2025w33_p2 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p2 :: idx_fm_s_t_d_m_2025w33_p2
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w33_p2 ON public.fact_measurements_2025w33_p2 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33_p3 :: fact_measurements_2025w33_p3_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p3_device_id_ts_bucket_idx ON public.fact_measurements_2025w33_p3 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p3 :: fact_measurements_2025w33_p3_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w33_p3_pkey ON public.fact_measurements_2025w33_p3 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p3 :: fact_measurements_2025w33_p3_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p3_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w33_p3 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33_p3 :: fact_measurements_2025w33_p3_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p3_ts_bucket_idx ON public.fact_measurements_2025w33_p3 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p3 :: idx_fm_dev_t_2025w33_p3
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w33_p3 ON public.fact_measurements_2025w33_p3 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p3 :: idx_fm_s_t_d_m_2025w33_p3
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w33_p3 ON public.fact_measurements_2025w33_p3 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33_p4 :: fact_measurements_2025w33_p4_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p4_device_id_ts_bucket_idx ON public.fact_measurements_2025w33_p4 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p4 :: fact_measurements_2025w33_p4_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w33_p4_pkey ON public.fact_measurements_2025w33_p4 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p4 :: fact_measurements_2025w33_p4_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p4_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w33_p4 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33_p4 :: fact_measurements_2025w33_p4_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p4_ts_bucket_idx ON public.fact_measurements_2025w33_p4 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p4 :: idx_fm_dev_t_2025w33_p4
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w33_p4 ON public.fact_measurements_2025w33_p4 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p4 :: idx_fm_s_t_d_m_2025w33_p4
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w33_p4 ON public.fact_measurements_2025w33_p4 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33_p5 :: fact_measurements_2025w33_p5_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p5_device_id_ts_bucket_idx ON public.fact_measurements_2025w33_p5 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p5 :: fact_measurements_2025w33_p5_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w33_p5_pkey ON public.fact_measurements_2025w33_p5 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p5 :: fact_measurements_2025w33_p5_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p5_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w33_p5 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33_p5 :: fact_measurements_2025w33_p5_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p5_ts_bucket_idx ON public.fact_measurements_2025w33_p5 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p5 :: idx_fm_dev_t_2025w33_p5
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w33_p5 ON public.fact_measurements_2025w33_p5 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p5 :: idx_fm_s_t_d_m_2025w33_p5
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w33_p5 ON public.fact_measurements_2025w33_p5 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33_p6 :: fact_measurements_2025w33_p6_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p6_device_id_ts_bucket_idx ON public.fact_measurements_2025w33_p6 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p6 :: fact_measurements_2025w33_p6_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w33_p6_pkey ON public.fact_measurements_2025w33_p6 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p6 :: fact_measurements_2025w33_p6_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p6_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w33_p6 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33_p6 :: fact_measurements_2025w33_p6_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p6_ts_bucket_idx ON public.fact_measurements_2025w33_p6 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p6 :: idx_fm_dev_t_2025w33_p6
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w33_p6 ON public.fact_measurements_2025w33_p6 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p6 :: idx_fm_s_t_d_m_2025w33_p6
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w33_p6 ON public.fact_measurements_2025w33_p6 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33_p7 :: fact_measurements_2025w33_p7_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p7_device_id_ts_bucket_idx ON public.fact_measurements_2025w33_p7 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p7 :: fact_measurements_2025w33_p7_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w33_p7_pkey ON public.fact_measurements_2025w33_p7 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p7 :: fact_measurements_2025w33_p7_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p7_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w33_p7 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33_p7 :: fact_measurements_2025w33_p7_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p7_ts_bucket_idx ON public.fact_measurements_2025w33_p7 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p7 :: idx_fm_dev_t_2025w33_p7
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w33_p7 ON public.fact_measurements_2025w33_p7 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p7 :: idx_fm_s_t_d_m_2025w33_p7
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w33_p7 ON public.fact_measurements_2025w33_p7 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33_p8 :: fact_measurements_2025w33_p8_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p8_device_id_ts_bucket_idx ON public.fact_measurements_2025w33_p8 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p8 :: fact_measurements_2025w33_p8_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w33_p8_pkey ON public.fact_measurements_2025w33_p8 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p8 :: fact_measurements_2025w33_p8_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p8_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w33_p8 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33_p8 :: fact_measurements_2025w33_p8_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p8_ts_bucket_idx ON public.fact_measurements_2025w33_p8 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p8 :: idx_fm_dev_t_2025w33_p8
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w33_p8 ON public.fact_measurements_2025w33_p8 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p8 :: idx_fm_s_t_d_m_2025w33_p8
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w33_p8 ON public.fact_measurements_2025w33_p8 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33_p9 :: fact_measurements_2025w33_p9_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p9_device_id_ts_bucket_idx ON public.fact_measurements_2025w33_p9 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p9 :: fact_measurements_2025w33_p9_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w33_p9_pkey ON public.fact_measurements_2025w33_p9 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p9 :: fact_measurements_2025w33_p9_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p9_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w33_p9 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w33_p9 :: fact_measurements_2025w33_p9_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w33_p9_ts_bucket_idx ON public.fact_measurements_2025w33_p9 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p9 :: idx_fm_dev_t_2025w33_p9
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w33_p9 ON public.fact_measurements_2025w33_p9 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w33_p9 :: idx_fm_s_t_d_m_2025w33_p9
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w33_p9 ON public.fact_measurements_2025w33_p9 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34 :: fact_measurements_2025w34_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_device_id_ts_bucket_idx ON ONLY public.fact_measurements_2025w34 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34 :: fact_measurements_2025w34_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w34_pkey ON ONLY public.fact_measurements_2025w34 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34 :: fact_measurements_2025w34_station_id_ts_bucket_device_id_me_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_station_id_ts_bucket_device_id_me_idx ON ONLY public.fact_measurements_2025w34 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34 :: fact_measurements_2025w34_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_ts_bucket_idx ON ONLY public.fact_measurements_2025w34 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p0 :: fact_measurements_2025w34_p0_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p0_device_id_ts_bucket_idx ON public.fact_measurements_2025w34_p0 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p0 :: fact_measurements_2025w34_p0_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w34_p0_pkey ON public.fact_measurements_2025w34_p0 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p0 :: fact_measurements_2025w34_p0_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p0_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w34_p0 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34_p0 :: fact_measurements_2025w34_p0_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p0_ts_bucket_idx ON public.fact_measurements_2025w34_p0 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p0 :: idx_fm_dev_t_2025w34_p0
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w34_p0 ON public.fact_measurements_2025w34_p0 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p0 :: idx_fm_s_t_d_m_2025w34_p0
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w34_p0 ON public.fact_measurements_2025w34_p0 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34_p1 :: fact_measurements_2025w34_p1_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p1_device_id_ts_bucket_idx ON public.fact_measurements_2025w34_p1 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p1 :: fact_measurements_2025w34_p1_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w34_p1_pkey ON public.fact_measurements_2025w34_p1 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p1 :: fact_measurements_2025w34_p1_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p1_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w34_p1 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34_p1 :: fact_measurements_2025w34_p1_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p1_ts_bucket_idx ON public.fact_measurements_2025w34_p1 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p1 :: idx_fm_dev_t_2025w34_p1
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w34_p1 ON public.fact_measurements_2025w34_p1 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p1 :: idx_fm_s_t_d_m_2025w34_p1
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w34_p1 ON public.fact_measurements_2025w34_p1 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34_p10 :: fact_measurements_2025w34_p10_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p10_device_id_ts_bucket_idx ON public.fact_measurements_2025w34_p10 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p10 :: fact_measurements_2025w34_p10_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w34_p10_pkey ON public.fact_measurements_2025w34_p10 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p10 :: fact_measurements_2025w34_p10_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p10_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w34_p10 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34_p10 :: fact_measurements_2025w34_p10_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p10_ts_bucket_idx ON public.fact_measurements_2025w34_p10 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p10 :: idx_fm_dev_t_2025w34_p10
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w34_p10 ON public.fact_measurements_2025w34_p10 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p10 :: idx_fm_s_t_d_m_2025w34_p10
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w34_p10 ON public.fact_measurements_2025w34_p10 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34_p11 :: fact_measurements_2025w34_p11_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p11_device_id_ts_bucket_idx ON public.fact_measurements_2025w34_p11 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p11 :: fact_measurements_2025w34_p11_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w34_p11_pkey ON public.fact_measurements_2025w34_p11 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p11 :: fact_measurements_2025w34_p11_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p11_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w34_p11 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34_p11 :: fact_measurements_2025w34_p11_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p11_ts_bucket_idx ON public.fact_measurements_2025w34_p11 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p11 :: idx_fm_dev_t_2025w34_p11
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w34_p11 ON public.fact_measurements_2025w34_p11 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p11 :: idx_fm_s_t_d_m_2025w34_p11
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w34_p11 ON public.fact_measurements_2025w34_p11 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34_p12 :: fact_measurements_2025w34_p12_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p12_device_id_ts_bucket_idx ON public.fact_measurements_2025w34_p12 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p12 :: fact_measurements_2025w34_p12_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w34_p12_pkey ON public.fact_measurements_2025w34_p12 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p12 :: fact_measurements_2025w34_p12_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p12_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w34_p12 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34_p12 :: fact_measurements_2025w34_p12_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p12_ts_bucket_idx ON public.fact_measurements_2025w34_p12 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p12 :: idx_fm_dev_t_2025w34_p12
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w34_p12 ON public.fact_measurements_2025w34_p12 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p12 :: idx_fm_s_t_d_m_2025w34_p12
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w34_p12 ON public.fact_measurements_2025w34_p12 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34_p13 :: fact_measurements_2025w34_p13_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p13_device_id_ts_bucket_idx ON public.fact_measurements_2025w34_p13 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p13 :: fact_measurements_2025w34_p13_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w34_p13_pkey ON public.fact_measurements_2025w34_p13 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p13 :: fact_measurements_2025w34_p13_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p13_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w34_p13 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34_p13 :: fact_measurements_2025w34_p13_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p13_ts_bucket_idx ON public.fact_measurements_2025w34_p13 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p13 :: idx_fm_dev_t_2025w34_p13
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w34_p13 ON public.fact_measurements_2025w34_p13 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p13 :: idx_fm_s_t_d_m_2025w34_p13
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w34_p13 ON public.fact_measurements_2025w34_p13 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34_p14 :: fact_measurements_2025w34_p14_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p14_device_id_ts_bucket_idx ON public.fact_measurements_2025w34_p14 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p14 :: fact_measurements_2025w34_p14_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w34_p14_pkey ON public.fact_measurements_2025w34_p14 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p14 :: fact_measurements_2025w34_p14_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p14_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w34_p14 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34_p14 :: fact_measurements_2025w34_p14_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p14_ts_bucket_idx ON public.fact_measurements_2025w34_p14 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p14 :: idx_fm_dev_t_2025w34_p14
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w34_p14 ON public.fact_measurements_2025w34_p14 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p14 :: idx_fm_s_t_d_m_2025w34_p14
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w34_p14 ON public.fact_measurements_2025w34_p14 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34_p15 :: fact_measurements_2025w34_p15_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p15_device_id_ts_bucket_idx ON public.fact_measurements_2025w34_p15 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p15 :: fact_measurements_2025w34_p15_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w34_p15_pkey ON public.fact_measurements_2025w34_p15 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p15 :: fact_measurements_2025w34_p15_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p15_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w34_p15 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34_p15 :: fact_measurements_2025w34_p15_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p15_ts_bucket_idx ON public.fact_measurements_2025w34_p15 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p15 :: idx_fm_dev_t_2025w34_p15
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w34_p15 ON public.fact_measurements_2025w34_p15 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p15 :: idx_fm_s_t_d_m_2025w34_p15
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w34_p15 ON public.fact_measurements_2025w34_p15 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34_p2 :: fact_measurements_2025w34_p2_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p2_device_id_ts_bucket_idx ON public.fact_measurements_2025w34_p2 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p2 :: fact_measurements_2025w34_p2_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w34_p2_pkey ON public.fact_measurements_2025w34_p2 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p2 :: fact_measurements_2025w34_p2_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p2_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w34_p2 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34_p2 :: fact_measurements_2025w34_p2_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p2_ts_bucket_idx ON public.fact_measurements_2025w34_p2 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p2 :: idx_fm_dev_t_2025w34_p2
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w34_p2 ON public.fact_measurements_2025w34_p2 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p2 :: idx_fm_s_t_d_m_2025w34_p2
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w34_p2 ON public.fact_measurements_2025w34_p2 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34_p3 :: fact_measurements_2025w34_p3_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p3_device_id_ts_bucket_idx ON public.fact_measurements_2025w34_p3 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p3 :: fact_measurements_2025w34_p3_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w34_p3_pkey ON public.fact_measurements_2025w34_p3 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p3 :: fact_measurements_2025w34_p3_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p3_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w34_p3 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34_p3 :: fact_measurements_2025w34_p3_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p3_ts_bucket_idx ON public.fact_measurements_2025w34_p3 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p3 :: idx_fm_dev_t_2025w34_p3
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w34_p3 ON public.fact_measurements_2025w34_p3 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p3 :: idx_fm_s_t_d_m_2025w34_p3
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w34_p3 ON public.fact_measurements_2025w34_p3 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34_p4 :: fact_measurements_2025w34_p4_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p4_device_id_ts_bucket_idx ON public.fact_measurements_2025w34_p4 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p4 :: fact_measurements_2025w34_p4_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w34_p4_pkey ON public.fact_measurements_2025w34_p4 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p4 :: fact_measurements_2025w34_p4_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p4_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w34_p4 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34_p4 :: fact_measurements_2025w34_p4_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p4_ts_bucket_idx ON public.fact_measurements_2025w34_p4 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p4 :: idx_fm_dev_t_2025w34_p4
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w34_p4 ON public.fact_measurements_2025w34_p4 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p4 :: idx_fm_s_t_d_m_2025w34_p4
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w34_p4 ON public.fact_measurements_2025w34_p4 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34_p5 :: fact_measurements_2025w34_p5_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p5_device_id_ts_bucket_idx ON public.fact_measurements_2025w34_p5 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p5 :: fact_measurements_2025w34_p5_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w34_p5_pkey ON public.fact_measurements_2025w34_p5 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p5 :: fact_measurements_2025w34_p5_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p5_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w34_p5 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34_p5 :: fact_measurements_2025w34_p5_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p5_ts_bucket_idx ON public.fact_measurements_2025w34_p5 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p5 :: idx_fm_dev_t_2025w34_p5
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w34_p5 ON public.fact_measurements_2025w34_p5 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p5 :: idx_fm_s_t_d_m_2025w34_p5
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w34_p5 ON public.fact_measurements_2025w34_p5 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34_p6 :: fact_measurements_2025w34_p6_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p6_device_id_ts_bucket_idx ON public.fact_measurements_2025w34_p6 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p6 :: fact_measurements_2025w34_p6_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w34_p6_pkey ON public.fact_measurements_2025w34_p6 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p6 :: fact_measurements_2025w34_p6_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p6_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w34_p6 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34_p6 :: fact_measurements_2025w34_p6_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p6_ts_bucket_idx ON public.fact_measurements_2025w34_p6 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p6 :: idx_fm_dev_t_2025w34_p6
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w34_p6 ON public.fact_measurements_2025w34_p6 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p6 :: idx_fm_s_t_d_m_2025w34_p6
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w34_p6 ON public.fact_measurements_2025w34_p6 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34_p7 :: fact_measurements_2025w34_p7_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p7_device_id_ts_bucket_idx ON public.fact_measurements_2025w34_p7 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p7 :: fact_measurements_2025w34_p7_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w34_p7_pkey ON public.fact_measurements_2025w34_p7 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p7 :: fact_measurements_2025w34_p7_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p7_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w34_p7 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34_p7 :: fact_measurements_2025w34_p7_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p7_ts_bucket_idx ON public.fact_measurements_2025w34_p7 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p7 :: idx_fm_dev_t_2025w34_p7
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w34_p7 ON public.fact_measurements_2025w34_p7 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p7 :: idx_fm_s_t_d_m_2025w34_p7
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w34_p7 ON public.fact_measurements_2025w34_p7 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34_p8 :: fact_measurements_2025w34_p8_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p8_device_id_ts_bucket_idx ON public.fact_measurements_2025w34_p8 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p8 :: fact_measurements_2025w34_p8_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w34_p8_pkey ON public.fact_measurements_2025w34_p8 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p8 :: fact_measurements_2025w34_p8_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p8_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w34_p8 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34_p8 :: fact_measurements_2025w34_p8_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p8_ts_bucket_idx ON public.fact_measurements_2025w34_p8 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p8 :: idx_fm_dev_t_2025w34_p8
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w34_p8 ON public.fact_measurements_2025w34_p8 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p8 :: idx_fm_s_t_d_m_2025w34_p8
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w34_p8 ON public.fact_measurements_2025w34_p8 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34_p9 :: fact_measurements_2025w34_p9_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p9_device_id_ts_bucket_idx ON public.fact_measurements_2025w34_p9 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p9 :: fact_measurements_2025w34_p9_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w34_p9_pkey ON public.fact_measurements_2025w34_p9 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p9 :: fact_measurements_2025w34_p9_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p9_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w34_p9 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w34_p9 :: fact_measurements_2025w34_p9_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w34_p9_ts_bucket_idx ON public.fact_measurements_2025w34_p9 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p9 :: idx_fm_dev_t_2025w34_p9
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w34_p9 ON public.fact_measurements_2025w34_p9 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w34_p9 :: idx_fm_s_t_d_m_2025w34_p9
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w34_p9 ON public.fact_measurements_2025w34_p9 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35 :: fact_measurements_2025w35_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_device_id_ts_bucket_idx ON ONLY public.fact_measurements_2025w35 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35 :: fact_measurements_2025w35_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w35_pkey ON ONLY public.fact_measurements_2025w35 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35 :: fact_measurements_2025w35_station_id_ts_bucket_device_id_me_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_station_id_ts_bucket_device_id_me_idx ON ONLY public.fact_measurements_2025w35 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35 :: fact_measurements_2025w35_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_ts_bucket_idx ON ONLY public.fact_measurements_2025w35 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p0 :: fact_measurements_2025w35_p0_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p0_device_id_ts_bucket_idx ON public.fact_measurements_2025w35_p0 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p0 :: fact_measurements_2025w35_p0_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w35_p0_pkey ON public.fact_measurements_2025w35_p0 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p0 :: fact_measurements_2025w35_p0_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p0_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w35_p0 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35_p0 :: fact_measurements_2025w35_p0_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p0_ts_bucket_idx ON public.fact_measurements_2025w35_p0 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p0 :: idx_fm_dev_t_2025w35_p0
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w35_p0 ON public.fact_measurements_2025w35_p0 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p0 :: idx_fm_s_t_d_m_2025w35_p0
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w35_p0 ON public.fact_measurements_2025w35_p0 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35_p1 :: fact_measurements_2025w35_p1_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p1_device_id_ts_bucket_idx ON public.fact_measurements_2025w35_p1 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p1 :: fact_measurements_2025w35_p1_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w35_p1_pkey ON public.fact_measurements_2025w35_p1 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p1 :: fact_measurements_2025w35_p1_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p1_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w35_p1 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35_p1 :: fact_measurements_2025w35_p1_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p1_ts_bucket_idx ON public.fact_measurements_2025w35_p1 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p1 :: idx_fm_dev_t_2025w35_p1
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w35_p1 ON public.fact_measurements_2025w35_p1 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p1 :: idx_fm_s_t_d_m_2025w35_p1
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w35_p1 ON public.fact_measurements_2025w35_p1 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35_p10 :: fact_measurements_2025w35_p10_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p10_device_id_ts_bucket_idx ON public.fact_measurements_2025w35_p10 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p10 :: fact_measurements_2025w35_p10_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w35_p10_pkey ON public.fact_measurements_2025w35_p10 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p10 :: fact_measurements_2025w35_p10_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p10_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w35_p10 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35_p10 :: fact_measurements_2025w35_p10_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p10_ts_bucket_idx ON public.fact_measurements_2025w35_p10 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p10 :: idx_fm_dev_t_2025w35_p10
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w35_p10 ON public.fact_measurements_2025w35_p10 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p10 :: idx_fm_s_t_d_m_2025w35_p10
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w35_p10 ON public.fact_measurements_2025w35_p10 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35_p11 :: fact_measurements_2025w35_p11_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p11_device_id_ts_bucket_idx ON public.fact_measurements_2025w35_p11 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p11 :: fact_measurements_2025w35_p11_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w35_p11_pkey ON public.fact_measurements_2025w35_p11 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p11 :: fact_measurements_2025w35_p11_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p11_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w35_p11 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35_p11 :: fact_measurements_2025w35_p11_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p11_ts_bucket_idx ON public.fact_measurements_2025w35_p11 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p11 :: idx_fm_dev_t_2025w35_p11
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w35_p11 ON public.fact_measurements_2025w35_p11 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p11 :: idx_fm_s_t_d_m_2025w35_p11
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w35_p11 ON public.fact_measurements_2025w35_p11 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35_p12 :: fact_measurements_2025w35_p12_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p12_device_id_ts_bucket_idx ON public.fact_measurements_2025w35_p12 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p12 :: fact_measurements_2025w35_p12_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w35_p12_pkey ON public.fact_measurements_2025w35_p12 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p12 :: fact_measurements_2025w35_p12_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p12_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w35_p12 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35_p12 :: fact_measurements_2025w35_p12_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p12_ts_bucket_idx ON public.fact_measurements_2025w35_p12 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p12 :: idx_fm_dev_t_2025w35_p12
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w35_p12 ON public.fact_measurements_2025w35_p12 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p12 :: idx_fm_s_t_d_m_2025w35_p12
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w35_p12 ON public.fact_measurements_2025w35_p12 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35_p13 :: fact_measurements_2025w35_p13_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p13_device_id_ts_bucket_idx ON public.fact_measurements_2025w35_p13 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p13 :: fact_measurements_2025w35_p13_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w35_p13_pkey ON public.fact_measurements_2025w35_p13 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p13 :: fact_measurements_2025w35_p13_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p13_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w35_p13 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35_p13 :: fact_measurements_2025w35_p13_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p13_ts_bucket_idx ON public.fact_measurements_2025w35_p13 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p13 :: idx_fm_dev_t_2025w35_p13
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w35_p13 ON public.fact_measurements_2025w35_p13 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p13 :: idx_fm_s_t_d_m_2025w35_p13
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w35_p13 ON public.fact_measurements_2025w35_p13 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35_p14 :: fact_measurements_2025w35_p14_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p14_device_id_ts_bucket_idx ON public.fact_measurements_2025w35_p14 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p14 :: fact_measurements_2025w35_p14_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w35_p14_pkey ON public.fact_measurements_2025w35_p14 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p14 :: fact_measurements_2025w35_p14_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p14_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w35_p14 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35_p14 :: fact_measurements_2025w35_p14_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p14_ts_bucket_idx ON public.fact_measurements_2025w35_p14 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p14 :: idx_fm_dev_t_2025w35_p14
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w35_p14 ON public.fact_measurements_2025w35_p14 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p14 :: idx_fm_s_t_d_m_2025w35_p14
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w35_p14 ON public.fact_measurements_2025w35_p14 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35_p15 :: fact_measurements_2025w35_p15_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p15_device_id_ts_bucket_idx ON public.fact_measurements_2025w35_p15 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p15 :: fact_measurements_2025w35_p15_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w35_p15_pkey ON public.fact_measurements_2025w35_p15 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p15 :: fact_measurements_2025w35_p15_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p15_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w35_p15 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35_p15 :: fact_measurements_2025w35_p15_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p15_ts_bucket_idx ON public.fact_measurements_2025w35_p15 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p15 :: idx_fm_dev_t_2025w35_p15
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w35_p15 ON public.fact_measurements_2025w35_p15 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p15 :: idx_fm_s_t_d_m_2025w35_p15
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w35_p15 ON public.fact_measurements_2025w35_p15 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35_p2 :: fact_measurements_2025w35_p2_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p2_device_id_ts_bucket_idx ON public.fact_measurements_2025w35_p2 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p2 :: fact_measurements_2025w35_p2_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w35_p2_pkey ON public.fact_measurements_2025w35_p2 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p2 :: fact_measurements_2025w35_p2_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p2_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w35_p2 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35_p2 :: fact_measurements_2025w35_p2_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p2_ts_bucket_idx ON public.fact_measurements_2025w35_p2 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p2 :: idx_fm_dev_t_2025w35_p2
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w35_p2 ON public.fact_measurements_2025w35_p2 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p2 :: idx_fm_s_t_d_m_2025w35_p2
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w35_p2 ON public.fact_measurements_2025w35_p2 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35_p3 :: fact_measurements_2025w35_p3_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p3_device_id_ts_bucket_idx ON public.fact_measurements_2025w35_p3 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p3 :: fact_measurements_2025w35_p3_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w35_p3_pkey ON public.fact_measurements_2025w35_p3 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p3 :: fact_measurements_2025w35_p3_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p3_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w35_p3 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35_p3 :: fact_measurements_2025w35_p3_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p3_ts_bucket_idx ON public.fact_measurements_2025w35_p3 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p3 :: idx_fm_dev_t_2025w35_p3
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w35_p3 ON public.fact_measurements_2025w35_p3 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p3 :: idx_fm_s_t_d_m_2025w35_p3
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w35_p3 ON public.fact_measurements_2025w35_p3 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35_p4 :: fact_measurements_2025w35_p4_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p4_device_id_ts_bucket_idx ON public.fact_measurements_2025w35_p4 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p4 :: fact_measurements_2025w35_p4_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w35_p4_pkey ON public.fact_measurements_2025w35_p4 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p4 :: fact_measurements_2025w35_p4_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p4_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w35_p4 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35_p4 :: fact_measurements_2025w35_p4_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p4_ts_bucket_idx ON public.fact_measurements_2025w35_p4 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p4 :: idx_fm_dev_t_2025w35_p4
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w35_p4 ON public.fact_measurements_2025w35_p4 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p4 :: idx_fm_s_t_d_m_2025w35_p4
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w35_p4 ON public.fact_measurements_2025w35_p4 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35_p5 :: fact_measurements_2025w35_p5_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p5_device_id_ts_bucket_idx ON public.fact_measurements_2025w35_p5 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p5 :: fact_measurements_2025w35_p5_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w35_p5_pkey ON public.fact_measurements_2025w35_p5 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p5 :: fact_measurements_2025w35_p5_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p5_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w35_p5 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35_p5 :: fact_measurements_2025w35_p5_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p5_ts_bucket_idx ON public.fact_measurements_2025w35_p5 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p5 :: idx_fm_dev_t_2025w35_p5
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w35_p5 ON public.fact_measurements_2025w35_p5 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p5 :: idx_fm_s_t_d_m_2025w35_p5
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w35_p5 ON public.fact_measurements_2025w35_p5 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35_p6 :: fact_measurements_2025w35_p6_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p6_device_id_ts_bucket_idx ON public.fact_measurements_2025w35_p6 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p6 :: fact_measurements_2025w35_p6_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w35_p6_pkey ON public.fact_measurements_2025w35_p6 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p6 :: fact_measurements_2025w35_p6_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p6_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w35_p6 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35_p6 :: fact_measurements_2025w35_p6_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p6_ts_bucket_idx ON public.fact_measurements_2025w35_p6 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p6 :: idx_fm_dev_t_2025w35_p6
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w35_p6 ON public.fact_measurements_2025w35_p6 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p6 :: idx_fm_s_t_d_m_2025w35_p6
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w35_p6 ON public.fact_measurements_2025w35_p6 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35_p7 :: fact_measurements_2025w35_p7_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p7_device_id_ts_bucket_idx ON public.fact_measurements_2025w35_p7 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p7 :: fact_measurements_2025w35_p7_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w35_p7_pkey ON public.fact_measurements_2025w35_p7 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p7 :: fact_measurements_2025w35_p7_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p7_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w35_p7 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35_p7 :: fact_measurements_2025w35_p7_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p7_ts_bucket_idx ON public.fact_measurements_2025w35_p7 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p7 :: idx_fm_dev_t_2025w35_p7
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w35_p7 ON public.fact_measurements_2025w35_p7 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p7 :: idx_fm_s_t_d_m_2025w35_p7
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w35_p7 ON public.fact_measurements_2025w35_p7 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35_p8 :: fact_measurements_2025w35_p8_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p8_device_id_ts_bucket_idx ON public.fact_measurements_2025w35_p8 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p8 :: fact_measurements_2025w35_p8_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w35_p8_pkey ON public.fact_measurements_2025w35_p8 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p8 :: fact_measurements_2025w35_p8_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p8_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w35_p8 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35_p8 :: fact_measurements_2025w35_p8_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p8_ts_bucket_idx ON public.fact_measurements_2025w35_p8 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p8 :: idx_fm_dev_t_2025w35_p8
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w35_p8 ON public.fact_measurements_2025w35_p8 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p8 :: idx_fm_s_t_d_m_2025w35_p8
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w35_p8 ON public.fact_measurements_2025w35_p8 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35_p9 :: fact_measurements_2025w35_p9_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p9_device_id_ts_bucket_idx ON public.fact_measurements_2025w35_p9 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p9 :: fact_measurements_2025w35_p9_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w35_p9_pkey ON public.fact_measurements_2025w35_p9 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p9 :: fact_measurements_2025w35_p9_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p9_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w35_p9 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w35_p9 :: fact_measurements_2025w35_p9_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w35_p9_ts_bucket_idx ON public.fact_measurements_2025w35_p9 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p9 :: idx_fm_dev_t_2025w35_p9
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w35_p9 ON public.fact_measurements_2025w35_p9 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w35_p9 :: idx_fm_s_t_d_m_2025w35_p9
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w35_p9 ON public.fact_measurements_2025w35_p9 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36 :: fact_measurements_2025w36_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_device_id_ts_bucket_idx ON ONLY public.fact_measurements_2025w36 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36 :: fact_measurements_2025w36_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w36_pkey ON ONLY public.fact_measurements_2025w36 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36 :: fact_measurements_2025w36_station_id_ts_bucket_device_id_me_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_station_id_ts_bucket_device_id_me_idx ON ONLY public.fact_measurements_2025w36 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36 :: fact_measurements_2025w36_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_ts_bucket_idx ON ONLY public.fact_measurements_2025w36 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p0 :: fact_measurements_2025w36_p0_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p0_device_id_ts_bucket_idx ON public.fact_measurements_2025w36_p0 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p0 :: fact_measurements_2025w36_p0_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w36_p0_pkey ON public.fact_measurements_2025w36_p0 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p0 :: fact_measurements_2025w36_p0_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p0_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w36_p0 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36_p0 :: fact_measurements_2025w36_p0_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p0_ts_bucket_idx ON public.fact_measurements_2025w36_p0 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p0 :: idx_fm_dev_t_2025w36_p0
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w36_p0 ON public.fact_measurements_2025w36_p0 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p0 :: idx_fm_s_t_d_m_2025w36_p0
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w36_p0 ON public.fact_measurements_2025w36_p0 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36_p1 :: fact_measurements_2025w36_p1_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p1_device_id_ts_bucket_idx ON public.fact_measurements_2025w36_p1 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p1 :: fact_measurements_2025w36_p1_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w36_p1_pkey ON public.fact_measurements_2025w36_p1 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p1 :: fact_measurements_2025w36_p1_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p1_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w36_p1 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36_p1 :: fact_measurements_2025w36_p1_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p1_ts_bucket_idx ON public.fact_measurements_2025w36_p1 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p1 :: idx_fm_dev_t_2025w36_p1
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w36_p1 ON public.fact_measurements_2025w36_p1 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p1 :: idx_fm_s_t_d_m_2025w36_p1
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w36_p1 ON public.fact_measurements_2025w36_p1 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36_p10 :: fact_measurements_2025w36_p10_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p10_device_id_ts_bucket_idx ON public.fact_measurements_2025w36_p10 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p10 :: fact_measurements_2025w36_p10_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w36_p10_pkey ON public.fact_measurements_2025w36_p10 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p10 :: fact_measurements_2025w36_p10_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p10_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w36_p10 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36_p10 :: fact_measurements_2025w36_p10_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p10_ts_bucket_idx ON public.fact_measurements_2025w36_p10 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p10 :: idx_fm_dev_t_2025w36_p10
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w36_p10 ON public.fact_measurements_2025w36_p10 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p10 :: idx_fm_s_t_d_m_2025w36_p10
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w36_p10 ON public.fact_measurements_2025w36_p10 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36_p11 :: fact_measurements_2025w36_p11_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p11_device_id_ts_bucket_idx ON public.fact_measurements_2025w36_p11 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p11 :: fact_measurements_2025w36_p11_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w36_p11_pkey ON public.fact_measurements_2025w36_p11 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p11 :: fact_measurements_2025w36_p11_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p11_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w36_p11 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36_p11 :: fact_measurements_2025w36_p11_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p11_ts_bucket_idx ON public.fact_measurements_2025w36_p11 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p11 :: idx_fm_dev_t_2025w36_p11
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w36_p11 ON public.fact_measurements_2025w36_p11 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p11 :: idx_fm_s_t_d_m_2025w36_p11
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w36_p11 ON public.fact_measurements_2025w36_p11 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36_p12 :: fact_measurements_2025w36_p12_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p12_device_id_ts_bucket_idx ON public.fact_measurements_2025w36_p12 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p12 :: fact_measurements_2025w36_p12_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w36_p12_pkey ON public.fact_measurements_2025w36_p12 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p12 :: fact_measurements_2025w36_p12_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p12_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w36_p12 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36_p12 :: fact_measurements_2025w36_p12_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p12_ts_bucket_idx ON public.fact_measurements_2025w36_p12 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p12 :: idx_fm_dev_t_2025w36_p12
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w36_p12 ON public.fact_measurements_2025w36_p12 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p12 :: idx_fm_s_t_d_m_2025w36_p12
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w36_p12 ON public.fact_measurements_2025w36_p12 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36_p13 :: fact_measurements_2025w36_p13_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p13_device_id_ts_bucket_idx ON public.fact_measurements_2025w36_p13 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p13 :: fact_measurements_2025w36_p13_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w36_p13_pkey ON public.fact_measurements_2025w36_p13 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p13 :: fact_measurements_2025w36_p13_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p13_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w36_p13 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36_p13 :: fact_measurements_2025w36_p13_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p13_ts_bucket_idx ON public.fact_measurements_2025w36_p13 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p13 :: idx_fm_dev_t_2025w36_p13
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w36_p13 ON public.fact_measurements_2025w36_p13 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p13 :: idx_fm_s_t_d_m_2025w36_p13
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w36_p13 ON public.fact_measurements_2025w36_p13 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36_p14 :: fact_measurements_2025w36_p14_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p14_device_id_ts_bucket_idx ON public.fact_measurements_2025w36_p14 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p14 :: fact_measurements_2025w36_p14_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w36_p14_pkey ON public.fact_measurements_2025w36_p14 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p14 :: fact_measurements_2025w36_p14_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p14_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w36_p14 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36_p14 :: fact_measurements_2025w36_p14_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p14_ts_bucket_idx ON public.fact_measurements_2025w36_p14 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p14 :: idx_fm_dev_t_2025w36_p14
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w36_p14 ON public.fact_measurements_2025w36_p14 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p14 :: idx_fm_s_t_d_m_2025w36_p14
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w36_p14 ON public.fact_measurements_2025w36_p14 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36_p15 :: fact_measurements_2025w36_p15_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p15_device_id_ts_bucket_idx ON public.fact_measurements_2025w36_p15 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p15 :: fact_measurements_2025w36_p15_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w36_p15_pkey ON public.fact_measurements_2025w36_p15 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p15 :: fact_measurements_2025w36_p15_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p15_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w36_p15 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36_p15 :: fact_measurements_2025w36_p15_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p15_ts_bucket_idx ON public.fact_measurements_2025w36_p15 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p15 :: idx_fm_dev_t_2025w36_p15
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w36_p15 ON public.fact_measurements_2025w36_p15 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p15 :: idx_fm_s_t_d_m_2025w36_p15
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w36_p15 ON public.fact_measurements_2025w36_p15 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36_p2 :: fact_measurements_2025w36_p2_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p2_device_id_ts_bucket_idx ON public.fact_measurements_2025w36_p2 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p2 :: fact_measurements_2025w36_p2_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w36_p2_pkey ON public.fact_measurements_2025w36_p2 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p2 :: fact_measurements_2025w36_p2_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p2_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w36_p2 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36_p2 :: fact_measurements_2025w36_p2_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p2_ts_bucket_idx ON public.fact_measurements_2025w36_p2 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p2 :: idx_fm_dev_t_2025w36_p2
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w36_p2 ON public.fact_measurements_2025w36_p2 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p2 :: idx_fm_s_t_d_m_2025w36_p2
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w36_p2 ON public.fact_measurements_2025w36_p2 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36_p3 :: fact_measurements_2025w36_p3_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p3_device_id_ts_bucket_idx ON public.fact_measurements_2025w36_p3 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p3 :: fact_measurements_2025w36_p3_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w36_p3_pkey ON public.fact_measurements_2025w36_p3 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p3 :: fact_measurements_2025w36_p3_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p3_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w36_p3 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36_p3 :: fact_measurements_2025w36_p3_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p3_ts_bucket_idx ON public.fact_measurements_2025w36_p3 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p3 :: idx_fm_dev_t_2025w36_p3
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w36_p3 ON public.fact_measurements_2025w36_p3 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p3 :: idx_fm_s_t_d_m_2025w36_p3
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w36_p3 ON public.fact_measurements_2025w36_p3 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36_p4 :: fact_measurements_2025w36_p4_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p4_device_id_ts_bucket_idx ON public.fact_measurements_2025w36_p4 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p4 :: fact_measurements_2025w36_p4_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w36_p4_pkey ON public.fact_measurements_2025w36_p4 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p4 :: fact_measurements_2025w36_p4_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p4_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w36_p4 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36_p4 :: fact_measurements_2025w36_p4_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p4_ts_bucket_idx ON public.fact_measurements_2025w36_p4 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p4 :: idx_fm_dev_t_2025w36_p4
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w36_p4 ON public.fact_measurements_2025w36_p4 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p4 :: idx_fm_s_t_d_m_2025w36_p4
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w36_p4 ON public.fact_measurements_2025w36_p4 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36_p5 :: fact_measurements_2025w36_p5_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p5_device_id_ts_bucket_idx ON public.fact_measurements_2025w36_p5 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p5 :: fact_measurements_2025w36_p5_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w36_p5_pkey ON public.fact_measurements_2025w36_p5 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p5 :: fact_measurements_2025w36_p5_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p5_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w36_p5 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36_p5 :: fact_measurements_2025w36_p5_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p5_ts_bucket_idx ON public.fact_measurements_2025w36_p5 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p5 :: idx_fm_dev_t_2025w36_p5
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w36_p5 ON public.fact_measurements_2025w36_p5 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p5 :: idx_fm_s_t_d_m_2025w36_p5
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w36_p5 ON public.fact_measurements_2025w36_p5 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36_p6 :: fact_measurements_2025w36_p6_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p6_device_id_ts_bucket_idx ON public.fact_measurements_2025w36_p6 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p6 :: fact_measurements_2025w36_p6_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w36_p6_pkey ON public.fact_measurements_2025w36_p6 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p6 :: fact_measurements_2025w36_p6_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p6_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w36_p6 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36_p6 :: fact_measurements_2025w36_p6_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p6_ts_bucket_idx ON public.fact_measurements_2025w36_p6 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p6 :: idx_fm_dev_t_2025w36_p6
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w36_p6 ON public.fact_measurements_2025w36_p6 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p6 :: idx_fm_s_t_d_m_2025w36_p6
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w36_p6 ON public.fact_measurements_2025w36_p6 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36_p7 :: fact_measurements_2025w36_p7_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p7_device_id_ts_bucket_idx ON public.fact_measurements_2025w36_p7 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p7 :: fact_measurements_2025w36_p7_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w36_p7_pkey ON public.fact_measurements_2025w36_p7 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p7 :: fact_measurements_2025w36_p7_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p7_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w36_p7 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36_p7 :: fact_measurements_2025w36_p7_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p7_ts_bucket_idx ON public.fact_measurements_2025w36_p7 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p7 :: idx_fm_dev_t_2025w36_p7
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w36_p7 ON public.fact_measurements_2025w36_p7 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p7 :: idx_fm_s_t_d_m_2025w36_p7
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w36_p7 ON public.fact_measurements_2025w36_p7 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36_p8 :: fact_measurements_2025w36_p8_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p8_device_id_ts_bucket_idx ON public.fact_measurements_2025w36_p8 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p8 :: fact_measurements_2025w36_p8_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w36_p8_pkey ON public.fact_measurements_2025w36_p8 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p8 :: fact_measurements_2025w36_p8_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p8_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w36_p8 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36_p8 :: fact_measurements_2025w36_p8_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p8_ts_bucket_idx ON public.fact_measurements_2025w36_p8 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p8 :: idx_fm_dev_t_2025w36_p8
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w36_p8 ON public.fact_measurements_2025w36_p8 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p8 :: idx_fm_s_t_d_m_2025w36_p8
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w36_p8 ON public.fact_measurements_2025w36_p8 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36_p9 :: fact_measurements_2025w36_p9_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p9_device_id_ts_bucket_idx ON public.fact_measurements_2025w36_p9 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p9 :: fact_measurements_2025w36_p9_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w36_p9_pkey ON public.fact_measurements_2025w36_p9 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p9 :: fact_measurements_2025w36_p9_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p9_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w36_p9 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w36_p9 :: fact_measurements_2025w36_p9_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w36_p9_ts_bucket_idx ON public.fact_measurements_2025w36_p9 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p9 :: idx_fm_dev_t_2025w36_p9
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w36_p9 ON public.fact_measurements_2025w36_p9 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w36_p9 :: idx_fm_s_t_d_m_2025w36_p9
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w36_p9 ON public.fact_measurements_2025w36_p9 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37 :: fact_measurements_2025w37_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_device_id_ts_bucket_idx ON ONLY public.fact_measurements_2025w37 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37 :: fact_measurements_2025w37_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w37_pkey ON ONLY public.fact_measurements_2025w37 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37 :: fact_measurements_2025w37_station_id_ts_bucket_device_id_me_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_station_id_ts_bucket_device_id_me_idx ON ONLY public.fact_measurements_2025w37 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37 :: fact_measurements_2025w37_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_ts_bucket_idx ON ONLY public.fact_measurements_2025w37 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p0 :: fact_measurements_2025w37_p0_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p0_device_id_ts_bucket_idx ON public.fact_measurements_2025w37_p0 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p0 :: fact_measurements_2025w37_p0_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w37_p0_pkey ON public.fact_measurements_2025w37_p0 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p0 :: fact_measurements_2025w37_p0_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p0_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w37_p0 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37_p0 :: fact_measurements_2025w37_p0_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p0_ts_bucket_idx ON public.fact_measurements_2025w37_p0 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p0 :: idx_fm_dev_t_2025w37_p0
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w37_p0 ON public.fact_measurements_2025w37_p0 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p0 :: idx_fm_s_t_d_m_2025w37_p0
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w37_p0 ON public.fact_measurements_2025w37_p0 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37_p1 :: fact_measurements_2025w37_p1_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p1_device_id_ts_bucket_idx ON public.fact_measurements_2025w37_p1 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p1 :: fact_measurements_2025w37_p1_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w37_p1_pkey ON public.fact_measurements_2025w37_p1 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p1 :: fact_measurements_2025w37_p1_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p1_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w37_p1 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37_p1 :: fact_measurements_2025w37_p1_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p1_ts_bucket_idx ON public.fact_measurements_2025w37_p1 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p1 :: idx_fm_dev_t_2025w37_p1
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w37_p1 ON public.fact_measurements_2025w37_p1 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p1 :: idx_fm_s_t_d_m_2025w37_p1
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w37_p1 ON public.fact_measurements_2025w37_p1 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37_p10 :: fact_measurements_2025w37_p10_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p10_device_id_ts_bucket_idx ON public.fact_measurements_2025w37_p10 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p10 :: fact_measurements_2025w37_p10_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w37_p10_pkey ON public.fact_measurements_2025w37_p10 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p10 :: fact_measurements_2025w37_p10_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p10_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w37_p10 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37_p10 :: fact_measurements_2025w37_p10_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p10_ts_bucket_idx ON public.fact_measurements_2025w37_p10 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p10 :: idx_fm_dev_t_2025w37_p10
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w37_p10 ON public.fact_measurements_2025w37_p10 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p10 :: idx_fm_s_t_d_m_2025w37_p10
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w37_p10 ON public.fact_measurements_2025w37_p10 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37_p11 :: fact_measurements_2025w37_p11_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p11_device_id_ts_bucket_idx ON public.fact_measurements_2025w37_p11 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p11 :: fact_measurements_2025w37_p11_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w37_p11_pkey ON public.fact_measurements_2025w37_p11 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p11 :: fact_measurements_2025w37_p11_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p11_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w37_p11 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37_p11 :: fact_measurements_2025w37_p11_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p11_ts_bucket_idx ON public.fact_measurements_2025w37_p11 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p11 :: idx_fm_dev_t_2025w37_p11
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w37_p11 ON public.fact_measurements_2025w37_p11 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p11 :: idx_fm_s_t_d_m_2025w37_p11
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w37_p11 ON public.fact_measurements_2025w37_p11 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37_p12 :: fact_measurements_2025w37_p12_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p12_device_id_ts_bucket_idx ON public.fact_measurements_2025w37_p12 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p12 :: fact_measurements_2025w37_p12_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w37_p12_pkey ON public.fact_measurements_2025w37_p12 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p12 :: fact_measurements_2025w37_p12_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p12_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w37_p12 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37_p12 :: fact_measurements_2025w37_p12_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p12_ts_bucket_idx ON public.fact_measurements_2025w37_p12 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p12 :: idx_fm_dev_t_2025w37_p12
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w37_p12 ON public.fact_measurements_2025w37_p12 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p12 :: idx_fm_s_t_d_m_2025w37_p12
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w37_p12 ON public.fact_measurements_2025w37_p12 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37_p13 :: fact_measurements_2025w37_p13_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p13_device_id_ts_bucket_idx ON public.fact_measurements_2025w37_p13 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p13 :: fact_measurements_2025w37_p13_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w37_p13_pkey ON public.fact_measurements_2025w37_p13 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p13 :: fact_measurements_2025w37_p13_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p13_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w37_p13 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37_p13 :: fact_measurements_2025w37_p13_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p13_ts_bucket_idx ON public.fact_measurements_2025w37_p13 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p13 :: idx_fm_dev_t_2025w37_p13
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w37_p13 ON public.fact_measurements_2025w37_p13 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p13 :: idx_fm_s_t_d_m_2025w37_p13
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w37_p13 ON public.fact_measurements_2025w37_p13 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37_p14 :: fact_measurements_2025w37_p14_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p14_device_id_ts_bucket_idx ON public.fact_measurements_2025w37_p14 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p14 :: fact_measurements_2025w37_p14_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w37_p14_pkey ON public.fact_measurements_2025w37_p14 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p14 :: fact_measurements_2025w37_p14_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p14_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w37_p14 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37_p14 :: fact_measurements_2025w37_p14_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p14_ts_bucket_idx ON public.fact_measurements_2025w37_p14 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p14 :: idx_fm_dev_t_2025w37_p14
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w37_p14 ON public.fact_measurements_2025w37_p14 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p14 :: idx_fm_s_t_d_m_2025w37_p14
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w37_p14 ON public.fact_measurements_2025w37_p14 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37_p15 :: fact_measurements_2025w37_p15_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p15_device_id_ts_bucket_idx ON public.fact_measurements_2025w37_p15 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p15 :: fact_measurements_2025w37_p15_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w37_p15_pkey ON public.fact_measurements_2025w37_p15 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p15 :: fact_measurements_2025w37_p15_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p15_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w37_p15 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37_p15 :: fact_measurements_2025w37_p15_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p15_ts_bucket_idx ON public.fact_measurements_2025w37_p15 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p15 :: idx_fm_dev_t_2025w37_p15
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w37_p15 ON public.fact_measurements_2025w37_p15 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p15 :: idx_fm_s_t_d_m_2025w37_p15
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w37_p15 ON public.fact_measurements_2025w37_p15 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37_p2 :: fact_measurements_2025w37_p2_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p2_device_id_ts_bucket_idx ON public.fact_measurements_2025w37_p2 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p2 :: fact_measurements_2025w37_p2_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w37_p2_pkey ON public.fact_measurements_2025w37_p2 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p2 :: fact_measurements_2025w37_p2_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p2_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w37_p2 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37_p2 :: fact_measurements_2025w37_p2_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p2_ts_bucket_idx ON public.fact_measurements_2025w37_p2 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p2 :: idx_fm_dev_t_2025w37_p2
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w37_p2 ON public.fact_measurements_2025w37_p2 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p2 :: idx_fm_s_t_d_m_2025w37_p2
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w37_p2 ON public.fact_measurements_2025w37_p2 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37_p3 :: fact_measurements_2025w37_p3_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p3_device_id_ts_bucket_idx ON public.fact_measurements_2025w37_p3 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p3 :: fact_measurements_2025w37_p3_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w37_p3_pkey ON public.fact_measurements_2025w37_p3 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p3 :: fact_measurements_2025w37_p3_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p3_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w37_p3 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37_p3 :: fact_measurements_2025w37_p3_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p3_ts_bucket_idx ON public.fact_measurements_2025w37_p3 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p3 :: idx_fm_dev_t_2025w37_p3
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w37_p3 ON public.fact_measurements_2025w37_p3 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p3 :: idx_fm_s_t_d_m_2025w37_p3
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w37_p3 ON public.fact_measurements_2025w37_p3 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37_p4 :: fact_measurements_2025w37_p4_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p4_device_id_ts_bucket_idx ON public.fact_measurements_2025w37_p4 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p4 :: fact_measurements_2025w37_p4_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w37_p4_pkey ON public.fact_measurements_2025w37_p4 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p4 :: fact_measurements_2025w37_p4_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p4_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w37_p4 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37_p4 :: fact_measurements_2025w37_p4_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p4_ts_bucket_idx ON public.fact_measurements_2025w37_p4 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p4 :: idx_fm_dev_t_2025w37_p4
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w37_p4 ON public.fact_measurements_2025w37_p4 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p4 :: idx_fm_s_t_d_m_2025w37_p4
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w37_p4 ON public.fact_measurements_2025w37_p4 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37_p5 :: fact_measurements_2025w37_p5_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p5_device_id_ts_bucket_idx ON public.fact_measurements_2025w37_p5 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p5 :: fact_measurements_2025w37_p5_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w37_p5_pkey ON public.fact_measurements_2025w37_p5 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p5 :: fact_measurements_2025w37_p5_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p5_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w37_p5 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37_p5 :: fact_measurements_2025w37_p5_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p5_ts_bucket_idx ON public.fact_measurements_2025w37_p5 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p5 :: idx_fm_dev_t_2025w37_p5
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w37_p5 ON public.fact_measurements_2025w37_p5 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p5 :: idx_fm_s_t_d_m_2025w37_p5
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w37_p5 ON public.fact_measurements_2025w37_p5 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37_p6 :: fact_measurements_2025w37_p6_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p6_device_id_ts_bucket_idx ON public.fact_measurements_2025w37_p6 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p6 :: fact_measurements_2025w37_p6_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w37_p6_pkey ON public.fact_measurements_2025w37_p6 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p6 :: fact_measurements_2025w37_p6_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p6_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w37_p6 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37_p6 :: fact_measurements_2025w37_p6_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p6_ts_bucket_idx ON public.fact_measurements_2025w37_p6 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p6 :: idx_fm_dev_t_2025w37_p6
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w37_p6 ON public.fact_measurements_2025w37_p6 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p6 :: idx_fm_s_t_d_m_2025w37_p6
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w37_p6 ON public.fact_measurements_2025w37_p6 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37_p7 :: fact_measurements_2025w37_p7_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p7_device_id_ts_bucket_idx ON public.fact_measurements_2025w37_p7 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p7 :: fact_measurements_2025w37_p7_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w37_p7_pkey ON public.fact_measurements_2025w37_p7 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p7 :: fact_measurements_2025w37_p7_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p7_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w37_p7 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37_p7 :: fact_measurements_2025w37_p7_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p7_ts_bucket_idx ON public.fact_measurements_2025w37_p7 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p7 :: idx_fm_dev_t_2025w37_p7
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w37_p7 ON public.fact_measurements_2025w37_p7 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p7 :: idx_fm_s_t_d_m_2025w37_p7
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w37_p7 ON public.fact_measurements_2025w37_p7 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37_p8 :: fact_measurements_2025w37_p8_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p8_device_id_ts_bucket_idx ON public.fact_measurements_2025w37_p8 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p8 :: fact_measurements_2025w37_p8_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w37_p8_pkey ON public.fact_measurements_2025w37_p8 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p8 :: fact_measurements_2025w37_p8_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p8_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w37_p8 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37_p8 :: fact_measurements_2025w37_p8_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p8_ts_bucket_idx ON public.fact_measurements_2025w37_p8 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p8 :: idx_fm_dev_t_2025w37_p8
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w37_p8 ON public.fact_measurements_2025w37_p8 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p8 :: idx_fm_s_t_d_m_2025w37_p8
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w37_p8 ON public.fact_measurements_2025w37_p8 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37_p9 :: fact_measurements_2025w37_p9_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p9_device_id_ts_bucket_idx ON public.fact_measurements_2025w37_p9 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p9 :: fact_measurements_2025w37_p9_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w37_p9_pkey ON public.fact_measurements_2025w37_p9 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p9 :: fact_measurements_2025w37_p9_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p9_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w37_p9 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w37_p9 :: fact_measurements_2025w37_p9_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w37_p9_ts_bucket_idx ON public.fact_measurements_2025w37_p9 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p9 :: idx_fm_dev_t_2025w37_p9
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w37_p9 ON public.fact_measurements_2025w37_p9 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w37_p9 :: idx_fm_s_t_d_m_2025w37_p9
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w37_p9 ON public.fact_measurements_2025w37_p9 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38 :: fact_measurements_2025w38_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_device_id_ts_bucket_idx ON ONLY public.fact_measurements_2025w38 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38 :: fact_measurements_2025w38_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w38_pkey ON ONLY public.fact_measurements_2025w38 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38 :: fact_measurements_2025w38_station_id_ts_bucket_device_id_me_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_station_id_ts_bucket_device_id_me_idx ON ONLY public.fact_measurements_2025w38 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38 :: fact_measurements_2025w38_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_ts_bucket_idx ON ONLY public.fact_measurements_2025w38 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p0 :: fact_measurements_2025w38_p0_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p0_device_id_ts_bucket_idx ON public.fact_measurements_2025w38_p0 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p0 :: fact_measurements_2025w38_p0_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w38_p0_pkey ON public.fact_measurements_2025w38_p0 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p0 :: fact_measurements_2025w38_p0_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p0_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w38_p0 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38_p0 :: fact_measurements_2025w38_p0_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p0_ts_bucket_idx ON public.fact_measurements_2025w38_p0 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p0 :: idx_fm_dev_t_2025w38_p0
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w38_p0 ON public.fact_measurements_2025w38_p0 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p0 :: idx_fm_s_t_d_m_2025w38_p0
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w38_p0 ON public.fact_measurements_2025w38_p0 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38_p1 :: fact_measurements_2025w38_p1_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p1_device_id_ts_bucket_idx ON public.fact_measurements_2025w38_p1 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p1 :: fact_measurements_2025w38_p1_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w38_p1_pkey ON public.fact_measurements_2025w38_p1 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p1 :: fact_measurements_2025w38_p1_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p1_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w38_p1 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38_p1 :: fact_measurements_2025w38_p1_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p1_ts_bucket_idx ON public.fact_measurements_2025w38_p1 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p1 :: idx_fm_dev_t_2025w38_p1
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w38_p1 ON public.fact_measurements_2025w38_p1 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p1 :: idx_fm_s_t_d_m_2025w38_p1
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w38_p1 ON public.fact_measurements_2025w38_p1 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38_p10 :: fact_measurements_2025w38_p10_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p10_device_id_ts_bucket_idx ON public.fact_measurements_2025w38_p10 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p10 :: fact_measurements_2025w38_p10_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w38_p10_pkey ON public.fact_measurements_2025w38_p10 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p10 :: fact_measurements_2025w38_p10_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p10_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w38_p10 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38_p10 :: fact_measurements_2025w38_p10_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p10_ts_bucket_idx ON public.fact_measurements_2025w38_p10 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p10 :: idx_fm_dev_t_2025w38_p10
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w38_p10 ON public.fact_measurements_2025w38_p10 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p10 :: idx_fm_s_t_d_m_2025w38_p10
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w38_p10 ON public.fact_measurements_2025w38_p10 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38_p11 :: fact_measurements_2025w38_p11_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p11_device_id_ts_bucket_idx ON public.fact_measurements_2025w38_p11 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p11 :: fact_measurements_2025w38_p11_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w38_p11_pkey ON public.fact_measurements_2025w38_p11 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p11 :: fact_measurements_2025w38_p11_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p11_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w38_p11 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38_p11 :: fact_measurements_2025w38_p11_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p11_ts_bucket_idx ON public.fact_measurements_2025w38_p11 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p11 :: idx_fm_dev_t_2025w38_p11
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w38_p11 ON public.fact_measurements_2025w38_p11 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p11 :: idx_fm_s_t_d_m_2025w38_p11
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w38_p11 ON public.fact_measurements_2025w38_p11 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38_p12 :: fact_measurements_2025w38_p12_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p12_device_id_ts_bucket_idx ON public.fact_measurements_2025w38_p12 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p12 :: fact_measurements_2025w38_p12_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w38_p12_pkey ON public.fact_measurements_2025w38_p12 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p12 :: fact_measurements_2025w38_p12_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p12_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w38_p12 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38_p12 :: fact_measurements_2025w38_p12_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p12_ts_bucket_idx ON public.fact_measurements_2025w38_p12 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p12 :: idx_fm_dev_t_2025w38_p12
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w38_p12 ON public.fact_measurements_2025w38_p12 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p12 :: idx_fm_s_t_d_m_2025w38_p12
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w38_p12 ON public.fact_measurements_2025w38_p12 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38_p13 :: fact_measurements_2025w38_p13_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p13_device_id_ts_bucket_idx ON public.fact_measurements_2025w38_p13 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p13 :: fact_measurements_2025w38_p13_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w38_p13_pkey ON public.fact_measurements_2025w38_p13 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p13 :: fact_measurements_2025w38_p13_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p13_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w38_p13 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38_p13 :: fact_measurements_2025w38_p13_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p13_ts_bucket_idx ON public.fact_measurements_2025w38_p13 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p13 :: idx_fm_dev_t_2025w38_p13
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w38_p13 ON public.fact_measurements_2025w38_p13 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p13 :: idx_fm_s_t_d_m_2025w38_p13
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w38_p13 ON public.fact_measurements_2025w38_p13 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38_p14 :: fact_measurements_2025w38_p14_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p14_device_id_ts_bucket_idx ON public.fact_measurements_2025w38_p14 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p14 :: fact_measurements_2025w38_p14_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w38_p14_pkey ON public.fact_measurements_2025w38_p14 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p14 :: fact_measurements_2025w38_p14_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p14_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w38_p14 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38_p14 :: fact_measurements_2025w38_p14_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p14_ts_bucket_idx ON public.fact_measurements_2025w38_p14 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p14 :: idx_fm_dev_t_2025w38_p14
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w38_p14 ON public.fact_measurements_2025w38_p14 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p14 :: idx_fm_s_t_d_m_2025w38_p14
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w38_p14 ON public.fact_measurements_2025w38_p14 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38_p15 :: fact_measurements_2025w38_p15_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p15_device_id_ts_bucket_idx ON public.fact_measurements_2025w38_p15 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p15 :: fact_measurements_2025w38_p15_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w38_p15_pkey ON public.fact_measurements_2025w38_p15 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p15 :: fact_measurements_2025w38_p15_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p15_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w38_p15 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38_p15 :: fact_measurements_2025w38_p15_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p15_ts_bucket_idx ON public.fact_measurements_2025w38_p15 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p15 :: idx_fm_dev_t_2025w38_p15
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w38_p15 ON public.fact_measurements_2025w38_p15 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p15 :: idx_fm_s_t_d_m_2025w38_p15
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w38_p15 ON public.fact_measurements_2025w38_p15 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38_p2 :: fact_measurements_2025w38_p2_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p2_device_id_ts_bucket_idx ON public.fact_measurements_2025w38_p2 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p2 :: fact_measurements_2025w38_p2_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w38_p2_pkey ON public.fact_measurements_2025w38_p2 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p2 :: fact_measurements_2025w38_p2_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p2_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w38_p2 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38_p2 :: fact_measurements_2025w38_p2_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p2_ts_bucket_idx ON public.fact_measurements_2025w38_p2 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p2 :: idx_fm_dev_t_2025w38_p2
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w38_p2 ON public.fact_measurements_2025w38_p2 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p2 :: idx_fm_s_t_d_m_2025w38_p2
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w38_p2 ON public.fact_measurements_2025w38_p2 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38_p3 :: fact_measurements_2025w38_p3_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p3_device_id_ts_bucket_idx ON public.fact_measurements_2025w38_p3 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p3 :: fact_measurements_2025w38_p3_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w38_p3_pkey ON public.fact_measurements_2025w38_p3 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p3 :: fact_measurements_2025w38_p3_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p3_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w38_p3 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38_p3 :: fact_measurements_2025w38_p3_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p3_ts_bucket_idx ON public.fact_measurements_2025w38_p3 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p3 :: idx_fm_dev_t_2025w38_p3
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w38_p3 ON public.fact_measurements_2025w38_p3 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p3 :: idx_fm_s_t_d_m_2025w38_p3
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w38_p3 ON public.fact_measurements_2025w38_p3 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38_p4 :: fact_measurements_2025w38_p4_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p4_device_id_ts_bucket_idx ON public.fact_measurements_2025w38_p4 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p4 :: fact_measurements_2025w38_p4_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w38_p4_pkey ON public.fact_measurements_2025w38_p4 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p4 :: fact_measurements_2025w38_p4_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p4_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w38_p4 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38_p4 :: fact_measurements_2025w38_p4_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p4_ts_bucket_idx ON public.fact_measurements_2025w38_p4 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p4 :: idx_fm_dev_t_2025w38_p4
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w38_p4 ON public.fact_measurements_2025w38_p4 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p4 :: idx_fm_s_t_d_m_2025w38_p4
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w38_p4 ON public.fact_measurements_2025w38_p4 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38_p5 :: fact_measurements_2025w38_p5_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p5_device_id_ts_bucket_idx ON public.fact_measurements_2025w38_p5 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p5 :: fact_measurements_2025w38_p5_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w38_p5_pkey ON public.fact_measurements_2025w38_p5 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p5 :: fact_measurements_2025w38_p5_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p5_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w38_p5 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38_p5 :: fact_measurements_2025w38_p5_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p5_ts_bucket_idx ON public.fact_measurements_2025w38_p5 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p5 :: idx_fm_dev_t_2025w38_p5
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w38_p5 ON public.fact_measurements_2025w38_p5 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p5 :: idx_fm_s_t_d_m_2025w38_p5
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w38_p5 ON public.fact_measurements_2025w38_p5 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38_p6 :: fact_measurements_2025w38_p6_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p6_device_id_ts_bucket_idx ON public.fact_measurements_2025w38_p6 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p6 :: fact_measurements_2025w38_p6_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w38_p6_pkey ON public.fact_measurements_2025w38_p6 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p6 :: fact_measurements_2025w38_p6_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p6_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w38_p6 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38_p6 :: fact_measurements_2025w38_p6_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p6_ts_bucket_idx ON public.fact_measurements_2025w38_p6 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p6 :: idx_fm_dev_t_2025w38_p6
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w38_p6 ON public.fact_measurements_2025w38_p6 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p6 :: idx_fm_s_t_d_m_2025w38_p6
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w38_p6 ON public.fact_measurements_2025w38_p6 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38_p7 :: fact_measurements_2025w38_p7_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p7_device_id_ts_bucket_idx ON public.fact_measurements_2025w38_p7 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p7 :: fact_measurements_2025w38_p7_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w38_p7_pkey ON public.fact_measurements_2025w38_p7 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p7 :: fact_measurements_2025w38_p7_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p7_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w38_p7 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38_p7 :: fact_measurements_2025w38_p7_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p7_ts_bucket_idx ON public.fact_measurements_2025w38_p7 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p7 :: idx_fm_dev_t_2025w38_p7
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w38_p7 ON public.fact_measurements_2025w38_p7 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p7 :: idx_fm_s_t_d_m_2025w38_p7
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w38_p7 ON public.fact_measurements_2025w38_p7 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38_p8 :: fact_measurements_2025w38_p8_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p8_device_id_ts_bucket_idx ON public.fact_measurements_2025w38_p8 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p8 :: fact_measurements_2025w38_p8_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w38_p8_pkey ON public.fact_measurements_2025w38_p8 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p8 :: fact_measurements_2025w38_p8_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p8_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w38_p8 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38_p8 :: fact_measurements_2025w38_p8_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p8_ts_bucket_idx ON public.fact_measurements_2025w38_p8 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p8 :: idx_fm_dev_t_2025w38_p8
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w38_p8 ON public.fact_measurements_2025w38_p8 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p8 :: idx_fm_s_t_d_m_2025w38_p8
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w38_p8 ON public.fact_measurements_2025w38_p8 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38_p9 :: fact_measurements_2025w38_p9_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p9_device_id_ts_bucket_idx ON public.fact_measurements_2025w38_p9 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p9 :: fact_measurements_2025w38_p9_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w38_p9_pkey ON public.fact_measurements_2025w38_p9 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p9 :: fact_measurements_2025w38_p9_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p9_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w38_p9 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w38_p9 :: fact_measurements_2025w38_p9_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w38_p9_ts_bucket_idx ON public.fact_measurements_2025w38_p9 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p9 :: idx_fm_dev_t_2025w38_p9
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w38_p9 ON public.fact_measurements_2025w38_p9 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w38_p9 :: idx_fm_s_t_d_m_2025w38_p9
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w38_p9 ON public.fact_measurements_2025w38_p9 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39 :: fact_measurements_2025w39_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_device_id_ts_bucket_idx ON ONLY public.fact_measurements_2025w39 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39 :: fact_measurements_2025w39_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w39_pkey ON ONLY public.fact_measurements_2025w39 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39 :: fact_measurements_2025w39_station_id_ts_bucket_device_id_me_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_station_id_ts_bucket_device_id_me_idx ON ONLY public.fact_measurements_2025w39 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39 :: fact_measurements_2025w39_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_ts_bucket_idx ON ONLY public.fact_measurements_2025w39 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p0 :: fact_measurements_2025w39_p0_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p0_device_id_ts_bucket_idx ON public.fact_measurements_2025w39_p0 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p0 :: fact_measurements_2025w39_p0_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w39_p0_pkey ON public.fact_measurements_2025w39_p0 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p0 :: fact_measurements_2025w39_p0_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p0_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w39_p0 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39_p0 :: fact_measurements_2025w39_p0_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p0_ts_bucket_idx ON public.fact_measurements_2025w39_p0 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p0 :: idx_fm_dev_t_2025w39_p0
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w39_p0 ON public.fact_measurements_2025w39_p0 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p0 :: idx_fm_s_t_d_m_2025w39_p0
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w39_p0 ON public.fact_measurements_2025w39_p0 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39_p1 :: fact_measurements_2025w39_p1_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p1_device_id_ts_bucket_idx ON public.fact_measurements_2025w39_p1 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p1 :: fact_measurements_2025w39_p1_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w39_p1_pkey ON public.fact_measurements_2025w39_p1 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p1 :: fact_measurements_2025w39_p1_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p1_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w39_p1 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39_p1 :: fact_measurements_2025w39_p1_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p1_ts_bucket_idx ON public.fact_measurements_2025w39_p1 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p1 :: idx_fm_dev_t_2025w39_p1
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w39_p1 ON public.fact_measurements_2025w39_p1 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p1 :: idx_fm_s_t_d_m_2025w39_p1
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w39_p1 ON public.fact_measurements_2025w39_p1 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39_p10 :: fact_measurements_2025w39_p10_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p10_device_id_ts_bucket_idx ON public.fact_measurements_2025w39_p10 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p10 :: fact_measurements_2025w39_p10_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w39_p10_pkey ON public.fact_measurements_2025w39_p10 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p10 :: fact_measurements_2025w39_p10_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p10_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w39_p10 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39_p10 :: fact_measurements_2025w39_p10_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p10_ts_bucket_idx ON public.fact_measurements_2025w39_p10 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p10 :: idx_fm_dev_t_2025w39_p10
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w39_p10 ON public.fact_measurements_2025w39_p10 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p10 :: idx_fm_s_t_d_m_2025w39_p10
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w39_p10 ON public.fact_measurements_2025w39_p10 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39_p11 :: fact_measurements_2025w39_p11_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p11_device_id_ts_bucket_idx ON public.fact_measurements_2025w39_p11 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p11 :: fact_measurements_2025w39_p11_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w39_p11_pkey ON public.fact_measurements_2025w39_p11 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p11 :: fact_measurements_2025w39_p11_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p11_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w39_p11 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39_p11 :: fact_measurements_2025w39_p11_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p11_ts_bucket_idx ON public.fact_measurements_2025w39_p11 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p11 :: idx_fm_dev_t_2025w39_p11
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w39_p11 ON public.fact_measurements_2025w39_p11 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p11 :: idx_fm_s_t_d_m_2025w39_p11
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w39_p11 ON public.fact_measurements_2025w39_p11 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39_p12 :: fact_measurements_2025w39_p12_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p12_device_id_ts_bucket_idx ON public.fact_measurements_2025w39_p12 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p12 :: fact_measurements_2025w39_p12_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w39_p12_pkey ON public.fact_measurements_2025w39_p12 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p12 :: fact_measurements_2025w39_p12_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p12_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w39_p12 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39_p12 :: fact_measurements_2025w39_p12_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p12_ts_bucket_idx ON public.fact_measurements_2025w39_p12 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p12 :: idx_fm_dev_t_2025w39_p12
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w39_p12 ON public.fact_measurements_2025w39_p12 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p12 :: idx_fm_s_t_d_m_2025w39_p12
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w39_p12 ON public.fact_measurements_2025w39_p12 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39_p13 :: fact_measurements_2025w39_p13_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p13_device_id_ts_bucket_idx ON public.fact_measurements_2025w39_p13 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p13 :: fact_measurements_2025w39_p13_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w39_p13_pkey ON public.fact_measurements_2025w39_p13 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p13 :: fact_measurements_2025w39_p13_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p13_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w39_p13 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39_p13 :: fact_measurements_2025w39_p13_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p13_ts_bucket_idx ON public.fact_measurements_2025w39_p13 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p13 :: idx_fm_dev_t_2025w39_p13
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w39_p13 ON public.fact_measurements_2025w39_p13 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p13 :: idx_fm_s_t_d_m_2025w39_p13
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w39_p13 ON public.fact_measurements_2025w39_p13 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39_p14 :: fact_measurements_2025w39_p14_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p14_device_id_ts_bucket_idx ON public.fact_measurements_2025w39_p14 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p14 :: fact_measurements_2025w39_p14_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w39_p14_pkey ON public.fact_measurements_2025w39_p14 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p14 :: fact_measurements_2025w39_p14_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p14_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w39_p14 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39_p14 :: fact_measurements_2025w39_p14_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p14_ts_bucket_idx ON public.fact_measurements_2025w39_p14 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p14 :: idx_fm_dev_t_2025w39_p14
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w39_p14 ON public.fact_measurements_2025w39_p14 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p14 :: idx_fm_s_t_d_m_2025w39_p14
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w39_p14 ON public.fact_measurements_2025w39_p14 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39_p15 :: fact_measurements_2025w39_p15_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p15_device_id_ts_bucket_idx ON public.fact_measurements_2025w39_p15 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p15 :: fact_measurements_2025w39_p15_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w39_p15_pkey ON public.fact_measurements_2025w39_p15 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p15 :: fact_measurements_2025w39_p15_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p15_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w39_p15 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39_p15 :: fact_measurements_2025w39_p15_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p15_ts_bucket_idx ON public.fact_measurements_2025w39_p15 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p15 :: idx_fm_dev_t_2025w39_p15
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w39_p15 ON public.fact_measurements_2025w39_p15 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p15 :: idx_fm_s_t_d_m_2025w39_p15
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w39_p15 ON public.fact_measurements_2025w39_p15 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39_p2 :: fact_measurements_2025w39_p2_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p2_device_id_ts_bucket_idx ON public.fact_measurements_2025w39_p2 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p2 :: fact_measurements_2025w39_p2_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w39_p2_pkey ON public.fact_measurements_2025w39_p2 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p2 :: fact_measurements_2025w39_p2_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p2_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w39_p2 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39_p2 :: fact_measurements_2025w39_p2_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p2_ts_bucket_idx ON public.fact_measurements_2025w39_p2 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p2 :: idx_fm_dev_t_2025w39_p2
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w39_p2 ON public.fact_measurements_2025w39_p2 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p2 :: idx_fm_s_t_d_m_2025w39_p2
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w39_p2 ON public.fact_measurements_2025w39_p2 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39_p3 :: fact_measurements_2025w39_p3_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p3_device_id_ts_bucket_idx ON public.fact_measurements_2025w39_p3 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p3 :: fact_measurements_2025w39_p3_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w39_p3_pkey ON public.fact_measurements_2025w39_p3 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p3 :: fact_measurements_2025w39_p3_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p3_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w39_p3 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39_p3 :: fact_measurements_2025w39_p3_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p3_ts_bucket_idx ON public.fact_measurements_2025w39_p3 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p3 :: idx_fm_dev_t_2025w39_p3
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w39_p3 ON public.fact_measurements_2025w39_p3 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p3 :: idx_fm_s_t_d_m_2025w39_p3
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w39_p3 ON public.fact_measurements_2025w39_p3 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39_p4 :: fact_measurements_2025w39_p4_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p4_device_id_ts_bucket_idx ON public.fact_measurements_2025w39_p4 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p4 :: fact_measurements_2025w39_p4_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w39_p4_pkey ON public.fact_measurements_2025w39_p4 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p4 :: fact_measurements_2025w39_p4_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p4_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w39_p4 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39_p4 :: fact_measurements_2025w39_p4_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p4_ts_bucket_idx ON public.fact_measurements_2025w39_p4 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p4 :: idx_fm_dev_t_2025w39_p4
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w39_p4 ON public.fact_measurements_2025w39_p4 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p4 :: idx_fm_s_t_d_m_2025w39_p4
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w39_p4 ON public.fact_measurements_2025w39_p4 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39_p5 :: fact_measurements_2025w39_p5_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p5_device_id_ts_bucket_idx ON public.fact_measurements_2025w39_p5 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p5 :: fact_measurements_2025w39_p5_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w39_p5_pkey ON public.fact_measurements_2025w39_p5 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p5 :: fact_measurements_2025w39_p5_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p5_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w39_p5 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39_p5 :: fact_measurements_2025w39_p5_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p5_ts_bucket_idx ON public.fact_measurements_2025w39_p5 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p5 :: idx_fm_dev_t_2025w39_p5
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w39_p5 ON public.fact_measurements_2025w39_p5 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p5 :: idx_fm_s_t_d_m_2025w39_p5
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w39_p5 ON public.fact_measurements_2025w39_p5 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39_p6 :: fact_measurements_2025w39_p6_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p6_device_id_ts_bucket_idx ON public.fact_measurements_2025w39_p6 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p6 :: fact_measurements_2025w39_p6_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w39_p6_pkey ON public.fact_measurements_2025w39_p6 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p6 :: fact_measurements_2025w39_p6_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p6_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w39_p6 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39_p6 :: fact_measurements_2025w39_p6_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p6_ts_bucket_idx ON public.fact_measurements_2025w39_p6 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p6 :: idx_fm_dev_t_2025w39_p6
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w39_p6 ON public.fact_measurements_2025w39_p6 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p6 :: idx_fm_s_t_d_m_2025w39_p6
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w39_p6 ON public.fact_measurements_2025w39_p6 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39_p7 :: fact_measurements_2025w39_p7_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p7_device_id_ts_bucket_idx ON public.fact_measurements_2025w39_p7 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p7 :: fact_measurements_2025w39_p7_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w39_p7_pkey ON public.fact_measurements_2025w39_p7 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p7 :: fact_measurements_2025w39_p7_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p7_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w39_p7 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39_p7 :: fact_measurements_2025w39_p7_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p7_ts_bucket_idx ON public.fact_measurements_2025w39_p7 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p7 :: idx_fm_dev_t_2025w39_p7
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w39_p7 ON public.fact_measurements_2025w39_p7 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p7 :: idx_fm_s_t_d_m_2025w39_p7
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w39_p7 ON public.fact_measurements_2025w39_p7 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39_p8 :: fact_measurements_2025w39_p8_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p8_device_id_ts_bucket_idx ON public.fact_measurements_2025w39_p8 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p8 :: fact_measurements_2025w39_p8_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w39_p8_pkey ON public.fact_measurements_2025w39_p8 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p8 :: fact_measurements_2025w39_p8_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p8_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w39_p8 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39_p8 :: fact_measurements_2025w39_p8_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p8_ts_bucket_idx ON public.fact_measurements_2025w39_p8 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p8 :: idx_fm_dev_t_2025w39_p8
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w39_p8 ON public.fact_measurements_2025w39_p8 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p8 :: idx_fm_s_t_d_m_2025w39_p8
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w39_p8 ON public.fact_measurements_2025w39_p8 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39_p9 :: fact_measurements_2025w39_p9_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p9_device_id_ts_bucket_idx ON public.fact_measurements_2025w39_p9 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p9 :: fact_measurements_2025w39_p9_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w39_p9_pkey ON public.fact_measurements_2025w39_p9 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p9 :: fact_measurements_2025w39_p9_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p9_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w39_p9 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w39_p9 :: fact_measurements_2025w39_p9_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w39_p9_ts_bucket_idx ON public.fact_measurements_2025w39_p9 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p9 :: idx_fm_dev_t_2025w39_p9
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w39_p9 ON public.fact_measurements_2025w39_p9 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w39_p9 :: idx_fm_s_t_d_m_2025w39_p9
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w39_p9 ON public.fact_measurements_2025w39_p9 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40 :: fact_measurements_2025w40_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_device_id_ts_bucket_idx ON ONLY public.fact_measurements_2025w40 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40 :: fact_measurements_2025w40_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w40_pkey ON ONLY public.fact_measurements_2025w40 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40 :: fact_measurements_2025w40_station_id_ts_bucket_device_id_me_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_station_id_ts_bucket_device_id_me_idx ON ONLY public.fact_measurements_2025w40 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40 :: fact_measurements_2025w40_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_ts_bucket_idx ON ONLY public.fact_measurements_2025w40 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p0 :: fact_measurements_2025w40_p0_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p0_device_id_ts_bucket_idx ON public.fact_measurements_2025w40_p0 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p0 :: fact_measurements_2025w40_p0_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w40_p0_pkey ON public.fact_measurements_2025w40_p0 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p0 :: fact_measurements_2025w40_p0_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p0_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w40_p0 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40_p0 :: fact_measurements_2025w40_p0_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p0_ts_bucket_idx ON public.fact_measurements_2025w40_p0 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p0 :: idx_fm_dev_t_2025w40_p0
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w40_p0 ON public.fact_measurements_2025w40_p0 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p0 :: idx_fm_s_t_d_m_2025w40_p0
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w40_p0 ON public.fact_measurements_2025w40_p0 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40_p1 :: fact_measurements_2025w40_p1_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p1_device_id_ts_bucket_idx ON public.fact_measurements_2025w40_p1 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p1 :: fact_measurements_2025w40_p1_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w40_p1_pkey ON public.fact_measurements_2025w40_p1 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p1 :: fact_measurements_2025w40_p1_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p1_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w40_p1 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40_p1 :: fact_measurements_2025w40_p1_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p1_ts_bucket_idx ON public.fact_measurements_2025w40_p1 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p1 :: idx_fm_dev_t_2025w40_p1
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w40_p1 ON public.fact_measurements_2025w40_p1 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p1 :: idx_fm_s_t_d_m_2025w40_p1
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w40_p1 ON public.fact_measurements_2025w40_p1 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40_p10 :: fact_measurements_2025w40_p10_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p10_device_id_ts_bucket_idx ON public.fact_measurements_2025w40_p10 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p10 :: fact_measurements_2025w40_p10_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w40_p10_pkey ON public.fact_measurements_2025w40_p10 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p10 :: fact_measurements_2025w40_p10_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p10_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w40_p10 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40_p10 :: fact_measurements_2025w40_p10_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p10_ts_bucket_idx ON public.fact_measurements_2025w40_p10 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p10 :: idx_fm_dev_t_2025w40_p10
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w40_p10 ON public.fact_measurements_2025w40_p10 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p10 :: idx_fm_s_t_d_m_2025w40_p10
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w40_p10 ON public.fact_measurements_2025w40_p10 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40_p11 :: fact_measurements_2025w40_p11_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p11_device_id_ts_bucket_idx ON public.fact_measurements_2025w40_p11 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p11 :: fact_measurements_2025w40_p11_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w40_p11_pkey ON public.fact_measurements_2025w40_p11 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p11 :: fact_measurements_2025w40_p11_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p11_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w40_p11 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40_p11 :: fact_measurements_2025w40_p11_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p11_ts_bucket_idx ON public.fact_measurements_2025w40_p11 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p11 :: idx_fm_dev_t_2025w40_p11
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w40_p11 ON public.fact_measurements_2025w40_p11 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p11 :: idx_fm_s_t_d_m_2025w40_p11
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w40_p11 ON public.fact_measurements_2025w40_p11 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40_p12 :: fact_measurements_2025w40_p12_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p12_device_id_ts_bucket_idx ON public.fact_measurements_2025w40_p12 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p12 :: fact_measurements_2025w40_p12_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w40_p12_pkey ON public.fact_measurements_2025w40_p12 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p12 :: fact_measurements_2025w40_p12_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p12_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w40_p12 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40_p12 :: fact_measurements_2025w40_p12_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p12_ts_bucket_idx ON public.fact_measurements_2025w40_p12 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p12 :: idx_fm_dev_t_2025w40_p12
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w40_p12 ON public.fact_measurements_2025w40_p12 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p12 :: idx_fm_s_t_d_m_2025w40_p12
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w40_p12 ON public.fact_measurements_2025w40_p12 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40_p13 :: fact_measurements_2025w40_p13_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p13_device_id_ts_bucket_idx ON public.fact_measurements_2025w40_p13 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p13 :: fact_measurements_2025w40_p13_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w40_p13_pkey ON public.fact_measurements_2025w40_p13 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p13 :: fact_measurements_2025w40_p13_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p13_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w40_p13 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40_p13 :: fact_measurements_2025w40_p13_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p13_ts_bucket_idx ON public.fact_measurements_2025w40_p13 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p13 :: idx_fm_dev_t_2025w40_p13
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w40_p13 ON public.fact_measurements_2025w40_p13 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p13 :: idx_fm_s_t_d_m_2025w40_p13
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w40_p13 ON public.fact_measurements_2025w40_p13 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40_p14 :: fact_measurements_2025w40_p14_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p14_device_id_ts_bucket_idx ON public.fact_measurements_2025w40_p14 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p14 :: fact_measurements_2025w40_p14_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w40_p14_pkey ON public.fact_measurements_2025w40_p14 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p14 :: fact_measurements_2025w40_p14_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p14_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w40_p14 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40_p14 :: fact_measurements_2025w40_p14_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p14_ts_bucket_idx ON public.fact_measurements_2025w40_p14 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p14 :: idx_fm_dev_t_2025w40_p14
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w40_p14 ON public.fact_measurements_2025w40_p14 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p14 :: idx_fm_s_t_d_m_2025w40_p14
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w40_p14 ON public.fact_measurements_2025w40_p14 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40_p15 :: fact_measurements_2025w40_p15_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p15_device_id_ts_bucket_idx ON public.fact_measurements_2025w40_p15 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p15 :: fact_measurements_2025w40_p15_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w40_p15_pkey ON public.fact_measurements_2025w40_p15 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p15 :: fact_measurements_2025w40_p15_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p15_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w40_p15 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40_p15 :: fact_measurements_2025w40_p15_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p15_ts_bucket_idx ON public.fact_measurements_2025w40_p15 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p15 :: idx_fm_dev_t_2025w40_p15
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w40_p15 ON public.fact_measurements_2025w40_p15 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p15 :: idx_fm_s_t_d_m_2025w40_p15
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w40_p15 ON public.fact_measurements_2025w40_p15 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40_p2 :: fact_measurements_2025w40_p2_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p2_device_id_ts_bucket_idx ON public.fact_measurements_2025w40_p2 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p2 :: fact_measurements_2025w40_p2_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w40_p2_pkey ON public.fact_measurements_2025w40_p2 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p2 :: fact_measurements_2025w40_p2_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p2_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w40_p2 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40_p2 :: fact_measurements_2025w40_p2_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p2_ts_bucket_idx ON public.fact_measurements_2025w40_p2 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p2 :: idx_fm_dev_t_2025w40_p2
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w40_p2 ON public.fact_measurements_2025w40_p2 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p2 :: idx_fm_s_t_d_m_2025w40_p2
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w40_p2 ON public.fact_measurements_2025w40_p2 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40_p3 :: fact_measurements_2025w40_p3_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p3_device_id_ts_bucket_idx ON public.fact_measurements_2025w40_p3 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p3 :: fact_measurements_2025w40_p3_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w40_p3_pkey ON public.fact_measurements_2025w40_p3 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p3 :: fact_measurements_2025w40_p3_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p3_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w40_p3 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40_p3 :: fact_measurements_2025w40_p3_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p3_ts_bucket_idx ON public.fact_measurements_2025w40_p3 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p3 :: idx_fm_dev_t_2025w40_p3
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w40_p3 ON public.fact_measurements_2025w40_p3 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p3 :: idx_fm_s_t_d_m_2025w40_p3
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w40_p3 ON public.fact_measurements_2025w40_p3 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40_p4 :: fact_measurements_2025w40_p4_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p4_device_id_ts_bucket_idx ON public.fact_measurements_2025w40_p4 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p4 :: fact_measurements_2025w40_p4_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w40_p4_pkey ON public.fact_measurements_2025w40_p4 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p4 :: fact_measurements_2025w40_p4_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p4_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w40_p4 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40_p4 :: fact_measurements_2025w40_p4_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p4_ts_bucket_idx ON public.fact_measurements_2025w40_p4 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p4 :: idx_fm_dev_t_2025w40_p4
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w40_p4 ON public.fact_measurements_2025w40_p4 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p4 :: idx_fm_s_t_d_m_2025w40_p4
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w40_p4 ON public.fact_measurements_2025w40_p4 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40_p5 :: fact_measurements_2025w40_p5_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p5_device_id_ts_bucket_idx ON public.fact_measurements_2025w40_p5 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p5 :: fact_measurements_2025w40_p5_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w40_p5_pkey ON public.fact_measurements_2025w40_p5 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p5 :: fact_measurements_2025w40_p5_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p5_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w40_p5 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40_p5 :: fact_measurements_2025w40_p5_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p5_ts_bucket_idx ON public.fact_measurements_2025w40_p5 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p5 :: idx_fm_dev_t_2025w40_p5
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w40_p5 ON public.fact_measurements_2025w40_p5 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p5 :: idx_fm_s_t_d_m_2025w40_p5
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w40_p5 ON public.fact_measurements_2025w40_p5 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40_p6 :: fact_measurements_2025w40_p6_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p6_device_id_ts_bucket_idx ON public.fact_measurements_2025w40_p6 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p6 :: fact_measurements_2025w40_p6_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w40_p6_pkey ON public.fact_measurements_2025w40_p6 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p6 :: fact_measurements_2025w40_p6_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p6_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w40_p6 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40_p6 :: fact_measurements_2025w40_p6_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p6_ts_bucket_idx ON public.fact_measurements_2025w40_p6 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p6 :: idx_fm_dev_t_2025w40_p6
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w40_p6 ON public.fact_measurements_2025w40_p6 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p6 :: idx_fm_s_t_d_m_2025w40_p6
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w40_p6 ON public.fact_measurements_2025w40_p6 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40_p7 :: fact_measurements_2025w40_p7_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p7_device_id_ts_bucket_idx ON public.fact_measurements_2025w40_p7 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p7 :: fact_measurements_2025w40_p7_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w40_p7_pkey ON public.fact_measurements_2025w40_p7 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p7 :: fact_measurements_2025w40_p7_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p7_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w40_p7 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40_p7 :: fact_measurements_2025w40_p7_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p7_ts_bucket_idx ON public.fact_measurements_2025w40_p7 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p7 :: idx_fm_dev_t_2025w40_p7
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w40_p7 ON public.fact_measurements_2025w40_p7 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p7 :: idx_fm_s_t_d_m_2025w40_p7
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w40_p7 ON public.fact_measurements_2025w40_p7 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40_p8 :: fact_measurements_2025w40_p8_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p8_device_id_ts_bucket_idx ON public.fact_measurements_2025w40_p8 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p8 :: fact_measurements_2025w40_p8_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w40_p8_pkey ON public.fact_measurements_2025w40_p8 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p8 :: fact_measurements_2025w40_p8_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p8_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w40_p8 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40_p8 :: fact_measurements_2025w40_p8_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p8_ts_bucket_idx ON public.fact_measurements_2025w40_p8 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p8 :: idx_fm_dev_t_2025w40_p8
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w40_p8 ON public.fact_measurements_2025w40_p8 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p8 :: idx_fm_s_t_d_m_2025w40_p8
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w40_p8 ON public.fact_measurements_2025w40_p8 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40_p9 :: fact_measurements_2025w40_p9_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p9_device_id_ts_bucket_idx ON public.fact_measurements_2025w40_p9 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p9 :: fact_measurements_2025w40_p9_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w40_p9_pkey ON public.fact_measurements_2025w40_p9 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p9 :: fact_measurements_2025w40_p9_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p9_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w40_p9 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w40_p9 :: fact_measurements_2025w40_p9_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w40_p9_ts_bucket_idx ON public.fact_measurements_2025w40_p9 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p9 :: idx_fm_dev_t_2025w40_p9
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w40_p9 ON public.fact_measurements_2025w40_p9 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w40_p9 :: idx_fm_s_t_d_m_2025w40_p9
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w40_p9 ON public.fact_measurements_2025w40_p9 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41 :: fact_measurements_2025w41_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_device_id_ts_bucket_idx ON ONLY public.fact_measurements_2025w41 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41 :: fact_measurements_2025w41_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w41_pkey ON ONLY public.fact_measurements_2025w41 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41 :: fact_measurements_2025w41_station_id_ts_bucket_device_id_me_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_station_id_ts_bucket_device_id_me_idx ON ONLY public.fact_measurements_2025w41 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41 :: fact_measurements_2025w41_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_ts_bucket_idx ON ONLY public.fact_measurements_2025w41 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p0 :: fact_measurements_2025w41_p0_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p0_device_id_ts_bucket_idx ON public.fact_measurements_2025w41_p0 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p0 :: fact_measurements_2025w41_p0_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w41_p0_pkey ON public.fact_measurements_2025w41_p0 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p0 :: fact_measurements_2025w41_p0_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p0_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w41_p0 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41_p0 :: fact_measurements_2025w41_p0_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p0_ts_bucket_idx ON public.fact_measurements_2025w41_p0 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p0 :: idx_fm_dev_t_2025w41_p0
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w41_p0 ON public.fact_measurements_2025w41_p0 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p0 :: idx_fm_s_t_d_m_2025w41_p0
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w41_p0 ON public.fact_measurements_2025w41_p0 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41_p1 :: fact_measurements_2025w41_p1_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p1_device_id_ts_bucket_idx ON public.fact_measurements_2025w41_p1 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p1 :: fact_measurements_2025w41_p1_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w41_p1_pkey ON public.fact_measurements_2025w41_p1 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p1 :: fact_measurements_2025w41_p1_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p1_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w41_p1 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41_p1 :: fact_measurements_2025w41_p1_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p1_ts_bucket_idx ON public.fact_measurements_2025w41_p1 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p1 :: idx_fm_dev_t_2025w41_p1
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w41_p1 ON public.fact_measurements_2025w41_p1 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p1 :: idx_fm_s_t_d_m_2025w41_p1
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w41_p1 ON public.fact_measurements_2025w41_p1 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41_p10 :: fact_measurements_2025w41_p10_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p10_device_id_ts_bucket_idx ON public.fact_measurements_2025w41_p10 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p10 :: fact_measurements_2025w41_p10_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w41_p10_pkey ON public.fact_measurements_2025w41_p10 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p10 :: fact_measurements_2025w41_p10_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p10_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w41_p10 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41_p10 :: fact_measurements_2025w41_p10_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p10_ts_bucket_idx ON public.fact_measurements_2025w41_p10 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p10 :: idx_fm_dev_t_2025w41_p10
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w41_p10 ON public.fact_measurements_2025w41_p10 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p10 :: idx_fm_s_t_d_m_2025w41_p10
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w41_p10 ON public.fact_measurements_2025w41_p10 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41_p11 :: fact_measurements_2025w41_p11_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p11_device_id_ts_bucket_idx ON public.fact_measurements_2025w41_p11 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p11 :: fact_measurements_2025w41_p11_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w41_p11_pkey ON public.fact_measurements_2025w41_p11 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p11 :: fact_measurements_2025w41_p11_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p11_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w41_p11 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41_p11 :: fact_measurements_2025w41_p11_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p11_ts_bucket_idx ON public.fact_measurements_2025w41_p11 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p11 :: idx_fm_dev_t_2025w41_p11
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w41_p11 ON public.fact_measurements_2025w41_p11 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p11 :: idx_fm_s_t_d_m_2025w41_p11
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w41_p11 ON public.fact_measurements_2025w41_p11 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41_p12 :: fact_measurements_2025w41_p12_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p12_device_id_ts_bucket_idx ON public.fact_measurements_2025w41_p12 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p12 :: fact_measurements_2025w41_p12_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w41_p12_pkey ON public.fact_measurements_2025w41_p12 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p12 :: fact_measurements_2025w41_p12_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p12_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w41_p12 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41_p12 :: fact_measurements_2025w41_p12_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p12_ts_bucket_idx ON public.fact_measurements_2025w41_p12 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p12 :: idx_fm_dev_t_2025w41_p12
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w41_p12 ON public.fact_measurements_2025w41_p12 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p12 :: idx_fm_s_t_d_m_2025w41_p12
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w41_p12 ON public.fact_measurements_2025w41_p12 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41_p13 :: fact_measurements_2025w41_p13_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p13_device_id_ts_bucket_idx ON public.fact_measurements_2025w41_p13 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p13 :: fact_measurements_2025w41_p13_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w41_p13_pkey ON public.fact_measurements_2025w41_p13 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p13 :: fact_measurements_2025w41_p13_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p13_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w41_p13 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41_p13 :: fact_measurements_2025w41_p13_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p13_ts_bucket_idx ON public.fact_measurements_2025w41_p13 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p13 :: idx_fm_dev_t_2025w41_p13
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w41_p13 ON public.fact_measurements_2025w41_p13 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p13 :: idx_fm_s_t_d_m_2025w41_p13
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w41_p13 ON public.fact_measurements_2025w41_p13 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41_p14 :: fact_measurements_2025w41_p14_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p14_device_id_ts_bucket_idx ON public.fact_measurements_2025w41_p14 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p14 :: fact_measurements_2025w41_p14_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w41_p14_pkey ON public.fact_measurements_2025w41_p14 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p14 :: fact_measurements_2025w41_p14_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p14_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w41_p14 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41_p14 :: fact_measurements_2025w41_p14_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p14_ts_bucket_idx ON public.fact_measurements_2025w41_p14 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p14 :: idx_fm_dev_t_2025w41_p14
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w41_p14 ON public.fact_measurements_2025w41_p14 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p14 :: idx_fm_s_t_d_m_2025w41_p14
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w41_p14 ON public.fact_measurements_2025w41_p14 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41_p15 :: fact_measurements_2025w41_p15_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p15_device_id_ts_bucket_idx ON public.fact_measurements_2025w41_p15 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p15 :: fact_measurements_2025w41_p15_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w41_p15_pkey ON public.fact_measurements_2025w41_p15 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p15 :: fact_measurements_2025w41_p15_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p15_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w41_p15 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41_p15 :: fact_measurements_2025w41_p15_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p15_ts_bucket_idx ON public.fact_measurements_2025w41_p15 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p15 :: idx_fm_dev_t_2025w41_p15
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w41_p15 ON public.fact_measurements_2025w41_p15 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p15 :: idx_fm_s_t_d_m_2025w41_p15
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w41_p15 ON public.fact_measurements_2025w41_p15 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41_p2 :: fact_measurements_2025w41_p2_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p2_device_id_ts_bucket_idx ON public.fact_measurements_2025w41_p2 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p2 :: fact_measurements_2025w41_p2_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w41_p2_pkey ON public.fact_measurements_2025w41_p2 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p2 :: fact_measurements_2025w41_p2_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p2_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w41_p2 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41_p2 :: fact_measurements_2025w41_p2_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p2_ts_bucket_idx ON public.fact_measurements_2025w41_p2 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p2 :: idx_fm_dev_t_2025w41_p2
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w41_p2 ON public.fact_measurements_2025w41_p2 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p2 :: idx_fm_s_t_d_m_2025w41_p2
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w41_p2 ON public.fact_measurements_2025w41_p2 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41_p3 :: fact_measurements_2025w41_p3_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p3_device_id_ts_bucket_idx ON public.fact_measurements_2025w41_p3 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p3 :: fact_measurements_2025w41_p3_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w41_p3_pkey ON public.fact_measurements_2025w41_p3 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p3 :: fact_measurements_2025w41_p3_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p3_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w41_p3 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41_p3 :: fact_measurements_2025w41_p3_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p3_ts_bucket_idx ON public.fact_measurements_2025w41_p3 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p3 :: idx_fm_dev_t_2025w41_p3
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w41_p3 ON public.fact_measurements_2025w41_p3 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p3 :: idx_fm_s_t_d_m_2025w41_p3
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w41_p3 ON public.fact_measurements_2025w41_p3 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41_p4 :: fact_measurements_2025w41_p4_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p4_device_id_ts_bucket_idx ON public.fact_measurements_2025w41_p4 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p4 :: fact_measurements_2025w41_p4_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w41_p4_pkey ON public.fact_measurements_2025w41_p4 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p4 :: fact_measurements_2025w41_p4_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p4_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w41_p4 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41_p4 :: fact_measurements_2025w41_p4_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p4_ts_bucket_idx ON public.fact_measurements_2025w41_p4 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p4 :: idx_fm_dev_t_2025w41_p4
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w41_p4 ON public.fact_measurements_2025w41_p4 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p4 :: idx_fm_s_t_d_m_2025w41_p4
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w41_p4 ON public.fact_measurements_2025w41_p4 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41_p5 :: fact_measurements_2025w41_p5_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p5_device_id_ts_bucket_idx ON public.fact_measurements_2025w41_p5 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p5 :: fact_measurements_2025w41_p5_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w41_p5_pkey ON public.fact_measurements_2025w41_p5 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p5 :: fact_measurements_2025w41_p5_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p5_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w41_p5 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41_p5 :: fact_measurements_2025w41_p5_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p5_ts_bucket_idx ON public.fact_measurements_2025w41_p5 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p5 :: idx_fm_dev_t_2025w41_p5
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w41_p5 ON public.fact_measurements_2025w41_p5 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p5 :: idx_fm_s_t_d_m_2025w41_p5
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w41_p5 ON public.fact_measurements_2025w41_p5 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41_p6 :: fact_measurements_2025w41_p6_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p6_device_id_ts_bucket_idx ON public.fact_measurements_2025w41_p6 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p6 :: fact_measurements_2025w41_p6_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w41_p6_pkey ON public.fact_measurements_2025w41_p6 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p6 :: fact_measurements_2025w41_p6_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p6_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w41_p6 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41_p6 :: fact_measurements_2025w41_p6_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p6_ts_bucket_idx ON public.fact_measurements_2025w41_p6 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p6 :: idx_fm_dev_t_2025w41_p6
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w41_p6 ON public.fact_measurements_2025w41_p6 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p6 :: idx_fm_s_t_d_m_2025w41_p6
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w41_p6 ON public.fact_measurements_2025w41_p6 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41_p7 :: fact_measurements_2025w41_p7_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p7_device_id_ts_bucket_idx ON public.fact_measurements_2025w41_p7 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p7 :: fact_measurements_2025w41_p7_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w41_p7_pkey ON public.fact_measurements_2025w41_p7 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p7 :: fact_measurements_2025w41_p7_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p7_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w41_p7 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41_p7 :: fact_measurements_2025w41_p7_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p7_ts_bucket_idx ON public.fact_measurements_2025w41_p7 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p7 :: idx_fm_dev_t_2025w41_p7
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w41_p7 ON public.fact_measurements_2025w41_p7 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p7 :: idx_fm_s_t_d_m_2025w41_p7
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w41_p7 ON public.fact_measurements_2025w41_p7 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41_p8 :: fact_measurements_2025w41_p8_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p8_device_id_ts_bucket_idx ON public.fact_measurements_2025w41_p8 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p8 :: fact_measurements_2025w41_p8_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w41_p8_pkey ON public.fact_measurements_2025w41_p8 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p8 :: fact_measurements_2025w41_p8_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p8_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w41_p8 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41_p8 :: fact_measurements_2025w41_p8_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p8_ts_bucket_idx ON public.fact_measurements_2025w41_p8 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p8 :: idx_fm_dev_t_2025w41_p8
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w41_p8 ON public.fact_measurements_2025w41_p8 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p8 :: idx_fm_s_t_d_m_2025w41_p8
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w41_p8 ON public.fact_measurements_2025w41_p8 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41_p9 :: fact_measurements_2025w41_p9_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p9_device_id_ts_bucket_idx ON public.fact_measurements_2025w41_p9 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p9 :: fact_measurements_2025w41_p9_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w41_p9_pkey ON public.fact_measurements_2025w41_p9 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p9 :: fact_measurements_2025w41_p9_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p9_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w41_p9 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w41_p9 :: fact_measurements_2025w41_p9_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w41_p9_ts_bucket_idx ON public.fact_measurements_2025w41_p9 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p9 :: idx_fm_dev_t_2025w41_p9
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w41_p9 ON public.fact_measurements_2025w41_p9 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w41_p9 :: idx_fm_s_t_d_m_2025w41_p9
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w41_p9 ON public.fact_measurements_2025w41_p9 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42 :: fact_measurements_2025w42_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_device_id_ts_bucket_idx ON ONLY public.fact_measurements_2025w42 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42 :: fact_measurements_2025w42_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w42_pkey ON ONLY public.fact_measurements_2025w42 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42 :: fact_measurements_2025w42_station_id_ts_bucket_device_id_me_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_station_id_ts_bucket_device_id_me_idx ON ONLY public.fact_measurements_2025w42 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42 :: fact_measurements_2025w42_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_ts_bucket_idx ON ONLY public.fact_measurements_2025w42 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p0 :: fact_measurements_2025w42_p0_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p0_device_id_ts_bucket_idx ON public.fact_measurements_2025w42_p0 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p0 :: fact_measurements_2025w42_p0_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w42_p0_pkey ON public.fact_measurements_2025w42_p0 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p0 :: fact_measurements_2025w42_p0_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p0_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w42_p0 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42_p0 :: fact_measurements_2025w42_p0_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p0_ts_bucket_idx ON public.fact_measurements_2025w42_p0 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p0 :: idx_fm_dev_t_2025w42_p0
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w42_p0 ON public.fact_measurements_2025w42_p0 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p0 :: idx_fm_s_t_d_m_2025w42_p0
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w42_p0 ON public.fact_measurements_2025w42_p0 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42_p1 :: fact_measurements_2025w42_p1_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p1_device_id_ts_bucket_idx ON public.fact_measurements_2025w42_p1 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p1 :: fact_measurements_2025w42_p1_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w42_p1_pkey ON public.fact_measurements_2025w42_p1 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p1 :: fact_measurements_2025w42_p1_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p1_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w42_p1 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42_p1 :: fact_measurements_2025w42_p1_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p1_ts_bucket_idx ON public.fact_measurements_2025w42_p1 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p1 :: idx_fm_dev_t_2025w42_p1
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w42_p1 ON public.fact_measurements_2025w42_p1 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p1 :: idx_fm_s_t_d_m_2025w42_p1
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w42_p1 ON public.fact_measurements_2025w42_p1 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42_p10 :: fact_measurements_2025w42_p10_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p10_device_id_ts_bucket_idx ON public.fact_measurements_2025w42_p10 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p10 :: fact_measurements_2025w42_p10_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w42_p10_pkey ON public.fact_measurements_2025w42_p10 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p10 :: fact_measurements_2025w42_p10_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p10_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w42_p10 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42_p10 :: fact_measurements_2025w42_p10_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p10_ts_bucket_idx ON public.fact_measurements_2025w42_p10 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p10 :: idx_fm_dev_t_2025w42_p10
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w42_p10 ON public.fact_measurements_2025w42_p10 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p10 :: idx_fm_s_t_d_m_2025w42_p10
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w42_p10 ON public.fact_measurements_2025w42_p10 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42_p11 :: fact_measurements_2025w42_p11_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p11_device_id_ts_bucket_idx ON public.fact_measurements_2025w42_p11 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p11 :: fact_measurements_2025w42_p11_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w42_p11_pkey ON public.fact_measurements_2025w42_p11 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p11 :: fact_measurements_2025w42_p11_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p11_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w42_p11 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42_p11 :: fact_measurements_2025w42_p11_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p11_ts_bucket_idx ON public.fact_measurements_2025w42_p11 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p11 :: idx_fm_dev_t_2025w42_p11
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w42_p11 ON public.fact_measurements_2025w42_p11 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p11 :: idx_fm_s_t_d_m_2025w42_p11
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w42_p11 ON public.fact_measurements_2025w42_p11 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42_p12 :: fact_measurements_2025w42_p12_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p12_device_id_ts_bucket_idx ON public.fact_measurements_2025w42_p12 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p12 :: fact_measurements_2025w42_p12_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w42_p12_pkey ON public.fact_measurements_2025w42_p12 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p12 :: fact_measurements_2025w42_p12_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p12_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w42_p12 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42_p12 :: fact_measurements_2025w42_p12_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p12_ts_bucket_idx ON public.fact_measurements_2025w42_p12 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p12 :: idx_fm_dev_t_2025w42_p12
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w42_p12 ON public.fact_measurements_2025w42_p12 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p12 :: idx_fm_s_t_d_m_2025w42_p12
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w42_p12 ON public.fact_measurements_2025w42_p12 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42_p13 :: fact_measurements_2025w42_p13_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p13_device_id_ts_bucket_idx ON public.fact_measurements_2025w42_p13 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p13 :: fact_measurements_2025w42_p13_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w42_p13_pkey ON public.fact_measurements_2025w42_p13 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p13 :: fact_measurements_2025w42_p13_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p13_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w42_p13 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42_p13 :: fact_measurements_2025w42_p13_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p13_ts_bucket_idx ON public.fact_measurements_2025w42_p13 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p13 :: idx_fm_dev_t_2025w42_p13
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w42_p13 ON public.fact_measurements_2025w42_p13 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p13 :: idx_fm_s_t_d_m_2025w42_p13
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w42_p13 ON public.fact_measurements_2025w42_p13 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42_p14 :: fact_measurements_2025w42_p14_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p14_device_id_ts_bucket_idx ON public.fact_measurements_2025w42_p14 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p14 :: fact_measurements_2025w42_p14_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w42_p14_pkey ON public.fact_measurements_2025w42_p14 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p14 :: fact_measurements_2025w42_p14_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p14_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w42_p14 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42_p14 :: fact_measurements_2025w42_p14_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p14_ts_bucket_idx ON public.fact_measurements_2025w42_p14 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p14 :: idx_fm_dev_t_2025w42_p14
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w42_p14 ON public.fact_measurements_2025w42_p14 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p14 :: idx_fm_s_t_d_m_2025w42_p14
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w42_p14 ON public.fact_measurements_2025w42_p14 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42_p15 :: fact_measurements_2025w42_p15_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p15_device_id_ts_bucket_idx ON public.fact_measurements_2025w42_p15 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p15 :: fact_measurements_2025w42_p15_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w42_p15_pkey ON public.fact_measurements_2025w42_p15 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p15 :: fact_measurements_2025w42_p15_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p15_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w42_p15 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42_p15 :: fact_measurements_2025w42_p15_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p15_ts_bucket_idx ON public.fact_measurements_2025w42_p15 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p15 :: idx_fm_dev_t_2025w42_p15
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w42_p15 ON public.fact_measurements_2025w42_p15 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p15 :: idx_fm_s_t_d_m_2025w42_p15
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w42_p15 ON public.fact_measurements_2025w42_p15 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42_p2 :: fact_measurements_2025w42_p2_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p2_device_id_ts_bucket_idx ON public.fact_measurements_2025w42_p2 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p2 :: fact_measurements_2025w42_p2_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w42_p2_pkey ON public.fact_measurements_2025w42_p2 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p2 :: fact_measurements_2025w42_p2_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p2_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w42_p2 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42_p2 :: fact_measurements_2025w42_p2_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p2_ts_bucket_idx ON public.fact_measurements_2025w42_p2 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p2 :: idx_fm_dev_t_2025w42_p2
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w42_p2 ON public.fact_measurements_2025w42_p2 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p2 :: idx_fm_s_t_d_m_2025w42_p2
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w42_p2 ON public.fact_measurements_2025w42_p2 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42_p3 :: fact_measurements_2025w42_p3_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p3_device_id_ts_bucket_idx ON public.fact_measurements_2025w42_p3 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p3 :: fact_measurements_2025w42_p3_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w42_p3_pkey ON public.fact_measurements_2025w42_p3 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p3 :: fact_measurements_2025w42_p3_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p3_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w42_p3 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42_p3 :: fact_measurements_2025w42_p3_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p3_ts_bucket_idx ON public.fact_measurements_2025w42_p3 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p3 :: idx_fm_dev_t_2025w42_p3
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w42_p3 ON public.fact_measurements_2025w42_p3 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p3 :: idx_fm_s_t_d_m_2025w42_p3
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w42_p3 ON public.fact_measurements_2025w42_p3 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42_p4 :: fact_measurements_2025w42_p4_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p4_device_id_ts_bucket_idx ON public.fact_measurements_2025w42_p4 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p4 :: fact_measurements_2025w42_p4_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w42_p4_pkey ON public.fact_measurements_2025w42_p4 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p4 :: fact_measurements_2025w42_p4_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p4_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w42_p4 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42_p4 :: fact_measurements_2025w42_p4_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p4_ts_bucket_idx ON public.fact_measurements_2025w42_p4 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p4 :: idx_fm_dev_t_2025w42_p4
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w42_p4 ON public.fact_measurements_2025w42_p4 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p4 :: idx_fm_s_t_d_m_2025w42_p4
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w42_p4 ON public.fact_measurements_2025w42_p4 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42_p5 :: fact_measurements_2025w42_p5_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p5_device_id_ts_bucket_idx ON public.fact_measurements_2025w42_p5 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p5 :: fact_measurements_2025w42_p5_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w42_p5_pkey ON public.fact_measurements_2025w42_p5 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p5 :: fact_measurements_2025w42_p5_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p5_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w42_p5 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42_p5 :: fact_measurements_2025w42_p5_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p5_ts_bucket_idx ON public.fact_measurements_2025w42_p5 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p5 :: idx_fm_dev_t_2025w42_p5
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w42_p5 ON public.fact_measurements_2025w42_p5 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p5 :: idx_fm_s_t_d_m_2025w42_p5
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w42_p5 ON public.fact_measurements_2025w42_p5 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42_p6 :: fact_measurements_2025w42_p6_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p6_device_id_ts_bucket_idx ON public.fact_measurements_2025w42_p6 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p6 :: fact_measurements_2025w42_p6_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w42_p6_pkey ON public.fact_measurements_2025w42_p6 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p6 :: fact_measurements_2025w42_p6_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p6_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w42_p6 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42_p6 :: fact_measurements_2025w42_p6_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p6_ts_bucket_idx ON public.fact_measurements_2025w42_p6 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p6 :: idx_fm_dev_t_2025w42_p6
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w42_p6 ON public.fact_measurements_2025w42_p6 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p6 :: idx_fm_s_t_d_m_2025w42_p6
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w42_p6 ON public.fact_measurements_2025w42_p6 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42_p7 :: fact_measurements_2025w42_p7_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p7_device_id_ts_bucket_idx ON public.fact_measurements_2025w42_p7 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p7 :: fact_measurements_2025w42_p7_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w42_p7_pkey ON public.fact_measurements_2025w42_p7 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p7 :: fact_measurements_2025w42_p7_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p7_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w42_p7 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42_p7 :: fact_measurements_2025w42_p7_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p7_ts_bucket_idx ON public.fact_measurements_2025w42_p7 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p7 :: idx_fm_dev_t_2025w42_p7
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w42_p7 ON public.fact_measurements_2025w42_p7 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p7 :: idx_fm_s_t_d_m_2025w42_p7
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w42_p7 ON public.fact_measurements_2025w42_p7 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42_p8 :: fact_measurements_2025w42_p8_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p8_device_id_ts_bucket_idx ON public.fact_measurements_2025w42_p8 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p8 :: fact_measurements_2025w42_p8_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w42_p8_pkey ON public.fact_measurements_2025w42_p8 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p8 :: fact_measurements_2025w42_p8_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p8_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w42_p8 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42_p8 :: fact_measurements_2025w42_p8_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p8_ts_bucket_idx ON public.fact_measurements_2025w42_p8 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p8 :: idx_fm_dev_t_2025w42_p8
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w42_p8 ON public.fact_measurements_2025w42_p8 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p8 :: idx_fm_s_t_d_m_2025w42_p8
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w42_p8 ON public.fact_measurements_2025w42_p8 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42_p9 :: fact_measurements_2025w42_p9_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p9_device_id_ts_bucket_idx ON public.fact_measurements_2025w42_p9 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p9 :: fact_measurements_2025w42_p9_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w42_p9_pkey ON public.fact_measurements_2025w42_p9 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p9 :: fact_measurements_2025w42_p9_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p9_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w42_p9 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w42_p9 :: fact_measurements_2025w42_p9_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w42_p9_ts_bucket_idx ON public.fact_measurements_2025w42_p9 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p9 :: idx_fm_dev_t_2025w42_p9
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w42_p9 ON public.fact_measurements_2025w42_p9 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w42_p9 :: idx_fm_s_t_d_m_2025w42_p9
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w42_p9 ON public.fact_measurements_2025w42_p9 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43 :: fact_measurements_2025w43_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_device_id_ts_bucket_idx ON ONLY public.fact_measurements_2025w43 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43 :: fact_measurements_2025w43_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w43_pkey ON ONLY public.fact_measurements_2025w43 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43 :: fact_measurements_2025w43_station_id_ts_bucket_device_id_me_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_station_id_ts_bucket_device_id_me_idx ON ONLY public.fact_measurements_2025w43 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43 :: fact_measurements_2025w43_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_ts_bucket_idx ON ONLY public.fact_measurements_2025w43 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p0 :: fact_measurements_2025w43_p0_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p0_device_id_ts_bucket_idx ON public.fact_measurements_2025w43_p0 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p0 :: fact_measurements_2025w43_p0_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w43_p0_pkey ON public.fact_measurements_2025w43_p0 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p0 :: fact_measurements_2025w43_p0_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p0_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w43_p0 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43_p0 :: fact_measurements_2025w43_p0_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p0_ts_bucket_idx ON public.fact_measurements_2025w43_p0 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p0 :: idx_fm_dev_t_2025w43_p0
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w43_p0 ON public.fact_measurements_2025w43_p0 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p0 :: idx_fm_s_t_d_m_2025w43_p0
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w43_p0 ON public.fact_measurements_2025w43_p0 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43_p1 :: fact_measurements_2025w43_p1_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p1_device_id_ts_bucket_idx ON public.fact_measurements_2025w43_p1 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p1 :: fact_measurements_2025w43_p1_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w43_p1_pkey ON public.fact_measurements_2025w43_p1 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p1 :: fact_measurements_2025w43_p1_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p1_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w43_p1 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43_p1 :: fact_measurements_2025w43_p1_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p1_ts_bucket_idx ON public.fact_measurements_2025w43_p1 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p1 :: idx_fm_dev_t_2025w43_p1
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w43_p1 ON public.fact_measurements_2025w43_p1 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p1 :: idx_fm_s_t_d_m_2025w43_p1
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w43_p1 ON public.fact_measurements_2025w43_p1 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43_p10 :: fact_measurements_2025w43_p10_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p10_device_id_ts_bucket_idx ON public.fact_measurements_2025w43_p10 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p10 :: fact_measurements_2025w43_p10_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w43_p10_pkey ON public.fact_measurements_2025w43_p10 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p10 :: fact_measurements_2025w43_p10_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p10_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w43_p10 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43_p10 :: fact_measurements_2025w43_p10_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p10_ts_bucket_idx ON public.fact_measurements_2025w43_p10 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p10 :: idx_fm_dev_t_2025w43_p10
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w43_p10 ON public.fact_measurements_2025w43_p10 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p10 :: idx_fm_s_t_d_m_2025w43_p10
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w43_p10 ON public.fact_measurements_2025w43_p10 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43_p11 :: fact_measurements_2025w43_p11_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p11_device_id_ts_bucket_idx ON public.fact_measurements_2025w43_p11 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p11 :: fact_measurements_2025w43_p11_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w43_p11_pkey ON public.fact_measurements_2025w43_p11 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p11 :: fact_measurements_2025w43_p11_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p11_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w43_p11 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43_p11 :: fact_measurements_2025w43_p11_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p11_ts_bucket_idx ON public.fact_measurements_2025w43_p11 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p11 :: idx_fm_dev_t_2025w43_p11
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w43_p11 ON public.fact_measurements_2025w43_p11 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p11 :: idx_fm_s_t_d_m_2025w43_p11
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w43_p11 ON public.fact_measurements_2025w43_p11 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43_p12 :: fact_measurements_2025w43_p12_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p12_device_id_ts_bucket_idx ON public.fact_measurements_2025w43_p12 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p12 :: fact_measurements_2025w43_p12_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w43_p12_pkey ON public.fact_measurements_2025w43_p12 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p12 :: fact_measurements_2025w43_p12_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p12_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w43_p12 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43_p12 :: fact_measurements_2025w43_p12_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p12_ts_bucket_idx ON public.fact_measurements_2025w43_p12 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p12 :: idx_fm_dev_t_2025w43_p12
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w43_p12 ON public.fact_measurements_2025w43_p12 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p12 :: idx_fm_s_t_d_m_2025w43_p12
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w43_p12 ON public.fact_measurements_2025w43_p12 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43_p13 :: fact_measurements_2025w43_p13_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p13_device_id_ts_bucket_idx ON public.fact_measurements_2025w43_p13 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p13 :: fact_measurements_2025w43_p13_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w43_p13_pkey ON public.fact_measurements_2025w43_p13 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p13 :: fact_measurements_2025w43_p13_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p13_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w43_p13 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43_p13 :: fact_measurements_2025w43_p13_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p13_ts_bucket_idx ON public.fact_measurements_2025w43_p13 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p13 :: idx_fm_dev_t_2025w43_p13
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w43_p13 ON public.fact_measurements_2025w43_p13 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p13 :: idx_fm_s_t_d_m_2025w43_p13
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w43_p13 ON public.fact_measurements_2025w43_p13 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43_p14 :: fact_measurements_2025w43_p14_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p14_device_id_ts_bucket_idx ON public.fact_measurements_2025w43_p14 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p14 :: fact_measurements_2025w43_p14_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w43_p14_pkey ON public.fact_measurements_2025w43_p14 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p14 :: fact_measurements_2025w43_p14_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p14_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w43_p14 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43_p14 :: fact_measurements_2025w43_p14_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p14_ts_bucket_idx ON public.fact_measurements_2025w43_p14 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p14 :: idx_fm_dev_t_2025w43_p14
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w43_p14 ON public.fact_measurements_2025w43_p14 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p14 :: idx_fm_s_t_d_m_2025w43_p14
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w43_p14 ON public.fact_measurements_2025w43_p14 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43_p15 :: fact_measurements_2025w43_p15_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p15_device_id_ts_bucket_idx ON public.fact_measurements_2025w43_p15 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p15 :: fact_measurements_2025w43_p15_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w43_p15_pkey ON public.fact_measurements_2025w43_p15 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p15 :: fact_measurements_2025w43_p15_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p15_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w43_p15 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43_p15 :: fact_measurements_2025w43_p15_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p15_ts_bucket_idx ON public.fact_measurements_2025w43_p15 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p15 :: idx_fm_dev_t_2025w43_p15
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w43_p15 ON public.fact_measurements_2025w43_p15 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p15 :: idx_fm_s_t_d_m_2025w43_p15
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w43_p15 ON public.fact_measurements_2025w43_p15 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43_p2 :: fact_measurements_2025w43_p2_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p2_device_id_ts_bucket_idx ON public.fact_measurements_2025w43_p2 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p2 :: fact_measurements_2025w43_p2_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w43_p2_pkey ON public.fact_measurements_2025w43_p2 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p2 :: fact_measurements_2025w43_p2_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p2_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w43_p2 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43_p2 :: fact_measurements_2025w43_p2_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p2_ts_bucket_idx ON public.fact_measurements_2025w43_p2 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p2 :: idx_fm_dev_t_2025w43_p2
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w43_p2 ON public.fact_measurements_2025w43_p2 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p2 :: idx_fm_s_t_d_m_2025w43_p2
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w43_p2 ON public.fact_measurements_2025w43_p2 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43_p3 :: fact_measurements_2025w43_p3_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p3_device_id_ts_bucket_idx ON public.fact_measurements_2025w43_p3 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p3 :: fact_measurements_2025w43_p3_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w43_p3_pkey ON public.fact_measurements_2025w43_p3 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p3 :: fact_measurements_2025w43_p3_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p3_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w43_p3 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43_p3 :: fact_measurements_2025w43_p3_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p3_ts_bucket_idx ON public.fact_measurements_2025w43_p3 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p3 :: idx_fm_dev_t_2025w43_p3
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w43_p3 ON public.fact_measurements_2025w43_p3 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p3 :: idx_fm_s_t_d_m_2025w43_p3
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w43_p3 ON public.fact_measurements_2025w43_p3 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43_p4 :: fact_measurements_2025w43_p4_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p4_device_id_ts_bucket_idx ON public.fact_measurements_2025w43_p4 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p4 :: fact_measurements_2025w43_p4_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w43_p4_pkey ON public.fact_measurements_2025w43_p4 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p4 :: fact_measurements_2025w43_p4_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p4_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w43_p4 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43_p4 :: fact_measurements_2025w43_p4_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p4_ts_bucket_idx ON public.fact_measurements_2025w43_p4 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p4 :: idx_fm_dev_t_2025w43_p4
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w43_p4 ON public.fact_measurements_2025w43_p4 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p4 :: idx_fm_s_t_d_m_2025w43_p4
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w43_p4 ON public.fact_measurements_2025w43_p4 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43_p5 :: fact_measurements_2025w43_p5_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p5_device_id_ts_bucket_idx ON public.fact_measurements_2025w43_p5 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p5 :: fact_measurements_2025w43_p5_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w43_p5_pkey ON public.fact_measurements_2025w43_p5 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p5 :: fact_measurements_2025w43_p5_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p5_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w43_p5 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43_p5 :: fact_measurements_2025w43_p5_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p5_ts_bucket_idx ON public.fact_measurements_2025w43_p5 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p5 :: idx_fm_dev_t_2025w43_p5
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w43_p5 ON public.fact_measurements_2025w43_p5 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p5 :: idx_fm_s_t_d_m_2025w43_p5
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w43_p5 ON public.fact_measurements_2025w43_p5 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43_p6 :: fact_measurements_2025w43_p6_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p6_device_id_ts_bucket_idx ON public.fact_measurements_2025w43_p6 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p6 :: fact_measurements_2025w43_p6_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w43_p6_pkey ON public.fact_measurements_2025w43_p6 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p6 :: fact_measurements_2025w43_p6_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p6_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w43_p6 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43_p6 :: fact_measurements_2025w43_p6_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p6_ts_bucket_idx ON public.fact_measurements_2025w43_p6 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p6 :: idx_fm_dev_t_2025w43_p6
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w43_p6 ON public.fact_measurements_2025w43_p6 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p6 :: idx_fm_s_t_d_m_2025w43_p6
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w43_p6 ON public.fact_measurements_2025w43_p6 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43_p7 :: fact_measurements_2025w43_p7_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p7_device_id_ts_bucket_idx ON public.fact_measurements_2025w43_p7 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p7 :: fact_measurements_2025w43_p7_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w43_p7_pkey ON public.fact_measurements_2025w43_p7 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p7 :: fact_measurements_2025w43_p7_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p7_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w43_p7 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43_p7 :: fact_measurements_2025w43_p7_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p7_ts_bucket_idx ON public.fact_measurements_2025w43_p7 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p7 :: idx_fm_dev_t_2025w43_p7
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w43_p7 ON public.fact_measurements_2025w43_p7 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p7 :: idx_fm_s_t_d_m_2025w43_p7
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w43_p7 ON public.fact_measurements_2025w43_p7 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43_p8 :: fact_measurements_2025w43_p8_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p8_device_id_ts_bucket_idx ON public.fact_measurements_2025w43_p8 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p8 :: fact_measurements_2025w43_p8_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w43_p8_pkey ON public.fact_measurements_2025w43_p8 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p8 :: fact_measurements_2025w43_p8_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p8_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w43_p8 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43_p8 :: fact_measurements_2025w43_p8_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p8_ts_bucket_idx ON public.fact_measurements_2025w43_p8 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p8 :: idx_fm_dev_t_2025w43_p8
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w43_p8 ON public.fact_measurements_2025w43_p8 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p8 :: idx_fm_s_t_d_m_2025w43_p8
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w43_p8 ON public.fact_measurements_2025w43_p8 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43_p9 :: fact_measurements_2025w43_p9_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p9_device_id_ts_bucket_idx ON public.fact_measurements_2025w43_p9 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p9 :: fact_measurements_2025w43_p9_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w43_p9_pkey ON public.fact_measurements_2025w43_p9 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p9 :: fact_measurements_2025w43_p9_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p9_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w43_p9 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w43_p9 :: fact_measurements_2025w43_p9_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w43_p9_ts_bucket_idx ON public.fact_measurements_2025w43_p9 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p9 :: idx_fm_dev_t_2025w43_p9
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w43_p9 ON public.fact_measurements_2025w43_p9 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w43_p9 :: idx_fm_s_t_d_m_2025w43_p9
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w43_p9 ON public.fact_measurements_2025w43_p9 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44 :: fact_measurements_2025w44_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_device_id_ts_bucket_idx ON ONLY public.fact_measurements_2025w44 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44 :: fact_measurements_2025w44_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w44_pkey ON ONLY public.fact_measurements_2025w44 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44 :: fact_measurements_2025w44_station_id_ts_bucket_device_id_me_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_station_id_ts_bucket_device_id_me_idx ON ONLY public.fact_measurements_2025w44 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44 :: fact_measurements_2025w44_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_ts_bucket_idx ON ONLY public.fact_measurements_2025w44 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p0 :: fact_measurements_2025w44_p0_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p0_device_id_ts_bucket_idx ON public.fact_measurements_2025w44_p0 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p0 :: fact_measurements_2025w44_p0_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w44_p0_pkey ON public.fact_measurements_2025w44_p0 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p0 :: fact_measurements_2025w44_p0_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p0_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w44_p0 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44_p0 :: fact_measurements_2025w44_p0_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p0_ts_bucket_idx ON public.fact_measurements_2025w44_p0 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p0 :: idx_fm_dev_t_2025w44_p0
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w44_p0 ON public.fact_measurements_2025w44_p0 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p0 :: idx_fm_s_t_d_m_2025w44_p0
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w44_p0 ON public.fact_measurements_2025w44_p0 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44_p1 :: fact_measurements_2025w44_p1_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p1_device_id_ts_bucket_idx ON public.fact_measurements_2025w44_p1 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p1 :: fact_measurements_2025w44_p1_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w44_p1_pkey ON public.fact_measurements_2025w44_p1 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p1 :: fact_measurements_2025w44_p1_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p1_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w44_p1 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44_p1 :: fact_measurements_2025w44_p1_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p1_ts_bucket_idx ON public.fact_measurements_2025w44_p1 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p1 :: idx_fm_dev_t_2025w44_p1
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w44_p1 ON public.fact_measurements_2025w44_p1 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p1 :: idx_fm_s_t_d_m_2025w44_p1
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w44_p1 ON public.fact_measurements_2025w44_p1 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44_p10 :: fact_measurements_2025w44_p10_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p10_device_id_ts_bucket_idx ON public.fact_measurements_2025w44_p10 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p10 :: fact_measurements_2025w44_p10_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w44_p10_pkey ON public.fact_measurements_2025w44_p10 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p10 :: fact_measurements_2025w44_p10_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p10_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w44_p10 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44_p10 :: fact_measurements_2025w44_p10_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p10_ts_bucket_idx ON public.fact_measurements_2025w44_p10 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p10 :: idx_fm_dev_t_2025w44_p10
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w44_p10 ON public.fact_measurements_2025w44_p10 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p10 :: idx_fm_s_t_d_m_2025w44_p10
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w44_p10 ON public.fact_measurements_2025w44_p10 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44_p11 :: fact_measurements_2025w44_p11_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p11_device_id_ts_bucket_idx ON public.fact_measurements_2025w44_p11 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p11 :: fact_measurements_2025w44_p11_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w44_p11_pkey ON public.fact_measurements_2025w44_p11 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p11 :: fact_measurements_2025w44_p11_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p11_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w44_p11 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44_p11 :: fact_measurements_2025w44_p11_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p11_ts_bucket_idx ON public.fact_measurements_2025w44_p11 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p11 :: idx_fm_dev_t_2025w44_p11
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w44_p11 ON public.fact_measurements_2025w44_p11 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p11 :: idx_fm_s_t_d_m_2025w44_p11
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w44_p11 ON public.fact_measurements_2025w44_p11 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44_p12 :: fact_measurements_2025w44_p12_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p12_device_id_ts_bucket_idx ON public.fact_measurements_2025w44_p12 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p12 :: fact_measurements_2025w44_p12_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w44_p12_pkey ON public.fact_measurements_2025w44_p12 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p12 :: fact_measurements_2025w44_p12_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p12_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w44_p12 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44_p12 :: fact_measurements_2025w44_p12_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p12_ts_bucket_idx ON public.fact_measurements_2025w44_p12 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p12 :: idx_fm_dev_t_2025w44_p12
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w44_p12 ON public.fact_measurements_2025w44_p12 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p12 :: idx_fm_s_t_d_m_2025w44_p12
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w44_p12 ON public.fact_measurements_2025w44_p12 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44_p13 :: fact_measurements_2025w44_p13_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p13_device_id_ts_bucket_idx ON public.fact_measurements_2025w44_p13 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p13 :: fact_measurements_2025w44_p13_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w44_p13_pkey ON public.fact_measurements_2025w44_p13 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p13 :: fact_measurements_2025w44_p13_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p13_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w44_p13 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44_p13 :: fact_measurements_2025w44_p13_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p13_ts_bucket_idx ON public.fact_measurements_2025w44_p13 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p13 :: idx_fm_dev_t_2025w44_p13
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w44_p13 ON public.fact_measurements_2025w44_p13 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p13 :: idx_fm_s_t_d_m_2025w44_p13
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w44_p13 ON public.fact_measurements_2025w44_p13 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44_p14 :: fact_measurements_2025w44_p14_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p14_device_id_ts_bucket_idx ON public.fact_measurements_2025w44_p14 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p14 :: fact_measurements_2025w44_p14_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w44_p14_pkey ON public.fact_measurements_2025w44_p14 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p14 :: fact_measurements_2025w44_p14_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p14_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w44_p14 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44_p14 :: fact_measurements_2025w44_p14_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p14_ts_bucket_idx ON public.fact_measurements_2025w44_p14 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p14 :: idx_fm_dev_t_2025w44_p14
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w44_p14 ON public.fact_measurements_2025w44_p14 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p14 :: idx_fm_s_t_d_m_2025w44_p14
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w44_p14 ON public.fact_measurements_2025w44_p14 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44_p15 :: fact_measurements_2025w44_p15_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p15_device_id_ts_bucket_idx ON public.fact_measurements_2025w44_p15 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p15 :: fact_measurements_2025w44_p15_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w44_p15_pkey ON public.fact_measurements_2025w44_p15 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p15 :: fact_measurements_2025w44_p15_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p15_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w44_p15 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44_p15 :: fact_measurements_2025w44_p15_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p15_ts_bucket_idx ON public.fact_measurements_2025w44_p15 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p15 :: idx_fm_dev_t_2025w44_p15
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w44_p15 ON public.fact_measurements_2025w44_p15 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p15 :: idx_fm_s_t_d_m_2025w44_p15
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w44_p15 ON public.fact_measurements_2025w44_p15 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44_p2 :: fact_measurements_2025w44_p2_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p2_device_id_ts_bucket_idx ON public.fact_measurements_2025w44_p2 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p2 :: fact_measurements_2025w44_p2_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w44_p2_pkey ON public.fact_measurements_2025w44_p2 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p2 :: fact_measurements_2025w44_p2_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p2_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w44_p2 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44_p2 :: fact_measurements_2025w44_p2_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p2_ts_bucket_idx ON public.fact_measurements_2025w44_p2 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p2 :: idx_fm_dev_t_2025w44_p2
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w44_p2 ON public.fact_measurements_2025w44_p2 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p2 :: idx_fm_s_t_d_m_2025w44_p2
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w44_p2 ON public.fact_measurements_2025w44_p2 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44_p3 :: fact_measurements_2025w44_p3_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p3_device_id_ts_bucket_idx ON public.fact_measurements_2025w44_p3 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p3 :: fact_measurements_2025w44_p3_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w44_p3_pkey ON public.fact_measurements_2025w44_p3 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p3 :: fact_measurements_2025w44_p3_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p3_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w44_p3 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44_p3 :: fact_measurements_2025w44_p3_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p3_ts_bucket_idx ON public.fact_measurements_2025w44_p3 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p3 :: idx_fm_dev_t_2025w44_p3
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w44_p3 ON public.fact_measurements_2025w44_p3 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p3 :: idx_fm_s_t_d_m_2025w44_p3
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w44_p3 ON public.fact_measurements_2025w44_p3 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44_p4 :: fact_measurements_2025w44_p4_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p4_device_id_ts_bucket_idx ON public.fact_measurements_2025w44_p4 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p4 :: fact_measurements_2025w44_p4_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w44_p4_pkey ON public.fact_measurements_2025w44_p4 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p4 :: fact_measurements_2025w44_p4_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p4_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w44_p4 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44_p4 :: fact_measurements_2025w44_p4_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p4_ts_bucket_idx ON public.fact_measurements_2025w44_p4 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p4 :: idx_fm_dev_t_2025w44_p4
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w44_p4 ON public.fact_measurements_2025w44_p4 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p4 :: idx_fm_s_t_d_m_2025w44_p4
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w44_p4 ON public.fact_measurements_2025w44_p4 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44_p5 :: fact_measurements_2025w44_p5_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p5_device_id_ts_bucket_idx ON public.fact_measurements_2025w44_p5 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p5 :: fact_measurements_2025w44_p5_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w44_p5_pkey ON public.fact_measurements_2025w44_p5 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p5 :: fact_measurements_2025w44_p5_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p5_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w44_p5 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44_p5 :: fact_measurements_2025w44_p5_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p5_ts_bucket_idx ON public.fact_measurements_2025w44_p5 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p5 :: idx_fm_dev_t_2025w44_p5
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w44_p5 ON public.fact_measurements_2025w44_p5 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p5 :: idx_fm_s_t_d_m_2025w44_p5
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w44_p5 ON public.fact_measurements_2025w44_p5 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44_p6 :: fact_measurements_2025w44_p6_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p6_device_id_ts_bucket_idx ON public.fact_measurements_2025w44_p6 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p6 :: fact_measurements_2025w44_p6_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w44_p6_pkey ON public.fact_measurements_2025w44_p6 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p6 :: fact_measurements_2025w44_p6_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p6_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w44_p6 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44_p6 :: fact_measurements_2025w44_p6_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p6_ts_bucket_idx ON public.fact_measurements_2025w44_p6 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p6 :: idx_fm_dev_t_2025w44_p6
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w44_p6 ON public.fact_measurements_2025w44_p6 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p6 :: idx_fm_s_t_d_m_2025w44_p6
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w44_p6 ON public.fact_measurements_2025w44_p6 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44_p7 :: fact_measurements_2025w44_p7_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p7_device_id_ts_bucket_idx ON public.fact_measurements_2025w44_p7 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p7 :: fact_measurements_2025w44_p7_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w44_p7_pkey ON public.fact_measurements_2025w44_p7 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p7 :: fact_measurements_2025w44_p7_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p7_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w44_p7 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44_p7 :: fact_measurements_2025w44_p7_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p7_ts_bucket_idx ON public.fact_measurements_2025w44_p7 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p7 :: idx_fm_dev_t_2025w44_p7
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w44_p7 ON public.fact_measurements_2025w44_p7 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p7 :: idx_fm_s_t_d_m_2025w44_p7
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w44_p7 ON public.fact_measurements_2025w44_p7 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44_p8 :: fact_measurements_2025w44_p8_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p8_device_id_ts_bucket_idx ON public.fact_measurements_2025w44_p8 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p8 :: fact_measurements_2025w44_p8_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w44_p8_pkey ON public.fact_measurements_2025w44_p8 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p8 :: fact_measurements_2025w44_p8_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p8_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w44_p8 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44_p8 :: fact_measurements_2025w44_p8_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p8_ts_bucket_idx ON public.fact_measurements_2025w44_p8 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p8 :: idx_fm_dev_t_2025w44_p8
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w44_p8 ON public.fact_measurements_2025w44_p8 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p8 :: idx_fm_s_t_d_m_2025w44_p8
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w44_p8 ON public.fact_measurements_2025w44_p8 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44_p9 :: fact_measurements_2025w44_p9_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p9_device_id_ts_bucket_idx ON public.fact_measurements_2025w44_p9 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p9 :: fact_measurements_2025w44_p9_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w44_p9_pkey ON public.fact_measurements_2025w44_p9 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p9 :: fact_measurements_2025w44_p9_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p9_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w44_p9 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w44_p9 :: fact_measurements_2025w44_p9_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w44_p9_ts_bucket_idx ON public.fact_measurements_2025w44_p9 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p9 :: idx_fm_dev_t_2025w44_p9
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w44_p9 ON public.fact_measurements_2025w44_p9 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w44_p9 :: idx_fm_s_t_d_m_2025w44_p9
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w44_p9 ON public.fact_measurements_2025w44_p9 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45 :: fact_measurements_2025w45_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_device_id_ts_bucket_idx ON ONLY public.fact_measurements_2025w45 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45 :: fact_measurements_2025w45_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w45_pkey ON ONLY public.fact_measurements_2025w45 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45 :: fact_measurements_2025w45_station_id_ts_bucket_device_id_me_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_station_id_ts_bucket_device_id_me_idx ON ONLY public.fact_measurements_2025w45 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45 :: fact_measurements_2025w45_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_ts_bucket_idx ON ONLY public.fact_measurements_2025w45 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p0 :: fact_measurements_2025w45_p0_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p0_device_id_ts_bucket_idx ON public.fact_measurements_2025w45_p0 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p0 :: fact_measurements_2025w45_p0_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w45_p0_pkey ON public.fact_measurements_2025w45_p0 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p0 :: fact_measurements_2025w45_p0_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p0_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w45_p0 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45_p0 :: fact_measurements_2025w45_p0_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p0_ts_bucket_idx ON public.fact_measurements_2025w45_p0 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p0 :: idx_fm_dev_t_2025w45_p0
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w45_p0 ON public.fact_measurements_2025w45_p0 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p0 :: idx_fm_s_t_d_m_2025w45_p0
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w45_p0 ON public.fact_measurements_2025w45_p0 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45_p1 :: fact_measurements_2025w45_p1_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p1_device_id_ts_bucket_idx ON public.fact_measurements_2025w45_p1 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p1 :: fact_measurements_2025w45_p1_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w45_p1_pkey ON public.fact_measurements_2025w45_p1 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p1 :: fact_measurements_2025w45_p1_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p1_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w45_p1 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45_p1 :: fact_measurements_2025w45_p1_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p1_ts_bucket_idx ON public.fact_measurements_2025w45_p1 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p1 :: idx_fm_dev_t_2025w45_p1
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w45_p1 ON public.fact_measurements_2025w45_p1 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p1 :: idx_fm_s_t_d_m_2025w45_p1
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w45_p1 ON public.fact_measurements_2025w45_p1 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45_p10 :: fact_measurements_2025w45_p10_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p10_device_id_ts_bucket_idx ON public.fact_measurements_2025w45_p10 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p10 :: fact_measurements_2025w45_p10_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w45_p10_pkey ON public.fact_measurements_2025w45_p10 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p10 :: fact_measurements_2025w45_p10_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p10_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w45_p10 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45_p10 :: fact_measurements_2025w45_p10_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p10_ts_bucket_idx ON public.fact_measurements_2025w45_p10 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p10 :: idx_fm_dev_t_2025w45_p10
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w45_p10 ON public.fact_measurements_2025w45_p10 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p10 :: idx_fm_s_t_d_m_2025w45_p10
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w45_p10 ON public.fact_measurements_2025w45_p10 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45_p11 :: fact_measurements_2025w45_p11_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p11_device_id_ts_bucket_idx ON public.fact_measurements_2025w45_p11 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p11 :: fact_measurements_2025w45_p11_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w45_p11_pkey ON public.fact_measurements_2025w45_p11 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p11 :: fact_measurements_2025w45_p11_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p11_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w45_p11 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45_p11 :: fact_measurements_2025w45_p11_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p11_ts_bucket_idx ON public.fact_measurements_2025w45_p11 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p11 :: idx_fm_dev_t_2025w45_p11
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w45_p11 ON public.fact_measurements_2025w45_p11 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p11 :: idx_fm_s_t_d_m_2025w45_p11
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w45_p11 ON public.fact_measurements_2025w45_p11 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45_p12 :: fact_measurements_2025w45_p12_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p12_device_id_ts_bucket_idx ON public.fact_measurements_2025w45_p12 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p12 :: fact_measurements_2025w45_p12_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w45_p12_pkey ON public.fact_measurements_2025w45_p12 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p12 :: fact_measurements_2025w45_p12_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p12_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w45_p12 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45_p12 :: fact_measurements_2025w45_p12_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p12_ts_bucket_idx ON public.fact_measurements_2025w45_p12 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p12 :: idx_fm_dev_t_2025w45_p12
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w45_p12 ON public.fact_measurements_2025w45_p12 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p12 :: idx_fm_s_t_d_m_2025w45_p12
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w45_p12 ON public.fact_measurements_2025w45_p12 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45_p13 :: fact_measurements_2025w45_p13_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p13_device_id_ts_bucket_idx ON public.fact_measurements_2025w45_p13 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p13 :: fact_measurements_2025w45_p13_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w45_p13_pkey ON public.fact_measurements_2025w45_p13 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p13 :: fact_measurements_2025w45_p13_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p13_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w45_p13 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45_p13 :: fact_measurements_2025w45_p13_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p13_ts_bucket_idx ON public.fact_measurements_2025w45_p13 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p13 :: idx_fm_dev_t_2025w45_p13
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w45_p13 ON public.fact_measurements_2025w45_p13 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p13 :: idx_fm_s_t_d_m_2025w45_p13
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w45_p13 ON public.fact_measurements_2025w45_p13 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45_p14 :: fact_measurements_2025w45_p14_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p14_device_id_ts_bucket_idx ON public.fact_measurements_2025w45_p14 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p14 :: fact_measurements_2025w45_p14_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w45_p14_pkey ON public.fact_measurements_2025w45_p14 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p14 :: fact_measurements_2025w45_p14_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p14_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w45_p14 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45_p14 :: fact_measurements_2025w45_p14_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p14_ts_bucket_idx ON public.fact_measurements_2025w45_p14 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p14 :: idx_fm_dev_t_2025w45_p14
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w45_p14 ON public.fact_measurements_2025w45_p14 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p14 :: idx_fm_s_t_d_m_2025w45_p14
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w45_p14 ON public.fact_measurements_2025w45_p14 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45_p15 :: fact_measurements_2025w45_p15_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p15_device_id_ts_bucket_idx ON public.fact_measurements_2025w45_p15 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p15 :: fact_measurements_2025w45_p15_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w45_p15_pkey ON public.fact_measurements_2025w45_p15 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p15 :: fact_measurements_2025w45_p15_station_id_ts_bucket_device_i_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p15_station_id_ts_bucket_device_i_idx ON public.fact_measurements_2025w45_p15 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45_p15 :: fact_measurements_2025w45_p15_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p15_ts_bucket_idx ON public.fact_measurements_2025w45_p15 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p15 :: idx_fm_dev_t_2025w45_p15
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w45_p15 ON public.fact_measurements_2025w45_p15 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p15 :: idx_fm_s_t_d_m_2025w45_p15
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w45_p15 ON public.fact_measurements_2025w45_p15 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45_p2 :: fact_measurements_2025w45_p2_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p2_device_id_ts_bucket_idx ON public.fact_measurements_2025w45_p2 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p2 :: fact_measurements_2025w45_p2_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w45_p2_pkey ON public.fact_measurements_2025w45_p2 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p2 :: fact_measurements_2025w45_p2_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p2_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w45_p2 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45_p2 :: fact_measurements_2025w45_p2_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p2_ts_bucket_idx ON public.fact_measurements_2025w45_p2 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p2 :: idx_fm_dev_t_2025w45_p2
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w45_p2 ON public.fact_measurements_2025w45_p2 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p2 :: idx_fm_s_t_d_m_2025w45_p2
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w45_p2 ON public.fact_measurements_2025w45_p2 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45_p3 :: fact_measurements_2025w45_p3_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p3_device_id_ts_bucket_idx ON public.fact_measurements_2025w45_p3 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p3 :: fact_measurements_2025w45_p3_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w45_p3_pkey ON public.fact_measurements_2025w45_p3 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p3 :: fact_measurements_2025w45_p3_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p3_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w45_p3 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45_p3 :: fact_measurements_2025w45_p3_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p3_ts_bucket_idx ON public.fact_measurements_2025w45_p3 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p3 :: idx_fm_dev_t_2025w45_p3
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w45_p3 ON public.fact_measurements_2025w45_p3 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p3 :: idx_fm_s_t_d_m_2025w45_p3
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w45_p3 ON public.fact_measurements_2025w45_p3 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45_p4 :: fact_measurements_2025w45_p4_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p4_device_id_ts_bucket_idx ON public.fact_measurements_2025w45_p4 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p4 :: fact_measurements_2025w45_p4_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w45_p4_pkey ON public.fact_measurements_2025w45_p4 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p4 :: fact_measurements_2025w45_p4_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p4_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w45_p4 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45_p4 :: fact_measurements_2025w45_p4_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p4_ts_bucket_idx ON public.fact_measurements_2025w45_p4 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p4 :: idx_fm_dev_t_2025w45_p4
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w45_p4 ON public.fact_measurements_2025w45_p4 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p4 :: idx_fm_s_t_d_m_2025w45_p4
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w45_p4 ON public.fact_measurements_2025w45_p4 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45_p5 :: fact_measurements_2025w45_p5_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p5_device_id_ts_bucket_idx ON public.fact_measurements_2025w45_p5 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p5 :: fact_measurements_2025w45_p5_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w45_p5_pkey ON public.fact_measurements_2025w45_p5 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p5 :: fact_measurements_2025w45_p5_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p5_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w45_p5 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45_p5 :: fact_measurements_2025w45_p5_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p5_ts_bucket_idx ON public.fact_measurements_2025w45_p5 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p5 :: idx_fm_dev_t_2025w45_p5
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w45_p5 ON public.fact_measurements_2025w45_p5 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p5 :: idx_fm_s_t_d_m_2025w45_p5
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w45_p5 ON public.fact_measurements_2025w45_p5 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45_p6 :: fact_measurements_2025w45_p6_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p6_device_id_ts_bucket_idx ON public.fact_measurements_2025w45_p6 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p6 :: fact_measurements_2025w45_p6_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w45_p6_pkey ON public.fact_measurements_2025w45_p6 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p6 :: fact_measurements_2025w45_p6_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p6_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w45_p6 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45_p6 :: fact_measurements_2025w45_p6_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p6_ts_bucket_idx ON public.fact_measurements_2025w45_p6 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p6 :: idx_fm_dev_t_2025w45_p6
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w45_p6 ON public.fact_measurements_2025w45_p6 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p6 :: idx_fm_s_t_d_m_2025w45_p6
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w45_p6 ON public.fact_measurements_2025w45_p6 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45_p7 :: fact_measurements_2025w45_p7_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p7_device_id_ts_bucket_idx ON public.fact_measurements_2025w45_p7 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p7 :: fact_measurements_2025w45_p7_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w45_p7_pkey ON public.fact_measurements_2025w45_p7 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p7 :: fact_measurements_2025w45_p7_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p7_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w45_p7 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45_p7 :: fact_measurements_2025w45_p7_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p7_ts_bucket_idx ON public.fact_measurements_2025w45_p7 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p7 :: idx_fm_dev_t_2025w45_p7
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w45_p7 ON public.fact_measurements_2025w45_p7 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p7 :: idx_fm_s_t_d_m_2025w45_p7
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w45_p7 ON public.fact_measurements_2025w45_p7 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45_p8 :: fact_measurements_2025w45_p8_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p8_device_id_ts_bucket_idx ON public.fact_measurements_2025w45_p8 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p8 :: fact_measurements_2025w45_p8_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w45_p8_pkey ON public.fact_measurements_2025w45_p8 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p8 :: fact_measurements_2025w45_p8_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p8_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w45_p8 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45_p8 :: fact_measurements_2025w45_p8_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p8_ts_bucket_idx ON public.fact_measurements_2025w45_p8 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p8 :: idx_fm_dev_t_2025w45_p8
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w45_p8 ON public.fact_measurements_2025w45_p8 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p8 :: idx_fm_s_t_d_m_2025w45_p8
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w45_p8 ON public.fact_measurements_2025w45_p8 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45_p9 :: fact_measurements_2025w45_p9_device_id_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p9_device_id_ts_bucket_idx ON public.fact_measurements_2025w45_p9 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p9 :: fact_measurements_2025w45_p9_pkey
+
 ```sql
 CREATE UNIQUE INDEX fact_measurements_2025w45_p9_pkey ON public.fact_measurements_2025w45_p9 USING btree (station_id, device_id, metric_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p9 :: fact_measurements_2025w45_p9_station_id_ts_bucket_device_id_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p9_station_id_ts_bucket_device_id_idx ON public.fact_measurements_2025w45_p9 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - public.fact_measurements_2025w45_p9 :: fact_measurements_2025w45_p9_ts_bucket_idx
+
 ```sql
 CREATE INDEX fact_measurements_2025w45_p9_ts_bucket_idx ON public.fact_measurements_2025w45_p9 USING brin (ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p9 :: idx_fm_dev_t_2025w45_p9
+
 ```sql
 CREATE INDEX idx_fm_dev_t_2025w45_p9 ON public.fact_measurements_2025w45_p9 USING btree (device_id, ts_bucket)
 ```
 
 - public.fact_measurements_2025w45_p9 :: idx_fm_s_t_d_m_2025w45_p9
+
 ```sql
 CREATE INDEX idx_fm_s_t_d_m_2025w45_p9 ON public.fact_measurements_2025w45_p9 USING btree (station_id, ts_bucket, device_id, metric_id) INCLUDE (value)
 ```
 
 - reporting.mv_measurements_daily :: idx_mv_measurements_daily_key
+
 ```sql
 CREATE INDEX idx_mv_measurements_daily_key ON reporting.mv_measurements_daily USING btree (station_id, device_id, metric_id, ts_day)
 ```
 
 - reporting.mv_measurements_daily :: idx_mv_measurements_daily_unique
+
 ```sql
 CREATE UNIQUE INDEX idx_mv_measurements_daily_unique ON reporting.mv_measurements_daily USING btree (station_id, device_id, metric_id, ts_day)
 ```
 
 - reporting.mv_measurements_hourly :: idx_mv_measurements_hourly_key
+
 ```sql
 CREATE INDEX idx_mv_measurements_hourly_key ON reporting.mv_measurements_hourly USING btree (station_id, device_id, metric_id, ts_hour)
 ```
 
 - reporting.mv_measurements_hourly :: idx_mv_measurements_hourly_unique
+
 ```sql
 CREATE UNIQUE INDEX idx_mv_measurements_hourly_unique ON reporting.mv_measurements_hourly USING btree (station_id, device_id, metric_id, ts_hour)
 ```
 
 ## 外键（简要）
 
-[WARN] 获取外键失败: canceling statement due to statement timeout
+\[WARN\] 获取外键失败: canceling statement due to statement timeout
 
 ## 视图列表
 
@@ -9206,6 +10861,7 @@ CREATE UNIQUE INDEX idx_mv_measurements_hourly_unique ON reporting.mv_measuremen
 ## 视图定义摘要（前 50 个）
 
 ### monitoring.v_active_index_coverage
+
 ```sql
  SELECT p.schemaname,
     p.part_name,
@@ -9216,6 +10872,7 @@ CREATE UNIQUE INDEX idx_mv_measurements_hourly_unique ON reporting.mv_measuremen
 ```
 
 ### monitoring.v_active_partitions
+
 ```sql
  SELECT n.nspname AS schemaname,
     c.relname AS part_name,
@@ -9227,6 +10884,7 @@ CREATE UNIQUE INDEX idx_mv_measurements_hourly_unique ON reporting.mv_measuremen
 ```
 
 ### monitoring.v_active_partitions_last7d
+
 ```sql
  SELECT p.schemaname,
     p.part_name,
@@ -9239,6 +10897,7 @@ CREATE UNIQUE INDEX idx_mv_measurements_hourly_unique ON reporting.mv_measuremen
 ```
 
 ### monitoring.v_missing_indexes_last7d
+
 ```sql
  SELECT p.schemaname,
     p.part_name
@@ -9249,6 +10908,7 @@ CREATE UNIQUE INDEX idx_mv_measurements_hourly_unique ON reporting.mv_measuremen
 ```
 
 ### monitoring.v_mv_hit_audit
+
 ```sql
  WITH base AS (
          SELECT lower(pg_stat_statements.query) AS q
@@ -9274,6 +10934,7 @@ CREATE UNIQUE INDEX idx_mv_measurements_hourly_unique ON reporting.mv_measuremen
 ```
 
 ### monitoring.v_query_coverage
+
 ```sql
  SELECT schemaname,
     tablename,
@@ -9290,6 +10951,7 @@ CREATE UNIQUE INDEX idx_mv_measurements_hourly_unique ON reporting.mv_measuremen
 ```
 
 ### public.device
+
 ```sql
  SELECT id AS device_id,
     station_id,
@@ -9302,6 +10964,7 @@ CREATE UNIQUE INDEX idx_mv_measurements_hourly_unique ON reporting.mv_measuremen
 ```
 
 ### public.device_metric_mapping
+
 ```sql
  SELECT d.id AS device_id,
     d.name AS device_name,
@@ -9317,6 +10980,7 @@ CREATE UNIQUE INDEX idx_mv_measurements_hourly_unique ON reporting.mv_measuremen
 ```
 
 ### public.device_summary
+
 ```sql
  SELECT d.id AS device_id,
     d.name AS device_name,
@@ -9338,6 +11002,7 @@ CREATE UNIQUE INDEX idx_mv_measurements_hourly_unique ON reporting.mv_measuremen
 ```
 
 ### public.operation_data
+
 ```sql
  SELECT f.ts_raw AS "timestamp",
     f.device_id,
@@ -9354,6 +11019,7 @@ CREATE UNIQUE INDEX idx_mv_measurements_hourly_unique ON reporting.mv_measuremen
 ```
 
 ### public.pg_stat_statements
+
 ```sql
  SELECT userid,
     dbid,
@@ -9402,6 +11068,7 @@ CREATE UNIQUE INDEX idx_mv_measurements_hourly_unique ON reporting.mv_measuremen
 ```
 
 ### public.pg_stat_statements_info
+
 ```sql
  SELECT dealloc,
     stats_reset
@@ -9409,6 +11076,7 @@ CREATE UNIQUE INDEX idx_mv_measurements_hourly_unique ON reporting.mv_measuremen
 ```
 
 ### public.pump_metric_mapping
+
 ```sql
  SELECT 9 AS device_id,
     '二期取水泵房2#泵'::text AS device_name,
@@ -9424,6 +11092,7 @@ CREATE UNIQUE INDEX idx_mv_measurements_hourly_unique ON reporting.mv_measuremen
 ```
 
 ### public.station
+
 ```sql
  SELECT id AS station_id,
     name,
@@ -9434,6 +11103,7 @@ CREATE UNIQUE INDEX idx_mv_measurements_hourly_unique ON reporting.mv_measuremen
 ```
 
 ### public.v_adaptive_horizontal
+
 ```sql
  SELECT "timestamp",
     station_id,
@@ -9476,6 +11146,7 @@ CREATE UNIQUE INDEX idx_mv_measurements_hourly_unique ON reporting.mv_measuremen
 ```
 
 ### public.v_device_metric_foundation
+
 ```sql
  SELECT d.id AS device_id,
     d.station_id,
@@ -9510,6 +11181,7 @@ CREATE UNIQUE INDEX idx_mv_measurements_hourly_unique ON reporting.mv_measuremen
 ```
 
 ### public.v_fully_adaptive_data
+
 ```sql
  WITH best_station AS (
          SELECT v_station_summary.station_id,
@@ -9544,6 +11216,7 @@ CREATE UNIQUE INDEX idx_mv_measurements_hourly_unique ON reporting.mv_measuremen
 ```
 
 ### public.v_station_summary
+
 ```sql
  SELECT d.station_id,
     COALESCE(s.name, '未知泵站'::text) AS station_name,
@@ -9581,6 +11254,7 @@ CREATE UNIQUE INDEX idx_mv_measurements_hourly_unique ON reporting.mv_measuremen
 ```
 
 ### public.v_storage_monitoring
+
 ```sql
  SELECT schemaname,
     relname AS tablename,
@@ -9603,6 +11277,7 @@ CREATE UNIQUE INDEX idx_mv_measurements_hourly_unique ON reporting.mv_measuremen
 ```
 
 ### reporting.v_metrics_daily
+
 ```sql
  SELECT station_id,
     device_id,

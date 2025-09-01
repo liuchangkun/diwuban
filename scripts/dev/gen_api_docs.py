@@ -36,7 +36,9 @@ def format_route(route) -> str:
         sig = str(inspect.signature(endpoint)) if endpoint else "()"
         ret_ann = inspect.signature(endpoint).return_annotation if endpoint else None
         if ret_ann is not inspect.Signature.empty:
-            if getattr(ret_ann, "__module__", "") and getattr(ret_ann, "__name__", None):
+            if getattr(ret_ann, "__module__", "") and getattr(
+                ret_ann, "__name__", None
+            ):
                 ret = f" -> {ret_ann.__module__}.{ret_ann.__name__}"
             else:
                 ret = f" -> {ret_ann}"
@@ -88,4 +90,3 @@ if __name__ == "__main__":
     except Exception as e:
         print("[ERR] 生成 API 文档失败:", e)
         sys.exit(2)
-

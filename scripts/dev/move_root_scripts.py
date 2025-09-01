@@ -12,31 +12,66 @@
   python scripts/dev/move_root_scripts.py
 """
 from __future__ import annotations
-import os
 from pathlib import Path
 from datetime import datetime
 from typing import List, Tuple
 
 ROOT = Path(__file__).resolve().parents[2]
-DEST_BASE = ROOT / 'scripts'
-REPORT_DIR = ROOT / 'docs' / '_archive' / 'reports'
+DEST_BASE = ROOT / "scripts"
+REPORT_DIR = ROOT / "docs" / "_archive" / "reports"
 REPORT_DIR.mkdir(parents=True, exist_ok=True)
 MAP_FILE = REPORT_DIR / f"顶层脚本迁移清单_{datetime.now().strftime('%Y%m%d')}.tsv"
 CONFLICT_FILE = REPORT_DIR / f"顶层脚本迁移冲突_{datetime.now().strftime('%Y%m%d')}.tsv"
 
 EXCLUDE_DIRS = {
-    'app','scripts','tests','docs','configs','config','data','logs','rules','src',
-    '.git','.github','.mypy_cache','.ruff_cache','.pytest_cache','.vscode','ProjectDocs个人说明'
+    "app",
+    "scripts",
+    "tests",
+    "docs",
+    "configs",
+    "config",
+    "data",
+    "logs",
+    "rules",
+    "src",
+    ".git",
+    ".github",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".pytest_cache",
+    ".vscode",
+    "ProjectDocs个人说明",
 }
 
 MAINT_PATTERNS = (
-    'create_','generate_','execute_','restore_','optimize_','fix_','recreate_','migrate_',
+    "create_",
+    "generate_",
+    "execute_",
+    "restore_",
+    "optimize_",
+    "fix_",
+    "recreate_",
+    "migrate_",
 )
 ANALYSIS_PATTERNS = (
-    'query_','demo_','verify_','analyze_','postgres_','*_example','example','examples','stats','digest',
+    "query_",
+    "demo_",
+    "verify_",
+    "analyze_",
+    "postgres_",
+    "*_example",
+    "example",
+    "examples",
+    "stats",
+    "digest",
 )
 TOOLS_PATTERNS = (
-    'check_','simple_','count_','probe_','print_','run_',
+    "check_",
+    "simple_",
+    "count_",
+    "probe_",
+    "print_",
+    "run_",
 )
 
 
@@ -44,25 +79,30 @@ def classify(script: Path) -> str:
     name = script.name
     low = name.lower()
     # 明确排除 __init__ 等
-    if low in {'__init__.py'}:
-        return 'skip'
+    if low in {"__init__.py"}:
+        return "skip"
     # 分类规则（按优先级）
     for p in MAINT_PATTERNS:
         if low.startswith(p):
-            return 'maintenance'
+            return "maintenance"
     for p in ANALYSIS_PATTERNS:
-        if low.startswith(p) or ('example' in low) or ('examples' in low) or ('digest' in low):
-            return 'analysis'
+        if (
+            low.startswith(p)
+            or ("example" in low)
+            or ("examples" in low)
+            or ("digest" in low)
+        ):
+            return "analysis"
     for p in TOOLS_PATTERNS:
         if low.startswith(p):
-            return 'tools'
+            return "tools"
     # 特判常见脚本名
-    if low in {'api_fix_report.py'}:
-        return 'tools'
-    if low in {'verify_horizontal.py'}:
-        return 'analysis'
+    if low in {"api_fix_report.py"}:
+        return "tools"
+    if low in {"verify_horizontal.py"}:
+        return "analysis"
     # 默认放 tools
-    return 'tools'
+    return "tools"
 
 
 def iter_root_scripts() -> List[Path]:
@@ -73,21 +113,23 @@ def iter_root_scripts() -> List[Path]:
                 continue
             # 不递归目录，这里只处理根层文件
             continue
-        if p.suffix.lower() == '.py':
+        if p.suffix.lower() == ".py":
             results.append(p)
     return results
 
 
-def move_files(files: List[Path]) -> Tuple[int,int,int]:
+def move_files(files: List[Path]) -> Tuple[int, int, int]:
     moved = 0
     skipped = 0
     conflicts = 0
-    with MAP_FILE.open('w', encoding='utf-8') as fw_map, CONFLICT_FILE.open('w', encoding='utf-8') as fw_conf:
-        fw_map.write('original_path\tnew_path\n')
-        fw_conf.write('conflict_path\ttarget_path\n')
+    with MAP_FILE.open("w", encoding="utf-8") as fw_map, CONFLICT_FILE.open(
+        "w", encoding="utf-8"
+    ) as fw_conf:
+        fw_map.write("original_path\tnew_path\n")
+        fw_conf.write("conflict_path\ttarget_path\n")
         for f in files:
             category = classify(f)
-            if category == 'skip':
+            if category == "skip":
                 skipped += 1
                 continue
             dest_dir = DEST_BASE / category
@@ -116,6 +158,5 @@ def main():
     print(f"[冲突] {CONFLICT_FILE.relative_to(ROOT)}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
-

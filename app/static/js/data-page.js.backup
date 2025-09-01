@@ -541,5 +541,3 @@
     window.addEventListener('resize', applyResponsiveLayout);
   });
 })();
-
-

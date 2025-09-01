@@ -14,9 +14,10 @@ import os
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Iterable, Dict, Tuple, List
+from typing import Iterable, Dict, Tuple
 
 EXCLUDE_DIR_NAMES = {".git", "node_modules", "venv", ".venv", "__pycache__"}
+
 
 @dataclass
 class FileInfo:
@@ -78,7 +79,9 @@ def main():
     print(f"根目录: {root}\n文件总数: {len(files)}\n")
 
     print("## 扩展名分布（TOP 30 按数量）")
-    for ext, (cnt, total) in sorted(by_ext.items(), key=lambda x: x[1][0], reverse=True)[:30]:
+    for ext, (cnt, total) in sorted(
+        by_ext.items(), key=lambda x: x[1][0], reverse=True
+    )[:30]:
         print(f"- {ext}: {cnt} 个，合计 {human_mb(total)} MB")
 
     print("\n## 顶层目录聚合（按体量降序）")
@@ -88,19 +91,24 @@ def main():
     print("\n## TOP 大文件")
     for fi in topN:
         rel = fi.path.relative_to(root).as_posix()
-        print(f"- {rel} | {human_mb(fi.size)} MB | {datetime.fromtimestamp(fi.mtime).strftime('%Y-%m-%d %H:%M:%S')}")
+        print(
+            f"- {rel} | {human_mb(fi.size)} MB | {datetime.fromtimestamp(fi.mtime).strftime('%Y-%m-%d %H:%M:%S')}"
+        )
 
     print("\n## 最近修改")
     for fi in recentN:
         rel = fi.path.relative_to(root).as_posix()
-        print(f"- {datetime.fromtimestamp(fi.mtime).strftime('%Y-%m-%d %H:%M:%S')} | {rel} | {human_mb(fi.size)} MB")
+        print(
+            f"- {datetime.fromtimestamp(fi.mtime).strftime('%Y-%m-%d %H:%M:%S')} | {rel} | {human_mb(fi.size)} MB"
+        )
 
     print("\n## 久未修改")
     for fi in staleN:
         rel = fi.path.relative_to(root).as_posix()
-        print(f"- {datetime.fromtimestamp(fi.mtime).strftime('%Y-%m-%d %H:%M:%S')} | {rel} | {human_mb(fi.size)} MB")
+        print(
+            f"- {datetime.fromtimestamp(fi.mtime).strftime('%Y-%m-%d %H:%M:%S')} | {rel} | {human_mb(fi.size)} MB"
+        )
 
 
 if __name__ == "__main__":
     main()
-

@@ -79,4 +79,3 @@ VALUES
 ON CONFLICT (device_id,param_key) DO UPDATE SET value_numeric=EXCLUDED.value_numeric, unit=EXCLUDED.unit, source=EXCLUDED.source, updated_at=now();
 
 COMMIT;
-

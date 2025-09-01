@@ -13,16 +13,16 @@ from pathlib import Path
 from datetime import datetime
 
 ROOT = Path(__file__).resolve().parents[2]
-SRC = ROOT / 'docs' / 'reports'
-ARCHIVE_BASE = ROOT / 'docs' / '_archive' / 'reports'
-DATE = datetime.now().strftime('%Y%m%d')
-DEST_ROOT = ARCHIVE_BASE / f'DELETED_{DATE}'
-REPORT_TSV = ARCHIVE_BASE / f'删除备份清单_{DATE}.tsv'
+SRC = ROOT / "docs" / "reports"
+ARCHIVE_BASE = ROOT / "docs" / "_archive" / "reports"
+DATE = datetime.now().strftime("%Y%m%d")
+DEST_ROOT = ARCHIVE_BASE / f"DELETED_{DATE}"
+REPORT_TSV = ARCHIVE_BASE / f"删除备份清单_{DATE}.tsv"
 
 
 def main():
     if not SRC.exists():
-        print('[INFO] 源目录不存在，跳过：', SRC)
+        print("[INFO] 源目录不存在，跳过：", SRC)
         return
 
     DEST_ROOT.mkdir(parents=True, exist_ok=True)
@@ -36,13 +36,15 @@ def main():
             # 跳过已经是归档路径（理论不会）
             files_to_move.append(p)
 
-    with REPORT_TSV.open('w', encoding='utf-8') as fw:
-        fw.write('original_path\tnew_path\n')
+    with REPORT_TSV.open("w", encoding="utf-8") as fw:
+        fw.write("original_path\tnew_path\n")
         for src_p in files_to_move:
             rel = src_p.relative_to(SRC)
             dest_p = DEST_ROOT / rel
             dest_p.parent.mkdir(parents=True, exist_ok=True)
-            fw.write(f"{src_p.relative_to(ROOT).as_posix()}\t{dest_p.relative_to(ROOT).as_posix()}\n")
+            fw.write(
+                f"{src_p.relative_to(ROOT).as_posix()}\t{dest_p.relative_to(ROOT).as_posix()}\n"
+            )
             # 执行移动
             dest_p.write_bytes(src_p.read_bytes())
             os.remove(src_p)
@@ -55,9 +57,8 @@ def main():
             except OSError:
                 pass
 
-    print('[OK] 已归档并清空 docs/reports，映射清单：', REPORT_TSV.relative_to(ROOT))
+    print("[OK] 已归档并清空 docs/reports，映射清单：", REPORT_TSV.relative_to(ROOT))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
-

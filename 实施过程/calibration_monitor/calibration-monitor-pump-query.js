@@ -292,7 +292,7 @@ function loadProcessDetails() {
                     <div style="color: #666;">总耗时</div>
                 </div>
             </div>
-            
+
             <h5>🔧 过程步骤时间线</h5>
             <div class="process-steps-timeline">
                 ${details.steps.map(step => `
@@ -305,7 +305,7 @@ function loadProcessDetails() {
                     </div>
                 `).join('')}
             </div>
-            
+
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
                 <div>
                     <h5>📊 数据选择细节</h5>
@@ -322,13 +322,13 @@ function loadProcessDetails() {
                         </div>
                     </div>
                 </div>
-                
+
                 <div>
                     <h5>🧠 算法选择原因</h5>
                     <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
                         <div style="line-height: 1.6;">${details.algorithmReason}</div>
                     </div>
-                    
+
                     <h5 style="margin-top: 15px;">📊 验证结果</h5>
                     <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
                         <div><strong>交叉验证:</strong> ${details.validationResults.crossValidationFolds}折</div>
@@ -384,7 +384,7 @@ function loadQualityMetrics() {
                 <div style="color: #666;">最大误差</div>
             </div>
         </div>
-        
+
         <h5>📈 残差分析</h5>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
             <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
@@ -396,7 +396,7 @@ function loadQualityMetrics() {
                 <div><strong>峰度:</strong> ${metrics.residualAnalysis.kurtosis.toFixed(3)}</div>
             </div>
         </div>
-        
+
         <div style="margin-top: 20px; padding: 15px; background: #e8f5e8; border-radius: 8px; border-left: 4px solid #27ae60;">
             <h5 style="color: #2e7d32; margin-bottom: 10px;">📊 综合评价</h5>
             <div style="color: #2e7d32;">
@@ -491,7 +491,7 @@ function loadDetailedAnalysisContent() {
                     <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #3498db;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                             <span style="font-weight: bold; color: #2c3e50;">${category.description}</span>
-                            <span style="padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; 
+                            <span style="padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;
                                     background: ${category.score > 0.9 ? '#d4edda' : category.score > 0.8 ? '#cce5ff' : '#fff3cd'};
                                     color: ${category.score > 0.9 ? '#155724' : category.score > 0.8 ? '#004085' : '#856404'};">
                                 ${(category.score * 100).toFixed(1)}%
@@ -516,7 +516,7 @@ function loadDetailedAnalysisContent() {
             <h5>💡 优化建议</h5>
             <div style="display: grid; gap: 10px;">
                 ${analysis.detailedAnalysis.optimizationRecommendations.map(rec => `
-                    <div style="background: white; padding: 15px; border-radius: 8px; 
+                    <div style="background: white; padding: 15px; border-radius: 8px;
                                 border-left: 4px solid ${rec.priority === 'high' ? '#e74c3c' : rec.priority === 'medium' ? '#f39c12' : '#3498db'};">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                             <span style="font-weight: bold; color: #2c3e50;">${rec.title}</span>

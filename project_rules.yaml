@@ -12,7 +12,7 @@
 - 公开API必须包含Google风格docstring
       </rule_content>
     </rule>
-    
+
     <rule name="architecture_rules">
       <rule_content>
 架构设计规范（基于 docs/体系结构总览.md）
@@ -25,7 +25,7 @@
 - 禁止直接DSN拼接，统一使用YAML配置
       </rule_content>
     </rule>
-    
+
     <rule name="logging_standards">
       <rule_content>
 日志规范（基于 docs/日志规范.md）
@@ -38,7 +38,7 @@
 - 单行限制8KB
       </rule_content>
     </rule>
-    
+
     <rule name="safety_rules">
       <rule_content>
 安全约束规则
@@ -54,7 +54,7 @@
 - 高风险：安装依赖、数据库迁移、部署
       </rule_content>
     </rule>
-    
+
     <rule name="mcp_workflow">
       <rule_content>
 MCP工具使用规范（基于 docs/智能助手行为控制.md）
@@ -68,13 +68,13 @@ MCP工具使用规范（基于 docs/智能助手行为控制.md）
       </rule_content>
     </rule>
   </always_on_rules>
-  
+
   <model_decision_rules>
     <rule name="risk_assessment" description="操作风险评估和分级管理"/>
     <rule name="change_validation" description="代码变更验证和回滚策略"/>
     <rule name="quality_gates" description="代码质量门禁和检查点"/>
   </model_decision_rules>
-  
+
   <glob_rules>
     <rule name="python_files" glob="*.py"/>
     <rule name="config_files" glob="configs/*.yaml"/>

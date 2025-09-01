@@ -260,19 +260,19 @@ def run_all(
         step_logger.step("检测staging_raw实际时间范围")
         try:
             from app.adapters.db.gateway import get_staging_time_range
-            
+
             with get_conn(settings) as conn:
                 min_time, max_time, count = get_staging_time_range(
                     conn, settings.merge.tz.default_station_tz
                 )
-            
+
             if count > 0 and min_time and max_time:
                 # 更新时间窗口
                 original_window_start = window_start_utc
                 original_window_end = window_end_utc
                 window_start_utc = min_time
                 window_end_utc = max_time
-                
+
                 step_logger.step(
                     "时间窗口已更新",
                     original_start=original_window_start.isoformat(),
@@ -281,7 +281,7 @@ def run_all(
                     new_end=window_end_utc.isoformat(),
                     data_count=count,
                 )
-                
+
                 logger.info(
                     "基于staging_raw数据更新时间窗口",
                     extra={

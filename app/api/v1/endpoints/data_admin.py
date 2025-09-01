@@ -59,7 +59,9 @@ async def get_stations(request: Request) -> List[StationSummary]:
             with conn.cursor() as cur:
                 cur.execute(sql)
                 sql_duration = (time.time() - sql_exec_time) * 1000
-                DatabaseLoggingMixin.log_sql_execution(sql=sql, duration_ms=sql_duration)
+                DatabaseLoggingMixin.log_sql_execution(
+                    sql=sql, duration_ms=sql_duration
+                )
                 rows = cur.fetchall()
                 logger.info(
                     "泵站数据查询完成",
@@ -231,14 +233,20 @@ async def get_station_statistics(
                         "total_records": result[0],
                         "active_devices": result[1],
                         "avg_power_kw": round(float(result[2]), 2) if result[2] else 0,
-                        "total_power_kw": round(float(result[3]), 2) if result[3] else 0,
-                        "avg_flow_rate_m3h": round(float(result[4]), 2) if result[4] else 0,
-                        "total_flow_rate_m3h": round(float(result[5]), 2) if result[5] else 0,
+                        "total_power_kw": (
+                            round(float(result[3]), 2) if result[3] else 0
+                        ),
+                        "avg_flow_rate_m3h": (
+                            round(float(result[4]), 2) if result[4] else 0
+                        ),
+                        "total_flow_rate_m3h": (
+                            round(float(result[5]), 2) if result[5] else 0
+                        ),
                         "data_start": result[6].isoformat() if result[6] else None,
                         "data_end": result[7].isoformat() if result[7] else None,
-                        "energy_consumption_kwh": round(float(result[3]) * hours, 2)
-                        if result[3]
-                        else 0,
+                        "energy_consumption_kwh": (
+                            round(float(result[3]) * hours, 2) if result[3] else 0
+                        ),
                     }
                 else:
                     return {"station_id": station_id, "message": "指定时间范围内无数据"}
@@ -301,4 +309,3 @@ async def get_import_statistics(station_id: str) -> Dict[str, Any]:
         return stats
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"导入统计查询失败: {str(e)}")
-

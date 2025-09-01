@@ -11,39 +11,39 @@ from pathlib import Path
 import shutil
 
 ROOT = Path(__file__).resolve().parents[2]
-DOCS = ROOT / 'docs'
-ARCHIVE = DOCS / '_archive'
+DOCS = ROOT / "docs"
+ARCHIVE = DOCS / "_archive"
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--date', required=True, help='日期，例如 20250826')
-    ap.add_argument('--apply', action='store_true')
+    ap.add_argument("--date", required=True, help="日期，例如 20250826")
+    ap.add_argument("--apply", action="store_true")
     args = ap.parse_args()
 
-    tsv = ARCHIVE / f'删除备份清单_{args.date}.tsv'
-    deleted_root = ARCHIVE / f'DELETED_{args.date}'
-    conflict_root = ARCHIVE / f'RESTORED_CONFLICTS_{args.date}'
+    tsv = ARCHIVE / f"删除备份清单_{args.date}.tsv"
+    deleted_root = ARCHIVE / f"DELETED_{args.date}"
+    conflict_root = ARCHIVE / f"RESTORED_CONFLICTS_{args.date}"
 
     if not tsv.exists():
-        print('[ERR] 清单不存在：', tsv)
+        print("[ERR] 清单不存在：", tsv)
         return
 
     conflict_root.mkdir(parents=True, exist_ok=True)
 
     restored, conflicts = 0, 0
-    lines = tsv.read_text(encoding='utf-8', errors='ignore').splitlines()
+    lines = tsv.read_text(encoding="utf-8", errors="ignore").splitlines()
     header = True
     for line in lines:
         if header:
             header = False
             continue
-        parts = line.split('\t')
+        parts = line.split("\t")
         if len(parts) < 2:
             continue
         orig_rel, new_rel = parts[0], parts[1]
         # 仅处理 DELETED_{date} 中的项
-        if f'_archive/reports/' in new_rel and 'DELETED_' not in new_rel:
+        if "_archive/reports/" in new_rel and "DELETED_" not in new_rel:
             pass
         src = ROOT / new_rel
         if not src.exists():
@@ -59,9 +59,8 @@ def main():
         else:
             shutil.copy2(src, dst)
             restored += 1
-    print(f'[OK] 恢复完成：restored={restored}, conflicts={conflicts}, 清单={tsv}')
+    print(f"[OK] 恢复完成：restored={restored}, conflicts={conflicts}, 清单={tsv}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
-

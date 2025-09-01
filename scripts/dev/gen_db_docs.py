@@ -26,7 +26,7 @@ def extract_block_from_snapshot() -> str:
     if not m:
         # 快照异常时，直接返回提示
         return "[WARN] 快照缺少表列表段落，请检查导出脚本运行是否成功。"
-    return text[m.start():]
+    return text[m.start() :]
 
 
 def replace_auto_block(doc_path: Path, block: str) -> None:
@@ -54,4 +54,3 @@ if __name__ == "__main__":
     except Exception as e:
         print("[ERR] 生成 DB 文档失败:", e)
         sys.exit(2)
-

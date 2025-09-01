@@ -61,4 +61,3 @@
 
   window.API = API;
 })();
-

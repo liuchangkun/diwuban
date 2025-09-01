@@ -10,15 +10,15 @@
 # =============================================================================
 rules_metadata:
   version: "1.0"
-  source_docs: 
+  source_docs:
     - "docs/编码规范.md"
-    - "docs/体系结构总览.md" 
+    - "docs/体系结构总览.md"
     - "docs/日志规范.md"
     - "docs/智能助手行为控制.md"
   last_updated: "2025-08-31"
   categories:
     - "coding_standards"
-    - "architecture" 
+    - "architecture"
     - "logging"
     - "safety"
     - "mcp_workflow"
@@ -37,24 +37,24 @@ coding_standards:
   type_annotations:
     required_for_public_api: true    # 对外API必须类型注解
     mypy_strict_mode: true           # 关键模块启用mypy严格模式
-  
+
   sql_safety:
     parameterized_only: true         # 严禁字符串拼接SQL
     placeholder_style: "%s"          # 必须使用%s占位符
     no_string_concat: true           # 禁止字符串拼接
-  
+
   error_handling:
     no_bare_except: true             # 禁止裸except
     specific_exceptions_only: true    # 仅捕获已知异常
     no_swallow_exceptions: true      # 不得吞异常
-  
+
   naming_conventions:
     packages_modules: "snake_case"   # 包/模块：小写蛇形
     classes: "PascalCase"            # 类：大驼峰
     functions_variables: "snake_case" # 函数/变量：小写蛇形
     constants: "UPPER_SNAKE_CASE"    # 常量：大写蛇形
     private_prefix: "_"              # 内部成员前缀
-  
+
   documentation:
     docstring_style: "Google"        # 使用Google风格
     public_api_required: true        # 公开API必须docstring
@@ -66,14 +66,14 @@ architecture:
     adapter_gateway_required: true   # 跨层访问必须走网关/适配器
     single_responsibility: true      # 单一职责原则
     no_circular_dependencies: true   # 禁止循环依赖
-  
+
   directory_structure:
     adapters_path: "app/adapters"     # 适配器层路径
     services_path: "app/services"     # 服务层路径
     models_path: "app/models"         # 模型层路径
     api_path: "app/api"               # API层路径
     core_path: "app/core"             # 核心层路径
-  
+
   database_access:
     pool_only: true                  # 仅使用连接池
     gateway_pattern: true            # 使用网关模式
@@ -85,17 +85,17 @@ logging_standards:
     structured_only: true            # 必须结构化格式(JSON)
     encoding: "utf-8"                # UTF-8编码
     timezone: "UTC"                  # UTC时间
-  
+
   event_naming:
     pattern: "<domain>.<action>[.detail]"  # 事件命名模式
     domains: ["ingest", "align", "db", "mv", "audit", "task", "guardrail", "backpressure", "quality", "cli", "pool"]
-  
+
   required_fields:
     - "ts"                           # 时间戳
     - "level"                        # 日志级别
     - "event"                        # 事件名称
     - "logger"                       # 日志器
-  
+
   security:
     redaction_required: true         # 必须脱敏
     max_line_size: 8192             # 单行最大字节
@@ -107,7 +107,7 @@ configuration:
     yaml_only: true                 # 配置统一YAML
     no_code_dsn: true               # 严禁代码中拼接DSN
     priority: ["CLI", "ENV", "YAML", "DEFAULT"]  # 配置优先级
-  
+
   files:
     database_config: "configs/database.yaml"
     web_config: "configs/web.yaml"
@@ -147,7 +147,7 @@ safety:
     - "database_migration"       # 禁止数据库迁移
     - "data_directory_write"     # 禁止写入data/目录
     - "venv_modification"        # 禁止操作venv/
-  
+
   risk_levels:
     low: ["view_code", "read_docs", "unit_test", "readonly_command"]
     medium: ["modify_code", "change_config", "generate_script", "add_dependency"]
@@ -158,10 +158,10 @@ mcp_requirements:
   mandatory_tools: ["Context7", "Sequential_thinking"]
   workflow_stages:
     - "retrieve"                # 检索
-    - "plan"                    # 规划  
+    - "plan"                    # 规划
     - "verify"                  # 验证
     - "audit"                   # 审计
-  
+
   task_management:
     required_for_complex: true   # 复杂任务必须使用任务清单
     min_steps_threshold: 3       # 3步以上任务必须分解

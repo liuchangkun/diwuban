@@ -241,6 +241,7 @@
 ### 日志事件
 
 连接池相关操作会生成以下日志事件：
+
 - `pool.initialized`：连接池初始化完成
 - `pool.connection.created`：创建新连接
 - `pool.connection.acquired`：获取连接成功
