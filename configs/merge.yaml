@@ -1,0 +1,19 @@
+# 数据合并配置 (merge.yaml)
+# 配置数据时间对齐和合并策略
+
+# 时间窗口配置
+window:
+  size: "7d"          # 时间窗口大小 (7天)
+  start: null         # 绝对开始时间 (可选)
+  end: null           # 绝对结束时间 (可选)
+
+# 时区策略配置
+tz:
+  default_station_tz: "Asia/Shanghai"  # 默认站点时区 (来自system.yaml)
+  allow_missing_tz: true               # 允许缺失时区信息
+  missing_tz_policy: "default"        # 缺失时区处理策略: default|utc|reject
+
+# 分段合并配置  
+segmented:
+  enabled: true       # 启用分段合并
+  granularity: "1h"   # 分段粒度: 15m|30m|1h|2h|6h|12h|24h

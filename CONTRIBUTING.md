@@ -55,4 +55,18 @@
 - 测试要求：并发/背压、日志字段/开关、合并窗口边界、UPSERT 语义均需单测/集成测覆盖
 - PR 要求：同步更新相关文档与 PLAYBOOKS；提供回滚方案；“完成一个函数即自查一次”
 
+## 9. 当前程序现状与快速恢复
+
+- 现状（2025-08-18）：
+  - CLI 方案B日志开关；中文帮助完善；db-ping --verbose；check-mapping --out/--show-all 聚类
+  - 标准 schema 映射：使用 config/data_mapping.v2.json（由转换脚本生成）
+  - run-all 进行到 prepare-dim：
+    - 已修：dim_stations tz CAST、dim_devices.type 默认 unknown
+    - 待修：dim_metric_config RETURNING 列名需与实际表对齐
+- 重启后恢复步骤：
+  1. 打开 docs/PLAYBOOKS/SESSION_SNAPSHOT_2025-08-18.md
+  1. `python -m app.cli.main db-ping --verbose`
+  1. `python -m app.cli.main check-mapping config/data_mapping.v2.json --out mapping_report_v2.json --log-run`
+  1. 修复 prepare_dim 的 dim_metric_config 返回列后，执行 run-all 并核对 logs/runs/<job>/sql|perf|summary
+
 —— 本指南持续与仓库自动化保持一致。若发现不一致，请以实际 pre-commit/CI 行为为准并提交修正。

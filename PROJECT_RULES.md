@@ -73,4 +73,16 @@
 - 配置文件位置：configs/ingest.yaml、configs/logging.yaml；覆盖顺序 CLI>ENV>YAML>默认
 - 日志：仅摘要 SQL（logging.sql.text=summary；explain=on_error），启用 redaction；多流目录 runs/YYYYMMDD/\<job_id>/
 
+## 10. 当前程序现状（2025-08-18）与恢复步骤
+
+- 现状：
+  - CLI 方案B：`--log-run/--log-dir`；所有命令支持中文帮助
+  - check-mapping：`--out` 导出、`--show-all` 聚类；聚类统计已启用
+  - db-ping：`--verbose` 输出连接信息（host 不脱敏）
+  - 标准 schema：使用 `config/data_mapping.v2.json`
+  - run-all 进度：prepare-dim 已执行，修复进行中
+    - 已修：dim_stations tz 参数类型；dim_devices.type 默认 unknown
+    - 待修：dim_metric_config RETURNING 列名不匹配
+- 重启后恢复：参见 `docs/PLAYBOOKS/SESSION_SNAPSHOT_2025-08-18.md`
+
 —— 本文件作为“总纲”。细节请以导航文档链接到的子文档为准，并保持与实现一致。

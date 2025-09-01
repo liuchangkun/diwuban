@@ -1,0 +1,111 @@
+# 日志配置（仅 YAML；严禁 ENV/CLI 覆盖）
+# - 默认使用 JSON 格式；路由 by_run|by_module
+level: DEBUG                # 全局日志级别：DEBUG/INFO/WARN/ERROR
+format: json                # json|text（默认 json）
+routing: by_run             # by_run|by_module
+
+# 启动清理配置
+startup_cleanup:
+  clear_logs: true          # 启动时清空logs目录
+  clear_database: true      # 启动时清空数据库
+  logs_backup_count: 3      # 清理前保留的日志备份数
+  confirm_clear: false      # 是否需要确认清理操作
+
+# 详细日志记录配置
+detailed_logging:
+  enable_function_entry: true     # 记录函数进入
+  enable_function_exit: true      # 记录函数退出
+  enable_parameter_logging: true  # 记录函数参数
+  enable_context_logging: true    # 记录上下文信息
+  enable_business_logging: true   # 记录业务逻辑
+  enable_progress_logging: true   # 记录进度信息
+  enable_performance_logging: true # 记录性能指标
+  enable_error_details: true      # 记录详细错误信息
+  enable_internal_steps: true     # 记录函数内部执行步骤
+  enable_condition_branches: true # 记录条件分支执行
+  enable_loop_iterations: true    # 记录循环迭代过程
+  enable_intermediate_results: true # 记录中间结果
+  enable_data_validation: true    # 记录数据验证过程
+  enable_resource_usage: true     # 记录资源使用情况
+  enable_timing_details: true     # 记录详细时间信息
+  internal_steps_interval: 10     # 内部步骤日志输出间隔（秒）
+  loop_log_interval: 100          # 循环日志输出间隔（次数）
+
+# 关键信息日志配置
+key_metrics:
+  enable_file_count: true         # 记录文件数量
+  enable_data_time_range: true    # 记录数据时间范围
+  enable_processing_progress: true # 记录处理进度
+  enable_merge_statistics: true   # 记录合并统计
+  enable_performance_metrics: true # 记录性能指标
+  enable_memory_usage: true       # 记录内存使用
+  enable_database_stats: true     # 记录数据库统计
+  enable_file_size_info: true     # 记录文件大小信息
+  enable_throughput_metrics: true # 记录吞吐量指标
+  enable_error_statistics: true   # 记录错误统计
+  enable_quality_metrics: true    # 记录数据质量指标
+  enable_pipeline_stages: true    # 记录管道阶段信息
+  enable_batch_statistics: true   # 记录批处理统计
+  enable_resource_consumption: true # 记录资源消耗
+  enable_data_distribution: true  # 记录数据分布信息
+  progress_report_interval: 1000  # 进度报告间隔（行数）
+  metrics_summary_interval: 300   # 指标汇总间隔（秒）
+
+# 文件轮转配置
+rotation:
+  max_bytes: 104857600         # 单文件最大大小（字节）：100MB，超过后轮转
+  backup_count: 7              # 备份文件数量：保留的历史日志文件数
+  rotation_interval: 86400     # 轮转间隔（秒）：按时间轮转的周期
+
+# 采样控制
+sampling:
+  loop_log_every_n: 1000
+  # default_rate: 1.0                 # 默认采样率（0~1），不配置则按应用默认
+  # high_frequency_events:             # 为高频事件单独设置采样率；不配置则按 default_rate
+  #   ingest.copy.batch: 0.1
+  #   backpressure.enter: 1.0
+  #   backpressure.exit: 1.0       # 高频循环事件的采样频率（每 N 条输出一次）
+  default_rate: 1.0            # 默认采样率：1.0 表示不采样
+  high_frequency_events:
+    "ingest.copy.batch": 0.1  # 批量导入事件采样率
+  burst_limit: 100             # 突发限制：短时间内同类事件的最大数量
+
+# 格式化设置
+formatting:
+  timestamp_format: "%Y-%m-%d %H:%M:%S.%f"  # 时间戳格式
+  max_message_length: 8192     # 消息最大长度：超过截断
+  field_order: ["timestamp", "level", "message", "extra"]  # 字段顺序
+
+# 性能优化
+performance:
+  buffer_size: 8192            # 缓冲区大小：写入缓冲区字节数
+  flush_interval: 1.0          # 刷新间隔（秒）：强制刷新缓冲区的周期
+  async_handler_queue_size: 1000  # 异步处理队列大小
+  queue_handler: true          # 启用异步写盘（QueueHandler/Listener）
+
+redaction:
+  enable: false                # 默认不脱敏；如需启用设置为 true
+retention_days: 14             # 日志保留天数
+
+# SQL执行日志配置
+sql_execution:
+  enable_statement_logging: true  # 记录完整SQL语句
+  enable_execution_metrics: true  # 记录执行指标
+  enable_parameter_logging: true  # 记录SQL参数
+  enable_result_summary: true     # 记录结果摘要
+  enable_slow_query_detection: true # 启用慢查询检测
+  slow_query_threshold_ms: 1000   # 慢查询阈值（毫秒）
+  max_sql_length: 2000           # SQL语句最大记录长度
+  sensitive_fields: ["password", "token", "secret", "key"]  # 敏感字段列表
+
+# 函数内部执行过程配置
+internal_execution:
+  enable_step_logging: true       # 启用步骤日志
+  enable_checkpoint_logging: true # 启用检查点日志
+  enable_branch_logging: true     # 启用分支日志
+  enable_iteration_logging: true  # 启用迭代日志
+  enable_validation_logging: true # 启用验证日志
+  enable_transformation_logging: true # 启用转换日志
+  step_detail_level: "medium"     # 步骤详细级别：low/medium/high
+  iteration_log_frequency: 100    # 迭代日志频率（每多X次记录一次）
+  checkpoint_auto_interval: 30    # 自动检查点间隔（秒）

@@ -67,6 +67,27 @@ repos:
         pass_filenames: false
         stages: [pre-commit]
 
+      - id: playbooks-naming
+        name: playbooks-naming
+        entry: python scripts/tools/check_playbooks_naming.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: kg-reminder
+        name: kg-reminder
+        entry: python scripts/tools/kg_reminder.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: kg-diff-check
+        name: kg-diff-check
+        entry: python scripts/tools/kg_diff_check.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+
+
   - repo: https://github.com/executablebooks/mdformat
     rev: 0.7.17
     hooks:

@@ -1,5 +1,7 @@
 # 性能基准与 A/B 验证
 
+> 状态板（2025-08-18）：perf.ndjson 已记录 p95_window 与吞吐；run-all 修复 prepare-dim 的 dim_metric_config 返回列后，将补充端到端性能快照与最小基线。参考：docs/PLAYBOOKS/SESSION_SNAPSHOT_2025-08-18.md。
+
 目的：提供统一的性能基线采集、A/B 验证与报告方法，支撑优化迭代与回归评估（以数据库与 scripts/sql 为事实源）。
 
 ## 1. 指标与数据源

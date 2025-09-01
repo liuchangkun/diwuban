@@ -47,7 +47,6 @@
     ".ipynb_checkpoints",
     "htmlcov"
   ],
-
   // 保存即自动格式化与修复
   "editor.formatOnSave": true,
   "[python]": {
@@ -60,11 +59,16 @@
   // 保存 Markdown 时尽量交给 mdformat（需安装 emeraldwalk.runonsave 扩展）
   "emeraldwalk.runonsave": {
     "commands": [
-      { "match": "^docs/.*\\.md$", "cmd": "mdformat ${file}" },
+      {
+        "match": "^docs/.*\\.md$",
+        "cmd": "mdformat ${file}"
+      },
       {
         "match": "^(docs/PLAYBOOKS/.*\\.md|docs/文档地图与导航\\.md)$",
         "cmd": "python scripts/tools/memory_index.py"
       }
     ]
-  }
+  },
+  "augment.mcpServers": [],
+  "workbench.settings.editor": "json"
 }

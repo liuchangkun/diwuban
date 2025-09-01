@@ -1,0 +1,47 @@
+# Web框架和API
+fastapi>=0.104.0
+uvicorn>=0.24.0
+
+# CLI框架
+typer>=0.9.0
+
+# 数据库连接和操作 (项目使用psycopg而非psycopg2)
+psycopg>=3.2.0
+sqlalchemy>=2.0.0
+
+# 调度器
+apscheduler>=3.10.0
+
+# 数据处理
+pandas>=2.0.0
+numpy>=1.24.0
+
+# 配置管理
+pyyaml>=6.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# 日志
+structlog>=23.0.0
+
+# 缓存 (可选)
+redis>=4.5.0
+
+# 时间处理
+python-dateutil>=2.8.0
+pytz>=2023.3
+
+# 环境变量
+python-dotenv>=1.0.0
+
+# 开发工具 (可选)
+# pre-commit>=3.0.0
+# black>=23.0.0
+# ruff>=0.1.0
+# mypy>=1.5.0
+# bandit>=1.7.0
+
+# 测试工具 (可选)
+# pytest>=7.4.0
+# pytest-asyncio>=0.21.0
+# pytest-cov>=4.1.0

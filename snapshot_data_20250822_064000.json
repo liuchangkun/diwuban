@@ -1,0 +1,16 @@
+{
+  "snapshot_code": "DIWUBAN_SNAPSHOT_20250822_064000",
+  "timestamp": "2025-08-22T14:44:09.507584",
+  "database_state": {
+    "dim_stations": 2,
+    "dim_devices": 13,
+    "dim_metric_config": 13,
+    "fact_measurements": 806288,
+    "staging_raw": 1612800,
+    "data_time_range": {
+      "min": "2025-02-28T02:00:00+08:00",
+      "max": "2025-02-28T03:59:58+08:00"
+    }
+  },
+  "file_checksums": {}
+}

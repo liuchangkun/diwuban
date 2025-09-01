@@ -1,0 +1,26 @@
+# 数据库连接配置（仅 YAML；严禁 ENV/CLI 覆盖）
+# - 使用 libpq 的 .pgpass/pg_hba 免密时，仅需 host/name/user；dsn_* 可留空
+# - 如需 DSN，仅在此处填写 dsn_read/dsn_write；代码中严禁拼接 DSN
+host: localhost
+name: pump_station_optimization
+user: postgres
+dsn_read: null              # 可选：postgresql://user:password@host:port/dbname
+dsn_write: null             # 可选：postgresql://user:password@host:port/dbname
+
+# 连接池配置
+pool:
+  min_size: 1          # 最小连接数：保持活跃的最少连接数量
+  max_size: 10         # 最大连接数：并发连接上限，影响系统负载
+  max_inactive_connection_lifetime: 3600  # 非活跃连接生存时间（秒）
+
+# 超时设置（毫秒）
+timeouts:
+  connect_timeout_ms: 5000      # 连接超时：建立连接的最大等待时间
+  statement_timeout_ms: 30000   # 语句超时：单个SQL执行的最大时间
+  query_timeout_ms: 60000       # 查询超时：复杂查询的最大执行时间
+
+# 重试策略
+retry:
+  max_retries: 3               # 最大重试次数：连接失败时的重试上限
+  retry_delay_ms: 1000         # 重试延迟：每次重试间的等待时间
+  backoff_multiplier: 2.0      # 退避倍数：指数退避的倍数因子

@@ -1,0 +1,150 @@
+{
+  "staging_raw": {
+    "count": 1612800,
+    "ts_utc_min": "2025-02-28 02:00:00",
+    "ts_utc_max": "2025-02-28 03:59:59",
+    "rows_parsable": 1612800
+  },
+  "staging_rejects": {
+    "count": 0
+  },
+  "fact_measurements": {
+    "count": 806288
+  },
+  "samples": {
+    "fact_measurements": [
+      {
+        "station_id": 2,
+        "device_id": 8,
+        "metric_id": 5,
+        "ts_raw": "2025-02-28 03:59:58+08:00",
+        "ts_bucket": "2025-02-28 03:59:58+08:00",
+        "value": 0.0,
+        "source_hint": "data/二期_取水泵房_多功能电表_1#取水泵_B相电流_反馈.csv|batch=20250822T212030Z|ver=2"
+      },
+      {
+        "station_id": 2,
+        "device_id": 8,
+        "metric_id": 3,
+        "ts_raw": "2025-02-28 03:59:58+08:00",
+        "ts_bucket": "2025-02-28 03:59:58+08:00",
+        "value": 0.0,
+        "source_hint": "data/二期_取水泵房_多功能电表_1#取水泵_A相电流_反馈.csv|batch=20250822T212030Z|ver=2"
+      },
+      {
+        "station_id": 2,
+        "device_id": 8,
+        "metric_id": 4,
+        "ts_raw": "2025-02-28 03:59:58+08:00",
+        "ts_bucket": "2025-02-28 03:59:58+08:00",
+        "value": 232.1,
+        "source_hint": "data/二期_取水泵房_多功能电表_1#取水泵_B相电压_反馈.csv|batch=20250822T212030Z|ver=2"
+      },
+      {
+        "station_id": 2,
+        "device_id": 8,
+        "metric_id": 2,
+        "ts_raw": "2025-02-28 03:59:58+08:00",
+        "ts_bucket": "2025-02-28 03:59:58+08:00",
+        "value": 231.95,
+        "source_hint": "data/二期_取水泵房_多功能电表_1#取水泵_A相电压_反馈.csv|batch=20250822T212030Z|ver=2"
+      },
+      {
+        "station_id": 2,
+        "device_id": 8,
+        "metric_id": 6,
+        "ts_raw": "2025-02-28 03:59:58+08:00",
+        "ts_bucket": "2025-02-28 03:59:58+08:00",
+        "value": 231.73,
+        "source_hint": "data/二期_取水泵房_多功能电表_1#取水泵_C相电压_反馈.csv|batch=20250822T212030Z|ver=2"
+      }
+    ]
+  },
+  "partitions": [
+    [
+      "fact_measurements",
+      "fact_measurements_1900w01",
+      "FOR VALUES FROM ('1900-01-01 08:05:43+08:05:43') TO ('1900-01-08 08:05:43+08:05:43')"
+    ],
+    [
+      "fact_measurements",
+      "fact_measurements_2024w01",
+      "FOR VALUES FROM ('2024-12-30 08:00:00+08') TO ('2025-01-06 08:00:00+08')"
+    ],
+    [
+      "fact_measurements",
+      "fact_measurements_2025w09",
+      "FOR VALUES FROM ('2025-02-24 08:00:00+08') TO ('2025-03-03 08:00:00+08')"
+    ],
+    [
+      "fact_measurements",
+      "fact_measurements_2025w10",
+      "FOR VALUES FROM ('2025-03-03 08:00:00+08') TO ('2025-03-10 08:00:00+08')"
+    ],
+    [
+      "fact_measurements",
+      "fact_measurements_2025w33",
+      "FOR VALUES FROM ('2025-08-11 00:00:00+08') TO ('2025-08-18 00:00:00+08')"
+    ],
+    [
+      "fact_measurements",
+      "fact_measurements_2025w34",
+      "FOR VALUES FROM ('2025-08-18 00:00:00+08') TO ('2025-08-25 00:00:00+08')"
+    ],
+    [
+      "fact_measurements",
+      "fact_measurements_2025w35",
+      "FOR VALUES FROM ('2025-08-25 00:00:00+08') TO ('2025-09-01 00:00:00+08')"
+    ],
+    [
+      "fact_measurements",
+      "fact_measurements_2025w36",
+      "FOR VALUES FROM ('2025-09-01 00:00:00+08') TO ('2025-09-08 00:00:00+08')"
+    ],
+    [
+      "fact_measurements",
+      "fact_measurements_2025w37",
+      "FOR VALUES FROM ('2025-09-08 00:00:00+08') TO ('2025-09-15 00:00:00+08')"
+    ],
+    [
+      "fact_measurements",
+      "fact_measurements_2025w38",
+      "FOR VALUES FROM ('2025-09-15 00:00:00+08') TO ('2025-09-22 00:00:00+08')"
+    ],
+    [
+      "fact_measurements",
+      "fact_measurements_2025w39",
+      "FOR VALUES FROM ('2025-09-22 00:00:00+08') TO ('2025-09-29 00:00:00+08')"
+    ],
+    [
+      "fact_measurements",
+      "fact_measurements_2025w40",
+      "FOR VALUES FROM ('2025-09-29 00:00:00+08') TO ('2025-10-06 00:00:00+08')"
+    ],
+    [
+      "fact_measurements",
+      "fact_measurements_2025w41",
+      "FOR VALUES FROM ('2025-10-06 00:00:00+08') TO ('2025-10-13 00:00:00+08')"
+    ],
+    [
+      "fact_measurements",
+      "fact_measurements_2025w42",
+      "FOR VALUES FROM ('2025-10-13 00:00:00+08') TO ('2025-10-20 00:00:00+08')"
+    ],
+    [
+      "fact_measurements",
+      "fact_measurements_2025w43",
+      "FOR VALUES FROM ('2025-10-20 00:00:00+08') TO ('2025-10-27 00:00:00+08')"
+    ],
+    [
+      "fact_measurements",
+      "fact_measurements_2025w44",
+      "FOR VALUES FROM ('2025-10-27 00:00:00+08') TO ('2025-11-03 00:00:00+08')"
+    ],
+    [
+      "fact_measurements",
+      "fact_measurements_2025w45",
+      "FOR VALUES FROM ('2025-11-03 00:00:00+08') TO ('2025-11-10 00:00:00+08')"
+    ]
+  ]
+}

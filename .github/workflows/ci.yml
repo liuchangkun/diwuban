@@ -104,6 +104,10 @@ jobs:
         run: |
           python scripts/quality_gate.py
 
+      - name: Config sanity check (py_compile + load_settings)
+        run: |
+          python scripts/ci/config_sanity_check.py
+
       - name: Security audit (pip-audit)
         run: |
           pip install pip-audit
@@ -124,6 +128,18 @@ jobs:
           name: coverage-xml
           path: coverage.xml
           if-no-files-found: warn
+
+  kg-check:
+    needs: pre-commit
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Check knowledge graph updated (non-blocking)
+        run: |
+          python scripts/ci/check_kg_updated.py || true
+
 
       - name: Upload coverage to Codecov
         if: ${{ env.CODECOV_TOKEN != '' }}

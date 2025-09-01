@@ -36,6 +36,31 @@ flowchart LR
 - 数据质量与校验（骨架）：docs/数据质量与校验.md
 - PLAYBOOKS 使用说明：docs/PLAYBOOKS/USAGE.md
 
+## 当前程序现状（2025-08-19）
+
+- CLI：中文帮助完善，新增日志方案B（--log-run/--log-dir）
+- check-mapping：--out 导出、--show-all 聚类开关，聚类统计按站/设/指标
+- db-ping：--verbose 打印 host/db/user(脱敏)/时区/版本
+- 映射：已提供转换脚本，生成标准 schema 文件 config/data_mapping.v2.json
+- 文档：CSV导入-使用指南 已新增“命令参考/迁移到标准schema”章节
+- 运行状态：run-all 完整成功，产出 env.json 与 summary.json；source_hint v2 与分段合并已上线
+  - 已修：dim_stations tz 传参类型、dim_devices.type 默认值、dim_metric_config RETURNING id；维表策略默认值完善
+- 新默认：导入模式 auto（阈值 total_mb=50/per_file_mb=10/max_file_count=20 满足倾向 direct，否则 staging）；日志默认 json，可切 text；支持按模块输出；配置拆分 configs/{logging,ingest,database}.yaml（中文注释），启动打印参数与配置快照（不脱敏）
+
+### 环境限制（重要）
+
+- 当前开发环境数据库严禁修改任何表（结构/数据）；仅允许修改函数、视图、触发器等对象。
+- 涉及写表的导入/合并请使用专用测试库/DSN；开发库仅进行 dry-run/只读验证。
+- 所有 E2E 验证必须使用标准映射 config/data_mapping.v2.json。
+
+### 重启后快速恢复步骤
+
+1. 打开 docs/PLAYBOOKS/SESSION_SNAPSHOT_2025-08-19.md
+1. 激活 .venv；db 连通：`python -m app.cli.main db-ping --verbose`
+1. 检查映射：`python -m app.cli.main check-mapping config/data_mapping.v2.json --out mapping_report_v2.json --log-run`
+1. 直接执行：
+   `python -m app.cli.main run-all config/data_mapping.v2.json --window-start ...Z --window-end ...Z --log-run`
+
 ## 八、本地开发规范（保存即自动 + 全绿门禁）
 
 - 保存即自动（VSCode）：
@@ -54,6 +79,23 @@ flowchart LR
 - CI 门禁：
 
   - pre-commit 全绿检查（报告上传为构件 + PR 评论摘要）
+
+## 七、知识图谱工作流（方案A）
+
+- 目标：将 PLAYBOOKS 与 docs 的实体与关系沉淀成图谱，便于“影响面/溯源/导航”
+
+- 存储：docs/PLAYBOOKS/知识图谱.json（含 meta.node_count/edge_count）
+
+- 更新：python scripts/tools/kg_update.py（仅内容变化才写入；会同步统计到 PLAYBOOKS/索引.md 顶部）
+
+- 查询：python scripts/tools/kg_query.py nodes type=Decision | edges rel=documents | neighbors id=... hops=1
+
+- 提醒：
+
+  - pre-commit：kg-reminder（文档变更未更新图谱→提示）、kg-diff-check（运行将产生变化→提示）
+
+  - CI：kg-check（PR 维度的非阻断提醒，未来可开启 STRICT=1 严格模式）
+
   - build-test 依赖 pre-commit，通过后才跑测试/覆盖率
 
 - 触发词（PLAYBOOKS 三步自动化）：
@@ -82,6 +124,14 @@ flowchart LR
 - 触发词：记录变更/更新 PLAYBOOKS/保存记忆/按照 PLAYBOOKS 流程完成/记忆和文档都更新了吗？/PLAYBOOKS
 
 - 三步法：1) 更新 PLAYBOOKS；2) 保存记忆；3) 同步文档
+
+### 行为规范（MCP 快速链接）
+
+- 使用 MCP 工具（强制）：docs/智能助手行为控制.md#使用-mcp-工具强制规则
+
+- 严格模式-核对清单（含 MCP 勾选）：docs/严格模式-核对清单.md
+
+- PR 模板（含 MCP 区块）：.github/PULL_REQUEST_TEMPLATE.md
 
 - 入口：docs/PLAYBOOKS/
 
@@ -131,3 +181,19 @@ summary: 文档统一为中文，新增导航与质量章节
 - 动作：中文化与导航整合；质量与对齐规范写入
 - 效果：入口统一、事实一致、可扩展
 ```
+
+## 附：env.json.sources 示例（里程碑1）
+
+- 启动命令：`python -m app.cli.main run-all ... --log-run --log-dir logs/runs/demo --log-format text --log-routing by_module`
+- 产物片段（sources 标注字段来源）：
+
+```
+{
+  "logging": {"format": "text", "routing": "by_module", ...},
+  "sources": {"logging": {"format": "CLI", "routing": "CLI"}, "ingest": {"workers": "YAML"}, ...}
+}
+```
+
+- 更多示例：见 docs/配置与快照-示例.md（里程碑1）
+
+- 治理：见 docs/智能助手行为控制.md（AI 助手操作边界与流程）

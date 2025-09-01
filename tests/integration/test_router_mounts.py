@@ -1,5 +1,8 @@
-from fastapi.testclient import TestClient
+import pytest
+
 from app.main import app
+
+TestClient = pytest.importorskip("fastapi").testclient.TestClient  # type: ignore[attr-defined]
 
 client = TestClient(app)
 

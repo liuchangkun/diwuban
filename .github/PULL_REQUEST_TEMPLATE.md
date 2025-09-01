@@ -2,6 +2,8 @@
 
 请简述本次改动的目的与范围。
 
+> 变更说明（必填）：Why/What/Impact/Risk/Rollback + 受影响对象清单（文件/函数）
+
 ## 规则合规清单（PROJECT_RULES 索引 + 子文档）
 
 - [ ] 文档地图与导航（docs/文档地图与导航.md）
@@ -21,6 +23,7 @@
 - [ ] PLAYBOOKS 已更新（并已刷新“最近变更”与 INDEX）
 - [ ] 文档已对齐（与数据库/脚本一致；必要时更新 docs/ 与 README 索引）
 - [ ] 未访问 venv/.venv 目录
+- [ ] 数据库/日志配置：仅 YAML 来源（configs/database.yaml、configs/logging.yaml）；无 ENV/CLI/代码覆盖；无 DSN 拼接
 - [ ] 数据文件来源全部由 config/data_mapping.json 驱动
 - [ ] 若变更对齐/派生/拟合策略，已增加 version 并更新文档
 
@@ -51,3 +54,52 @@
 
 - 受影响模块：
 - 风险与回滚方案：
+
+## 严格模式核对（必选）
+
+- [ ] 已按 docs/严格模式-核对清单.md 全部自检完成（含“仅 YAML 来源”核对项与 sources 快照核对）
+- [ ] 已遵循 docs/智能助手行为控制.md，无高风险未授权操作
+- [ ] 重要变更已更新 PLAYBOOKS 与相关文档，并保存关键记忆
+
+## E2E 验证与产物（必选）
+
+- [ ] 最小窗口命令已提供（text/by_module）：
+
+## 知识图谱（可选）
+
+- [ ] 本 PR 涉及 PLAYBOOKS/文档更新，已运行 kg_update.py 并确认已提交知识图谱.json
+- [ ] 影响面简述（可粘贴 kg_query.py 输出或列出关键节点/关系）
+
+## 【必选】MCP 默认工具确认
+
+- [ ] 已使用 Context 7 进行库/框架文档检索与 API/方案核对（或在下方说明豁免原因）
+- [ ] 已使用 Sequential thinking 进行任务分解与反思验证（或在下方说明豁免原因）
+- 豁免说明（如未使用上述工具，请简述原因与替代措施；需提供替代验证证据与风险评估）：
+
+## MCP 使用（必选）
+
+- [ ] 已使用 MCP 进行任务分解与验证（Investigate→实施→验证→文档/PLAYBOOKS）
+
+- [ ] 附关键 MCP 验证命令与结果摘要（exit code、关键日志）
+
+- [ ] 若未使用 MCP：说明豁免理由（仅文档/极小变更）
+
+  - 示例：`python -m app.cli.main run-all config/data_mapping.v2.json --window-start ...Z --window-end ...Z --log-run --log-dir logs/runs/pr-verify --log-format text --log-routing by_module --log-level INFO`
+
+- [ ] env.json 核验：包含 args_summary/config_snapshot/sources/ts/run_id/run_dir
+
+- [ ] 附上代表性日志（可粘贴 2–3 行）：
+
+  - logs/modules/sql.log：db.exec.succeeded 或 failed（含 sql_op/target_table/affected_rows/sql_cost_ms）
+  - logs/modules/root.log：align.merge.window 或 ingest.copy.batch
+
+## 日志与诊断产物链接（推荐）
+
+- 运行目录：logs/runs/\<日期>/\<时间-pid>/（或 by_module 模式日志路径）
+- 关键产物：
+  - env.json（args_summary/config_snapshot/sources/ts/run_id/run_dir）
+  - app.ndjson/sql.ndjson/perf.ndjson
+  - summary.json（含 rows_total/rows_merged/rows_per_sec/duration_ms/backpressure_count/slow_sql_top/diagnostics）
+- 建议附：
+  - 2–3 行代表性日志（db.exec.succeeded、align.merge.window、ingest.load.progress）
+  - slow_sql_top 中 Top-1 的 sql_cost_ms/affected_rows 摘要
