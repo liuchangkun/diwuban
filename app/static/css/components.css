@@ -1,0 +1,12 @@
+/* components.css - 可复用组件样式（中文注释） */
+
+/* 卡片通用样式 */
+.card-shadow {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  border-radius: 8px;
+}
+
+/* 表格容器 */
+.table-wrapper {
+  overflow: auto;
+}

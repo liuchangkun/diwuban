@@ -1,13 +1,78 @@
+---
 name: CI
 
-on:
+'on':
   push:
-    branches: [ "**" ]
+    branches: ["**"]
   pull_request:
-    branches: [ "**" ]
+    branches: ["**"]
 
 jobs:
+  pre-commit:
+    name: pre-commit 全绿检查
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install pre-commit
+        run: |
+          python -m pip install --upgrade pip
+          pip install pre-commit
+
+      - name: Run pre-commit (all files)
+        shell: bash
+        run: |
+          set -o pipefail
+          pre-commit run --all-files -v --show-diff-on-failure | tee pre-commit-report.txt
+          git --no-pager diff > pre-commit-diff.patch || true
+
+      - name: Generate pre-commit summary
+        if: always()
+        shell: bash
+        run: |
+          echo "### pre-commit 结果摘要" >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo '```text' >> "$GITHUB_STEP_SUMMARY"
+          tail -n 200 pre-commit-report.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment pre-commit report to PR
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          recreate: true
+          header: pre-commit
+          path: pre-commit-report.txt
+
+      - name: Comment pre-commit diff to PR (if any)
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          recreate: false
+          header: pre-commit-diff
+          path: pre-commit-diff.patch
+
+      - name: Upload pre-commit artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pre-commit-artifacts
+          path: |
+            pre-commit-report.txt
+            pre-commit-diff.patch
+          if-no-files-found: warn
+
   build-test:
+    needs: pre-commit
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -29,7 +94,7 @@ jobs:
       - name: Install tools and test deps
         run: |
           python -m pip install --upgrade pip
-          pip install pre-commit ruff black mypy bandit pip-audit pytest
+          pip install pre-commit ruff black mypy bandit pip-audit pytest pytest-xdist pytest-cov
 
       - name: Run pre-commit (all files)
         run: |
@@ -39,6 +104,47 @@ jobs:
         run: |
           python scripts/quality_gate.py
 
+      - name: Config sanity check (py_compile + load_settings)
+        run: |
+          python scripts/ci/config_sanity_check.py
+
+      - name: Security audit (pip-audit)
+        run: |
+          pip install pip-audit
+          pip-audit
+
       - name: Run tests
         run: |
-          pytest -q
+          pytest -q -n auto
+
+      - name: Run tests with coverage (artifact)
+        run: |
+          pip install pytest-cov
+          pytest --cov=. --cov-report=xml --cov-report=term-missing --cov-fail-under=70 -q
+
+      - name: Upload coverage.xml artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
+          if-no-files-found: warn
+
+  kg-check:
+    needs: pre-commit
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Check knowledge graph updated (non-blocking)
+        run: |
+          python scripts/ci/check_kg_updated.py || true
+
+
+      - name: Upload coverage to Codecov
+        if: ${{ env.CODECOV_TOKEN != '' }}
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false

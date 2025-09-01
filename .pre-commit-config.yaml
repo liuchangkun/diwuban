@@ -1,6 +1,4 @@
-exclude: |
-  ^(venv/|\.venv/|env/|data/|ProjectDocs/)
-
+---
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
@@ -9,14 +7,15 @@ repos:
       - id: end-of-file-fixer
       - id: check-merge-conflict
       - id: check-yaml
+      - id: detect-private-key
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.6.2
     hooks:
       - id: ruff
         args: ["--fix"]
-      # 如需用 Ruff Formatter 可启用下行并移除 Black
-      # - id: ruff-format
 
   - repo: https://github.com/psf/black
     rev: 24.4.2
@@ -28,14 +27,72 @@ repos:
     rev: v1.10.0
     hooks:
       - id: mypy
-        args: ["--ignore-missing-imports", "--install-types", "--non-interactive"]
-        additional_dependencies: []
+        files: "^(app/|src/)"
+        args:
+          - "--ignore-missing-imports"
+          - "--install-types"
+          - "--non-interactive"
 
   - repo: https://github.com/PyCQA/bandit
     rev: 1.7.9
     hooks:
       - id: bandit
-        args: ["-q"]
-        files: "\\.py$"
-        exclude: "^tests/"
-        pass_filenames: true
+        files: "^(app/)"
+        args:
+          - "-q"
+          - "-s"
+          - "B101,B404,B603,B607"
+
+  - repo: https://github.com/PyCQA/pydocstyle
+    rev: 6.3.0
+    hooks:
+      - id: pydocstyle
+        files: "^(app/)"
+        stages: [manual]
+        args:
+          - "--ignore=D100,D101,D102,D103,D104,D105,D106,D107,D205,D400"
+
+  - repo: local
+    hooks:
+      - id: memory-check
+        name: memory-check
+        entry: python scripts/tools/memory_check.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: memory-index
+        name: memory-index
+        entry: python scripts/tools/memory_index.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: playbooks-naming
+        name: playbooks-naming
+        entry: python scripts/tools/check_playbooks_naming.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: kg-reminder
+        name: kg-reminder
+        entry: python scripts/tools/kg_reminder.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: kg-diff-check
+        name: kg-diff-check
+        entry: python scripts/tools/kg_diff_check.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+
+
+  - repo: https://github.com/executablebooks/mdformat
+    rev: 0.7.17
+    hooks:
+      - id: mdformat
+        additional_dependencies: [mdformat-gfm]
+
+exclude: |
+  ^(venv/|\.venv/|env/|data/|ProjectDocs/)

@@ -1,27 +1,27 @@
-# Ignore Python virtual environments at repository root
+# Python 虚拟环境
 venv/
 .venv/
 env/
 
-# Ignore data directory (user requested)
+# 数据目录 (用户要求)
 data/
 
-# Ignore ProjectDocs directory (user requested)
+# 项目文档目录 (用户要求)
 ProjectDocs/
 
-# Ignore Python bytecode caches
+# Python 字节码缓存
 __pycache__/
 **/__pycache__/
 
-# Ignore Python compiled files
+# Python 编译文件
 *.pyc
 
-# OS & IDE junk
+# 操作系统和IDE文件
 .DS_Store
 Thumbs.db
 .idea/
 
-# Test / tooling caches
+# 测试和工具缓存
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
@@ -29,44 +29,15 @@ Thumbs.db
 .cache/
 .ipynb_checkpoints/
 
-# Coverage reports
+# 覆盖率报告
 .coverage
 .coverage.*
 htmlcov/
 
-# Ignore Python virtual environments at repository root
-venv/
-.venv/
-env/
-
-
-# Ignore data directory (user requested)
-data/
-
-# Ignore ProjectDocs directory (user requested)
-ProjectDocs/
-
-# Ignore Python bytecode caches
-__pycache__/
-**/__pycache__/
-
-# Ignore Python compiled files
-*.pyc
-
-# OS & IDE junk
-.DS_Store
-Thumbs.db
-.idea/
-
-# Test / tooling caches
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.tox/
-.cache/
-.ipynb_checkpoints/
-
-# Coverage reports
-.coverage
-.coverage.*
-htmlcov/
+# 环境和构建产物
+.env
+*.log
+logs/
+dist/
+build/
+*.egg-info/

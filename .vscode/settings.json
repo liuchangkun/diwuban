@@ -46,5 +46,48 @@
     ".cache",
     ".ipynb_checkpoints",
     "htmlcov"
-  ]
+  ],
+  // 保存即自动格式化与修复
+  "editor.formatOnSave": true,
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.ruff": "explicit",
+      "source.organizeImports.ruff": "explicit"
+    }
+  },
+  // 保存 Markdown 时尽量交给 mdformat（需安装 emeraldwalk.runonsave 扩展）
+  "emeraldwalk.runonsave": {
+    "commands": [
+      {
+        "match": "^docs/.*\\.md$",
+        "cmd": "mdformat ${file}"
+      },
+      {
+        "match": "^(docs/PLAYBOOKS/.*\\.md|docs/文档地图与导航\\.md)$",
+        "cmd": "python scripts/tools/memory_index.py"
+      }
+    ]
+  },
+  "augment.mcpServers": [],
+  "augment.rules": {
+    "configPath": "rules/rules.yml",
+    "ideConfigPath": "rules/ide_rules.toml",
+    "enabled": true,
+    "autoLoad": true,
+    "categories": [
+      "coding_standards",
+      "architecture",
+      "logging",
+      "safety",
+      "mcp_workflow"
+    ]
+  },
+  "augment.projectRules": {
+    "rulesFile": "rules/ide_rules.toml",
+    "yamlConfig": "rules/rules.yml",
+    "enableInEditor": true,
+    "showInStatusBar": true
+  },
+  "workbench.settings.editor": "json"
 }

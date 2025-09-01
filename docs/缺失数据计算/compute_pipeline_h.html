@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>计算流程 · 全过程横向监控</title>
+<style>
+:root{--bg:#0b1220;--card:#0f172a;--line:#1f2937;--txt:#e5e7eb;--sub:#9ca3af;--ok:#10b981;--warn:#f59e0b;--bad:#ef4444;--info:#60a5fa;--mut:#334155}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.55 system-ui,-apple-system,Segoe UI,Roboto}
+header{padding:14px 18px;border-bottom:1px solid var(--line);background:#0a0f1a;position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between}
+h1{margin:0;font-size:18px}
+.actions{display:flex;gap:12px;align-items:center}
+.actions .id{color:#cbd5e1;font-family:ui-monospace,Consolas,monospace}
+.actions a{color:#fff;text-decoration:none;background:#334155;border:1px solid #475569;padding:6px 10px;border-radius:8px}
+.wrap{max-width:1500px;margin:auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.sec-title{font-size:15px;margin:0 0 8px}
+.small{color:var(--sub);font-size:12px}
+.hflow{display:flex;gap:14px;overflow-x:auto;padding-bottom:8px}
+.hstep{min-width:340px;max-width:380px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;position:relative}
+.hstep .title{font-weight:700;margin-bottom:6px}
+.badge{padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid var(--line)}
+.badge.ok{background:#052e26;color:#34d399;border-color:#065f46}
+.badge.warn{background:#341b00;color:#f59e0b;border-color:#92400e}
+.badge.err{background:#3b0a0a;color:#ef4444;border-color:#7f1d1d}
+.hstep .status{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.ctx{background:#0a0f1a;border:1px solid var(--line);padding:8px;border-radius:8px}
+pre{margin:6px 0;background:#0a0f1a;border:1px solid var(--line);border-radius:8px;padding:8px;white-space:pre-wrap;color:#cbd5e1}
+.arrow{align-self:center;min-width:40px;color:#64748b;display:flex;align-items:center;justify-content:center}
+.arrow:after{content:"→";font-size:22px}
+.rule{display:flex;gap:8px;align-items:center;margin:2px 0}
+.rule .expr{font-family:ui-monospace,Consolas,monospace;color:#cbd5e1}
+.rule .res.ok{color:#34d399}.rule .res.err{color:#ef4444}
+.kv{display:grid;grid-template-columns:120px 1fr;gap:8px}
+</style>
+</head>
+<body>
+<header>
+  <h1>计算流程 · 全过程横向监控</h1>
+  <div class="actions">
+    <span class="id">运行ID：<span id="runid">—</span></span>
+    <a id="traceLink" href="#" target="_blank">查看 Trace</a>
+  </div>
+</header>
+<div class="wrap">
+  <section class="card">
+    <div class="small" id="summary">—</div>
+    <div class="kv" style="margin:8px 0 12px">
+      <div class="small">时间窗</div><div id="window">—</div>
+      <div class="small">站点/上下文</div><div id="context">—</div>
+    </div>
+    <div class="hflow" id="flow"></div>
+  </section>
+</div>
+<script>
+const job={
+  run_id:'cmp-20250829-003', trace_id:'trace-cmp-3', trace_url:'#/trace/trace-cmp-3',
+  window:'2025-08-29 11:15:00 ~ 11:16:00',
+  context:'站点 #A ｜ 并联 2 台 ｜ 压力单位 MPa ｜ 优先功率×频率分摊',
+  steps:[
+    {key:'ingest', name:'原始数据获取', status:'ok', ms:1200, ctx:'从采集服务拉取最近 60s 数据；缺失率 0.1% ; 延迟 0.8s',
+     input:{main_pipeline_outlet_pressure:0.41, main_pipeline_inlet_pressure:0.36, pump_inlet_pressure:0.19, main_pipeline_flow_rate:235, pump_active_power:[82.1,66.0], pump_frequency:[45.0,36.0], water_temperature:23.3}},
+    {key:'validate', name:'校验与单位', status:'ok', ms:320, ctx:'压力(MPa)/流量(m³/h)/功率(kW) 单位校验；负值/跳变=0', output:{ok:1},
+     rules:[{name:'压力单位',expr:'所有压力字段为 MPa', pass:true},{name:'流量单位',expr:'m³/h', pass:true}]},
+    {key:'gate', name:'运行/稳态判定', status:'ok', ms:200, ctx:'稳态；振动/温度正常', output:{run_flag:1, steady_flag:1},
+     rules:[{name:'频率阈值',expr:'f_i ≥ f_thr (f_thr=4Hz)', pass:true},{name:'功率阈值',expr:'P_i ≥ P_thr (P_thr=5%·P_ref)', pass:true},{name:'稳态阈值',expr:'|dQ/dt|<1–5, |dH/dt|<0.3–1, |df/dt|<0.2–1', pass:true}]},
+    {key:'select', name:'方案选择', status:'ok', ms:240, ctx:'阈值满足，选择“功率×频率分摊”', output:{strategy:'功率×频率分摊', alpha:1.00, beta:1.00, f_thr:'4Hz', P_thr:'5%P_ref'},
+     rules:[{name:'候选评分',expr:'功率×频率 > 累计量求导 > 仅功率 > 仅频率 > 直取', pass:true}]},
+    {key:'qcalc', name:'计算单泵流量', status:'ok', ms:420, ctx:'w_i=(P_i^α f_i^β)/Σ 归一化 → Q_i=C_Q(Q_total·w_i)+b_Q',
+     input:{Q_total:235, P:[82.1,66.0], f:[45.0,36.0]}, output:{w:[0.60,0.40], pump_flow_rate:[141,94]},
+     rules:[{name:'权重归一',expr:'Σw_i = 1', pass:true}]},
+    {key:'hcalc', name:'计算扬程', status:'ok', ms:260, ctx:'H≈((p_out−p_in)×1e6)/(ρg)，p_out≈main_pipeline_outlet_pressure', input:{p_out:0.41, p_in:0.19, rho:1000}, output:{Δp_MPa:0.22, pump_head:'≈22.4 m'}},
+    {key:'etacalc', name:'计算效率', status:'ok', ms:260, ctx:'η=(ρg(Q/3600)H)/(P×1000)；单泵输出', input:{Q:'[141,94] m³/h', H:'22.4 m', P:'[82.1,66.0] kW'}, output:{pump_efficiency:'[0.70,0.56]'}},
+    {key:'persist', name:'结果入库', status:'ok', ms:180, ctx:'写入 computed_metrics 与 compute_runs/steps', output:{rows:6}}
+  ]
+}
+
+function badge(status){return `<span class="badge ${status==='ok'?'ok':status==='warn'?'warn':'err'}">${status==='ok'?'正常':status==='warn'?'警告':'错误'}</span>`}
+function rulesHTML(rules){
+  if(!rules||!rules.length) return '';
+  return '<div class="small" style="margin-top:6px"><b>阈值命中明细</b></div>' +
+    rules.map(r=>`<div class="rule"><span class="res ${r.pass?'ok':'err'}">${r.pass?'✓':'✗'}</span><span>${r.name}</span><span class="expr">${r.expr}</span></div>`).join('')
+}
+function stepCard(s){
+  return `<div class="hstep">
+    <div class="title">${s.name}</div>
+    <div class="status">${badge(s.status)}<span class="small">耗时 ${((s.ms||0)/1000).toFixed(2)}s</span></div>
+    <div class="ctx">${s.ctx||''}</div>
+    ${rulesHTML(s.rules)}
+    ${s.input?`<div class="small" style="margin-top:8px"><b>输入</b></div><pre>${typeof s.input==='string'?s.input:JSON.stringify(s.input,null,2)}</pre>`:''}
+    ${s.output?`<div class="small" style="margin-top:6px"><b>输出</b></div><pre>${typeof s.output==='string'?s.output:JSON.stringify(s.output,null,2)}</pre>`:''}
+  </div>`
+}
+function render(){
+  document.getElementById('runid').textContent=job.run_id;
+  const a=document.getElementById('traceLink'); a.href=job.trace_url; a.textContent='查看 Trace（'+job.trace_id+'）';
+  document.getElementById('window').textContent=job.window;
+  document.getElementById('context').textContent=job.context;
+  document.getElementById('summary').textContent='总步数 '+job.steps.length+' ｜ 成功 '+job.steps.filter(s=>s.status==='ok').length+' ｜ 警告 '+job.steps.filter(s=>s.status==='warn').length
+  const flow=document.getElementById('flow');
+  const arr=[]; job.steps.forEach((s,i)=>{arr.push(stepCard(s)); if(i<job.steps.length-1) arr.push('<div class="arrow"></div>')});
+  flow.innerHTML=arr.join('');
+}
+render();
+</script>
+</body>
+</html>

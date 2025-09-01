@@ -1,0 +1,50 @@
+/* main.css - 全局样式（中文注释，完整资源文件） */
+
+:root {
+  --primary: #0d6efd;
+  /* Bootstrap 主色 */
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Microsoft Yahei", "WenQuanYi Micro Hei", sans-serif;
+  background-color: #f8f9fa;
+}
+
+.container-narrow {
+  /* 大屏铺宽到视口，限制最大宽度，提升自适应表现 */
+  max-width: min(1600px, 96vw);
+}
+
+.hero {
+  padding: 4rem 1rem;
+  background: linear-gradient(135deg, #e3f2fd, #f8f9fa);
+  border-radius: 1rem;
+}
+
+
+/* 响应式细节优化（小屏表格横向滚动、容器间距） */
+@media (max-width: 576px) {
+  .container-narrow {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  #chart {
+    height: 300px !important;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 360px) {
+  #chart {
+    height: 240px !important;
+  }
+}

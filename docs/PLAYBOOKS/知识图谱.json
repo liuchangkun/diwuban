@@ -1,0 +1,414 @@
+{
+  "nodes": [
+    {
+      "id": "DEC-20250816-008",
+      "type": "Decision",
+      "title": "DEC-20250816-008"
+    },
+    {
+      "id": "DEC-20250816-009",
+      "type": "Decision",
+      "title": "DEC-20250816-009"
+    },
+    {
+      "id": "DEC-YYYYMMDD-001",
+      "type": "Decision",
+      "title": "DEC-YYYYMMDD-001"
+    },
+    {
+      "id": "DEC-20250815-004",
+      "type": "Decision",
+      "title": "DEC-20250815-004"
+    },
+    {
+      "id": "DEC-20250815-005",
+      "type": "Decision",
+      "title": "DEC-20250815-005"
+    },
+    {
+      "id": "DEC-20250815-006",
+      "type": "Decision",
+      "title": "DEC-20250815-006"
+    },
+    {
+      "id": "DEC-20250115-001",
+      "type": "Decision",
+      "title": "DEC-20250115-001"
+    },
+    {
+      "id": "DEC-20250115-002",
+      "type": "Decision",
+      "title": "DEC-20250115-002"
+    },
+    {
+      "id": "DEC-20250115-003",
+      "type": "Decision",
+      "title": "DEC-20250115-003"
+    },
+    {
+      "id": "DEC-20250816-007",
+      "type": "Decision",
+      "title": "DEC-20250816-007"
+    },
+    {
+      "id": "DEC-20250818-INGEST-PLAN-APP",
+      "type": "Decision",
+      "title": "DEC-20250818-INGEST-PLAN-APP"
+    },
+    {
+      "id": "CONF-20250816-006",
+      "type": "ConfigChange",
+      "title": "CONF-20250816-006"
+    },
+    {
+      "id": "CONF-20250816-007",
+      "type": "ConfigChange",
+      "title": "CONF-20250816-007"
+    },
+    {
+      "id": "CONF-YYYYMMDD-001",
+      "type": "ConfigChange",
+      "title": "CONF-YYYYMMDD-001"
+    },
+    {
+      "id": "CONF-20250816-001",
+      "type": "ConfigChange",
+      "title": "CONF-20250816-001"
+    },
+    {
+      "id": "CONF-20250816-002",
+      "type": "ConfigChange",
+      "title": "CONF-20250816-002"
+    },
+    {
+      "id": "CONF-20250815-001",
+      "type": "ConfigChange",
+      "title": "CONF-20250815-001"
+    },
+    {
+      "id": "CONF-20250115-001",
+      "type": "ConfigChange",
+      "title": "CONF-20250115-001"
+    },
+    {
+      "id": "CONF-20250115-002",
+      "type": "ConfigChange",
+      "title": "CONF-20250115-002"
+    },
+    {
+      "id": "CONF-20250115-003",
+      "type": "ConfigChange",
+      "title": "CONF-20250115-003"
+    },
+    {
+      "id": "CONF-20250115-004",
+      "type": "ConfigChange",
+      "title": "CONF-20250115-004"
+    },
+    {
+      "id": "CONF-20250819-001",
+      "type": "ConfigChange",
+      "title": "CONF-20250819-001"
+    },
+    {
+      "id": "CONF-20250817-001",
+      "type": "ConfigChange",
+      "title": "CONF-20250817-001"
+    },
+    {
+      "id": "CONF-20250817-002",
+      "type": "ConfigChange",
+      "title": "CONF-20250817-002"
+    },
+    {
+      "id": "CONF-20250818-003",
+      "type": "ConfigChange",
+      "title": "CONF-20250818-003"
+    },
+    {
+      "id": "CONF-20250818-004",
+      "type": "ConfigChange",
+      "title": "CONF-20250818-004"
+    },
+    {
+      "id": "CONF-20250819-010",
+      "type": "ConfigChange",
+      "title": "CONF-20250819-010"
+    },
+    {
+      "id": "CONF-20250818-005",
+      "type": "ConfigChange",
+      "title": "CONF-20250818-005"
+    },
+    {
+      "id": "IMP-20250816-005",
+      "type": "Improvement",
+      "title": "IMP-20250816-005"
+    },
+    {
+      "id": "IMP-20250816-006",
+      "type": "Improvement",
+      "title": "IMP-20250816-006"
+    },
+    {
+      "id": "IMP-YYYYMMDD-001",
+      "type": "Improvement",
+      "title": "IMP-YYYYMMDD-001"
+    },
+    {
+      "id": "IMP-20250115-001",
+      "type": "Improvement",
+      "title": "IMP-20250115-001"
+    },
+    {
+      "id": "IMP-20250115-002",
+      "type": "Improvement",
+      "title": "IMP-20250115-002"
+    },
+    {
+      "id": "IMP-20250115-003",
+      "type": "Improvement",
+      "title": "IMP-20250115-003"
+    },
+    {
+      "id": "IMP-20250815-001",
+      "type": "Improvement",
+      "title": "IMP-20250815-001"
+    },
+    {
+      "id": "IMP-20250816-001",
+      "type": "Improvement",
+      "title": "IMP-20250816-001"
+    },
+    {
+      "id": "IMP-20250816-002",
+      "type": "Improvement",
+      "title": "IMP-20250816-002"
+    },
+    {
+      "id": "IMP-20250816-003",
+      "type": "Improvement",
+      "title": "IMP-20250816-003"
+    },
+    {
+      "id": "IMP-20250816-004",
+      "type": "Improvement",
+      "title": "IMP-20250816-004"
+    },
+    {
+      "id": "IMP-20250816-008",
+      "type": "Improvement",
+      "title": "IMP-20250816-008"
+    },
+    {
+      "id": "IMP-20250817-009",
+      "type": "Improvement",
+      "title": "IMP-20250817-009"
+    },
+    {
+      "id": "IMP-20250817-010",
+      "type": "Improvement",
+      "title": "IMP-20250817-010"
+    },
+    {
+      "id": "LES-YYYYMMDD-001",
+      "type": "Lesson",
+      "title": "LES-YYYYMMDD-001"
+    },
+    {
+      "id": "LES-20250816-001",
+      "type": "Lesson",
+      "title": "LES-20250816-001"
+    },
+    {
+      "id": "LES-20250817-002",
+      "type": "Lesson",
+      "title": "LES-20250817-002"
+    },
+    {
+      "id": "PERF-YYYYMMDD-001",
+      "type": "Benchmark",
+      "title": "PERF-YYYYMMDD-001"
+    },
+    {
+      "id": "BENCH-20250817-001",
+      "type": "Benchmark",
+      "title": "BENCH-20250817-001"
+    },
+    {
+      "id": "docs/CSV导入-使用指南.md",
+      "type": "Doc",
+      "title": "CSV导入-使用指南（方案A + auto/direct/staging 三态）"
+    },
+    {
+      "id": "docs/严格模式-核对清单.md",
+      "type": "Doc",
+      "title": "严格模式-核对清单（Strict Mode Checklist）"
+    },
+    {
+      "id": "docs/个人工作守则.md",
+      "type": "Doc",
+      "title": "个人工作守则（与仓库规范联动）"
+    },
+    {
+      "id": "docs/体系结构总览.md",
+      "type": "Doc",
+      "title": "体系结构总览"
+    },
+    {
+      "id": "docs/可视化.md",
+      "type": "Doc",
+      "title": "可视化（占位）"
+    },
+    {
+      "id": "docs/应用接口说明.md",
+      "type": "Doc",
+      "title": "应用接口说明（占位）"
+    },
+    {
+      "id": "docs/性能基准与A_B验证.md",
+      "type": "Doc",
+      "title": "性能基准与 A/B 验证"
+    },
+    {
+      "id": "docs/数据库函数参考.md",
+      "type": "Doc",
+      "title": "数据库函数参考"
+    },
+    {
+      "id": "docs/数据库完成项清单.md",
+      "type": "Doc",
+      "title": "数据库完成项清单（自动核对于 2025-08-16）"
+    },
+    {
+      "id": "docs/数据清理指南.md",
+      "type": "Doc",
+      "title": "数据清理指南（占位）"
+    },
+    {
+      "id": "docs/数据质量与校验.md",
+      "type": "Doc",
+      "title": "数据质量与校验"
+    },
+    {
+      "id": "docs/文档地图与导航.md",
+      "type": "Doc",
+      "title": "文档地图与导航"
+    },
+    {
+      "id": "docs/日志规范.md",
+      "type": "Doc",
+      "title": "日志规范（项目版）"
+    },
+    {
+      "id": "docs/日志运维.md",
+      "type": "Doc",
+      "title": "日志运维（项目版）"
+    },
+    {
+      "id": "docs/智能助手行为控制.md",
+      "type": "Doc",
+      "title": "智能助手行为控制（治理规范）"
+    },
+    {
+      "id": "docs/曲线校验与评估.md",
+      "type": "Doc",
+      "title": "曲线校验与评估（占位）"
+    },
+    {
+      "id": "docs/机器学习与深度学习.md",
+      "type": "Doc",
+      "title": "机器学习与深度学习（占位）"
+    },
+    {
+      "id": "docs/架构落地计划_v1.md",
+      "type": "Doc",
+      "title": "架构落地计划 v1（仅保留 32/33/34/35/37）"
+    },
+    {
+      "id": "docs/泵站时间对齐实现.md",
+      "type": "Doc",
+      "title": "泵站时间对齐实现"
+    },
+    {
+      "id": "docs/泵组优化.md",
+      "type": "Doc",
+      "title": "泵组优化（占位）"
+    },
+    {
+      "id": "docs/测试指南.md",
+      "type": "Doc",
+      "title": "测试指南（里程碑对齐版）"
+    },
+    {
+      "id": "docs/特性曲线拟合.md",
+      "type": "Doc",
+      "title": "特性曲线拟合（占位）"
+    },
+    {
+      "id": "docs/程序工作流程.md",
+      "type": "Doc",
+      "title": "程序工作流程（重排版）"
+    },
+    {
+      "id": "docs/编码规范.md",
+      "type": "Doc",
+      "title": "编码规范（项目版）"
+    },
+    {
+      "id": "docs/缺失与补齐策略.md",
+      "type": "Doc",
+      "title": "缺失与补齐策略（占位）"
+    },
+    {
+      "id": "docs/表结构与数据库.md",
+      "type": "Doc",
+      "title": "表结构与数据库"
+    },
+    {
+      "id": "docs/表结构明细_附录.md",
+      "type": "Doc",
+      "title": "表结构明细（附录）"
+    },
+    {
+      "id": "docs/逐函数详解_附录.md",
+      "type": "Doc",
+      "title": "逐函数详解（附录）"
+    },
+    {
+      "id": "docs/配置与快照-示例.md",
+      "type": "Doc",
+      "title": "配置与快照-示例（里程碑1）"
+    },
+    {
+      "id": "docs/项目技术选型.md",
+      "type": "Doc",
+      "title": "项目技术选型"
+    },
+    {
+      "id": "docs/ADR/ADR-0001-docs-structure.md",
+      "type": "Doc",
+      "title": "ADR-0001：文档结构与拆分"
+    },
+    {
+      "id": "CONF-20250819-011",
+      "type": "ConfigChange",
+      "title": "CONF-20250819-011"
+    },
+    {
+      "id": "IMP-20250819-011",
+      "type": "Improvement",
+      "title": "IMP-20250819-011"
+    },
+    {
+      "id": "docs/开发环境-DevSuiteMCP-接入指南.md",
+      "type": "Doc",
+      "title": "Dev-Suite MCP 接入指南（零依赖版）"
+    }
+  ],
+  "edges": [],
+  "meta": {
+    "node_count": 81,
+    "edge_count": 0
+  }
+}

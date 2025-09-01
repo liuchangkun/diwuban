@@ -1,0 +1,31 @@
+# Web服务配置
+# 用于配置FastAPI应用程序的运行参数
+
+# 服务器配置
+server:
+  host: "127.0.0.1"          # 服务器绑定地址
+  port: 8000                 # 服务器端口
+  reload: true               # 开发模式下是否启用热重载
+  workers: 1                 # 生产环境下的工作进程数
+
+# API配置
+api:
+  title: "Pump Station Optimization API"
+  description: "泵站运行数据优化系统 API"
+  version: "1.0.0"
+  docs_url: "/docs"          # Swagger文档路径
+  redoc_url: "/redoc"        # ReDoc文档路径
+  minimal_window_minutes: 60  # 测量接口最小默认时间窗口（分钟），用于控制默认查询范围
+
+# 应用配置
+app:
+  debug: false               # 调试模式
+  log_requests: true         # 是否记录HTTP请求日志
+  cors_enabled: false        # 是否启用CORS
+  cors_origins: []           # 允许的跨域来源
+
+# 性能配置
+performance:
+  request_timeout: 30        # 请求超时时间（秒）
+  max_request_size: 16777216 # 最大请求大小（16MB）
+  keepalive_timeout: 65      # Keep-Alive超时时间（秒）

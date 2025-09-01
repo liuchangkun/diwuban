@@ -1,0 +1,22 @@
+# 系统通用配置
+# 用于配置系统级别的通用设置，包括目录路径、时区等
+
+# 目录配置
+directories:
+  data: "data"               # 数据文件目录
+  logs: "logs"               # 日志文件目录
+  configs: "configs"         # 配置文件目录
+  temp: "temp"               # 临时文件目录
+  backup: "backup"           # 备份文件目录
+
+# 时区配置
+timezone:
+  default: "Asia/Shanghai"   # 默认时区
+  storage: "UTC"             # 数据库存储时区
+  display: "Asia/Shanghai"   # 显示时区
+
+# 系统配置
+system:
+  encoding: "utf-8"          # 默认文件编码
+  locale: "zh_CN.UTF-8"      # 系统语言环境
+  max_workers: 4             # 系统级别默认最大工作线程数

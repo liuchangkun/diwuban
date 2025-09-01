@@ -1,0 +1,822 @@
+/* 数据补充管道监控 - 专用样式 */
+
+/* 管道控制面板样式 */
+.pipeline-control-panel {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.pipeline-control-panel .control-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e3f2fd;
+}
+
+.pipeline-control-panel h2 {
+    color: #1976d2;
+    font-size: 1.5rem;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* 流程可视化样式 */
+.pipeline-flow-visualization {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 15px;
+    overflow-x: auto;
+    padding: 20px 10px;
+    min-height: 180px;
+}
+
+.flow-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 140px;
+    position: relative;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.flow-step:hover {
+    transform: translateY(-3px);
+}
+
+.step-circle {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    position: relative;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    margin-bottom: 12px;
+    overflow: hidden;
+}
+
+.flow-step[data-status="completed"] .step-circle {
+    background: linear-gradient(135deg, #4caf50, #45a049);
+}
+
+.flow-step[data-status="active"] .step-circle {
+    background: linear-gradient(135deg, #2196f3, #1976d2);
+    animation: pulse-glow 2s infinite;
+}
+
+.flow-step[data-status="pending"] .step-circle {
+    background: linear-gradient(135deg, #9e9e9e, #757575);
+}
+
+.flow-step[data-status="error"] .step-circle {
+    background: linear-gradient(135deg, #f44336, #d32f2f);
+}
+
+@keyframes pulse-glow {
+
+    0%,
+    100% {
+        box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+        transform: scale(1);
+    }
+
+    50% {
+        box-shadow: 0 8px 25px rgba(33, 150, 243, 0.6);
+        transform: scale(1.05);
+    }
+}
+
+.step-progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: conic-gradient(transparent 0deg,
+            rgba(255, 255, 255, 0.3) 0deg,
+            rgba(255, 255, 255, 0.3) var(--progress, 0deg),
+            transparent var(--progress, 0deg));
+}
+
+.flow-step[data-status="active"] .step-progress {
+    --progress: 280deg;
+    animation: rotate-progress 3s linear infinite;
+}
+
+@keyframes rotate-progress {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.step-info {
+    text-align: center;
+    max-width: 130px;
+}
+
+.step-title {
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.step-description {
+    font-size: 0.75rem;
+    color: #666;
+    line-height: 1.3;
+    margin-bottom: 8px;
+}
+
+.step-metrics {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.step-metrics .metric {
+    font-size: 0.7rem;
+    color: #1976d2;
+    background: rgba(33, 150, 243, 0.1);
+    padding: 2px 6px;
+    border-radius: 8px;
+}
+
+.step-connector {
+    position: absolute;
+    right: -22px;
+    top: 35px;
+    width: 30px;
+    height: 2px;
+    background: linear-gradient(90deg, #ddd, #bbb);
+}
+
+.flow-step:last-child .step-connector {
+    display: none;
+}
+
+.flow-step[data-status="completed"]+.flow-step .step-connector {
+    background: linear-gradient(90deg, #4caf50, #2196f3);
+}
+
+/* 策略配置面板 */
+.strategy-configuration .strategy-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.strategy-card {
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.strategy-card:hover:not(.disabled) {
+    border-color: #2196f3;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(33, 150, 243, 0.2);
+}
+
+.strategy-card.active {
+    border-color: #4caf50;
+    background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
+    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+}
+
+.strategy-card.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(50%);
+}
+
+.strategy-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.strategy-header i {
+    font-size: 1.2rem;
+    color: #2196f3;
+}
+
+.strategy-card.active .strategy-header i {
+    color: #4caf50;
+}
+
+.strategy-name {
+    font-weight: bold;
+    font-size: 1rem;
+    color: #2c3e50;
+    margin-left: 8px;
+    flex: 1;
+}
+
+.strategy-suitability {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-weight: bold;
+}
+
+.strategy-suitability.excellent {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.strategy-suitability.good {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+.strategy-suitability.unavailable {
+    background: #fafafa;
+    color: #757575;
+}
+
+.strategy-description {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+
+.strategy-metrics {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.metric-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+}
+
+.metric-row span:first-child {
+    color: #666;
+}
+
+.metric-row .metric-value {
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+/* 策略参数配置 */
+.strategy-parameters {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 15px;
+    border-left: 4px solid #2196f3;
+}
+
+.strategy-parameters h4 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+    font-size: 1rem;
+}
+
+.parameter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.parameter-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.parameter-item label {
+    font-size: 0.85rem;
+    color: #555;
+    font-weight: 500;
+}
+
+.parameter-item input {
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.parameter-item .unit {
+    font-size: 0.75rem;
+    color: #999;
+    text-align: center;
+}
+
+/* 数据质量监控 */
+.quality-monitoring .quality-overview {
+    margin-bottom: 20px;
+}
+
+.quality-score-card {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.score-circle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100px;
+    height: 100px;
+    background: conic-gradient(#4caf50 0deg,
+            #4caf50 calc(85.2 * 3.6deg),
+            #e0e0e0 calc(85.2 * 3.6deg));
+    border-radius: 50%;
+    position: relative;
+}
+
+.score-circle::after {
+    content: '';
+    position: absolute;
+    width: 70px;
+    height: 70px;
+    background: white;
+    border-radius: 50%;
+    z-index: 1;
+}
+
+.score-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #2c3e50;
+    z-index: 2;
+}
+
+.score-label {
+    font-size: 0.8rem;
+    color: #666;
+    z-index: 2;
+}
+
+.score-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.detail-item:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.detail-value {
+    font-weight: bold;
+    font-size: 0.95rem;
+}
+
+.detail-value.excellent {
+    color: #4caf50;
+}
+
+.detail-value.good {
+    color: #2196f3;
+}
+
+.detail-value.warning {
+    color: #ff9800;
+}
+
+/* 计算精度分析 */
+.accuracy-analysis .accuracy-metrics {
+    margin-bottom: 20px;
+}
+
+.accuracy-analysis .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.accuracy-analysis .metric-card {
+    background: white;
+    border-radius: 10px;
+    padding: 12px;
+    border-left: 4px solid #2196f3;
+    transition: all 0.2s ease;
+}
+
+.accuracy-analysis .metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.accuracy-analysis .metric-card.excellent {
+    border-left-color: #4caf50;
+}
+
+.accuracy-analysis .metric-card.good {
+    border-left-color: #2196f3;
+}
+
+.accuracy-analysis .metric-card.warning {
+    border-left-color: #ff9800;
+}
+
+.metric-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.metric-header i {
+    font-size: 1rem;
+}
+
+.accuracy-analysis .metric-value {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 4px;
+}
+
+.metric-trend {
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.metric-trend.trend-up {
+    color: #4caf50;
+}
+
+.metric-trend.trend-down {
+    color: #f44336;
+}
+
+.metric-trend.trend-stable {
+    color: #ff9800;
+}
+
+/* 实时参数校准 */
+.parameter-calibration .calibration-progress {
+    margin-bottom: 20px;
+}
+
+.progress-item {
+    margin-bottom: 15px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 3px solid #2196f3;
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.progress-label {
+    font-weight: 500;
+    color: #2c3e50;
+    font-size: 0.9rem;
+}
+
+.progress-value {
+    font-family: monospace;
+    color: #1976d2;
+    font-weight: bold;
+    font-size: 0.85rem;
+}
+
+.progress-bar {
+    height: 6px;
+    background: #e0e0e0;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 5px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2196f3, #4caf50);
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
+
+.progress-status {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.calibration-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #bbb;
+}
+
+.status-indicator.active {
+    background: #4caf50;
+    animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.3;
+    }
+}
+
+/* 残差分析面板 */
+.residual-analysis .residual-summary {
+    margin-bottom: 20px;
+}
+
+.summary-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.stat-item {
+    background: white;
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid #e0e0e0;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.stat-value {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+/* 数据流监控 */
+.dataflow-monitoring .dataflow-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.flow-metric {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 10px;
+    border-left: 4px solid #2196f3;
+}
+
+.metric-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: rgba(33, 150, 243, 0.1);
+    border-radius: 50%;
+    color: #2196f3;
+    font-size: 1.2rem;
+}
+
+.metric-info {
+    flex: 1;
+}
+
+.flow-metric .metric-label {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 2px;
+}
+
+.flow-metric .metric-value {
+    font-weight: bold;
+    color: #2c3e50;
+    font-size: 0.95rem;
+}
+
+/* 日志监控面板 */
+.log-monitoring .log-container {
+    max-height: 400px;
+    overflow-y: auto;
+    background: #fafafa;
+    border-radius: 8px;
+    padding: 15px;
+    border: 1px solid #e0e0e0;
+}
+
+.log-entry {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+    animation: slideInRight 0.3s ease;
+}
+
+.log-entry:last-child {
+    border-bottom: none;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.log-timestamp {
+    font-size: 0.75rem;
+    color: #888;
+    min-width: 80px;
+    font-family: monospace;
+}
+
+.log-level {
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    min-width: 50px;
+    text-align: center;
+}
+
+.log-level.INFO {
+    background: rgba(33, 150, 243, 0.2);
+    color: #1976d2;
+}
+
+.log-level.WARN {
+    background: rgba(255, 152, 0, 0.2);
+    color: #f57c00;
+}
+
+.log-level.ERROR {
+    background: rgba(244, 67, 54, 0.2);
+    color: #d32f2f;
+}
+
+.log-level.SUCCESS {
+    background: rgba(76, 175, 80, 0.2);
+    color: #388e3c;
+}
+
+.log-message {
+    flex: 1;
+    font-size: 0.85rem;
+    color: #333;
+    line-height: 1.4;
+}
+
+.log-filters {
+    display: flex;
+    gap: 5px;
+    margin-right: 15px;
+}
+
+.filter-btn {
+    padding: 4px 12px;
+    border: none;
+    background: #f0f0f0;
+    color: #666;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filter-btn:hover {
+    background: #e0e0e0;
+}
+
+.filter-btn.active {
+    background: #2196f3;
+    color: white;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+    .main-content {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .analysis-panels {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .pipeline-flow-visualization {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .step-connector {
+        display: none;
+    }
+
+    .strategy-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .parameter-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .accuracy-analysis .metric-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .dataflow-monitoring .dataflow-metrics {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .pipeline-control-panel .control-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+
+    .accuracy-analysis .metric-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .summary-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

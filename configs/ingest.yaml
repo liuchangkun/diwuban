@@ -1,0 +1,54 @@
+# 导入配置（允许运行时 CLI 覆盖；否则依据 YAML）
+mode: auto                  # auto|direct|staging（默认 auto）
+workers: 6                  # 并发线程/任务数
+commit_interval: 1000000    # 提交批大小（行）
+p95_window: 20              # 计算 P95 的滑动窗口批次数
+
+# CSV解析配置
+csv:
+  delimiter: ","               # 分隔符：CSV字段分隔字符
+  encoding: "utf-8"           # 编码格式：文件字符编码
+  quote_char: '"'             # 引用字符：包围含特殊字符的字段
+  escape_char: "\\"           # 转义字符：转义特殊字符
+  allow_bom: true             # 允许BOM：处理UTF-8 BOM标记
+
+# 批处理优化
+batch:
+  size: 50000                 # 批次大小：每批处理的记录数
+  max_memory_mb: 256          # 最大内存：单批次最大内存使用量（MB）
+  parallel_batches: 2         # 并行批次：同时处理的批次数量
+
+# 错误处理
+error_handling:
+  max_errors_per_file: 100    # 单文件最大错误数：超过后跳过文件
+  error_threshold_percent: 5.0 # 错误阈值百分比：超过后终止处理
+  continue_on_error: true     # 遇错继续：是否在错误后继续处理
+
+# 性能调优
+performance:
+  read_buffer_size: 65536     # 读缓冲区大小（字节）
+  write_buffer_size: 65536    # 写缓冲区大小（字节）
+  connection_pool_size: 5     # 连接池大小：并发数据库连接数
+
+# 背压阈值（第一轮配置化）
+backpressure:
+  thresholds:
+    p95_ms: 2000              # P95 批耗时阈值（ms）
+    fail_rate: 0.01           # 错误率阈值（0~1）
+    min_batch: 1000           # 最小批大小（行）
+    min_workers: 1            # 最小并发数
+
+# 默认文件路径配置
+default_paths:
+  # data_mapping.json 默认路径（相对于项目根目录）
+  mapping_file: "configs/data_mapping.v2.json"  # 迁移自 config/，统一到 configs/
+  # dim_metric_config.json 默认路径（可选，用于指标配置扩展）
+  dim_metric_config: "config/dim_metric_config.json"  # 后续若迁移到 configs/，需同步更新此路径
+
+# 默认时间窗口设置
+default_window:
+  # 是否使用全量数据（忽略时间窗口限制）
+  process_all_data: true
+  # 当process_all_data为false时的默认时间窗口（UTC时间）
+  start_utc: "2025-02-27T18:00:00Z"
+  end_utc: "2025-02-27T19:59:59Z"

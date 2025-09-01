@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据计算补充管道监控 - 智能分析系统</title>
+
+    <!-- 外部依赖 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+    <!-- 共享资源 -->
+    <link rel="stylesheet" href="../共享资源/common-styles.css">
+    <script src="../共享资源/common-utils.js"></script>
+
+    <!-- 数据补充管道专用资源 -->
+    <link rel="stylesheet" href="./data-completion-styles.css">
+    <script src="./data-completion-core.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <!-- 页面头部 -->
+        <div class="header">
+            <h1>
+                🔧 数据计算补充管道监控
+                <span class="status-badge status-active">管道运行中</span>
+                <span class="status-badge status-processing">数据处理</span>
+            </h1>
+            <div class="header-info">
+                <div class="system-metrics">
+                    <div class="metric-item">
+                        <i class="fas fa-database"></i>
+                        <span>数据连接: 正常</span>
+                    </div>
+                    <div class="metric-item">
+                        <i class="fas fa-chart-line"></i>
+                        <span>精度提升: +12.5%</span>
+                    </div>
+                    <div class="metric-item">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>异常点: 3个</span>
+                    </div>
+                    <div class="metric-item">
+                        <i class="fas fa-clock"></i>
+                        <span>更新: 14:32:18</span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-primary" onclick="DataPipeline.exportReport()">
+                        <i class="fas fa-download"></i> 导出报告
+                    </button>
+                    <button class="btn btn-secondary" onclick="DataPipeline.pausePipeline()">
+                        <i class="fas fa-pause"></i> 暂停管道
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 管道控制面板 -->
+        <div class="pipeline-control-panel">
+            <div class="control-header">
+                <h2>🎯 8步计算流程管道控制</h2>
+                <div class="control-actions">
+                    <button class="btn btn-success" onclick="DataPipeline.startPipeline()">
+                        <i class="fas fa-play"></i> 启动管道
+                    </button>
+                    <button class="btn btn-warning" onclick="DataPipeline.resetPipeline()">
+                        <i class="fas fa-redo"></i> 重置流程
+                    </button>
+                    <button class="btn btn-info" onclick="DataPipeline.showConfiguration()">
+                        <i class="fas fa-cog"></i> 配置管道
+                    </button>
+                </div>
+            </div>
+
+            <!-- 流程步骤可视化 -->
+            <div class="pipeline-flow-visualization" id="pipelineFlow">
+                <div class="flow-step" data-step="ingest" data-status="completed">
+                    <div class="step-circle">
+                        <i class="fas fa-download"></i>
+                        <div class="step-progress"></div>
+                    </div>
+                    <div class="step-info">
+                        <div class="step-title">数据摄取</div>
+                        <div class="step-description">从fact_measurements读取原始数据</div>
+                        <div class="step-metrics">
+                            <span class="metric">1,247条记录</span>
+                            <span class="metric">耗时: 2.3s</span>
+                        </div>
+                    </div>
+                    <div class="step-connector"></div>
+                </div>
+
+                <div class="flow-step" data-step="validate" data-status="completed">
+                    <div class="step-circle">
+                        <i class="fas fa-check-circle"></i>
+                        <div class="step-progress"></div>
+                    </div>
+                    <div class="step-info">
+                        <div class="step-title">数据验证</div>
+                        <div class="step-description">质量检查与异常值检测</div>
+                        <div class="step-metrics">
+                            <span class="metric">97.3%通过率</span>
+                            <span class="metric">34个异常点</span>
+                        </div>
+                    </div>
+                    <div class="step-connector"></div>
+                </div>
+
+                <div class="flow-step" data-step="gate" data-status="active">
+                    <div class="step-circle">
+                        <i class="fas fa-filter"></i>
+                        <div class="step-progress"></div>
+                    </div>
+                    <div class="step-info">
+                        <div class="step-title">质量门槛</div>
+                        <div class="step-description">缺失数据识别与策略选择</div>
+                        <div class="step-metrics">
+                            <span class="metric">FFILL策略</span>
+                            <span class="metric">2.3h缺失</span>
+                        </div>
+                    </div>
+                    <div class="step-connector"></div>
+                </div>
+
+                <div class="flow-step" data-step="select" data-status="pending">
+                    <div class="step-circle">
+                        <i class="fas fa-search"></i>
+                        <div class="step-progress"></div>
+                    </div>
+                    <div class="step-info">
+                        <div class="step-title">数据选择</div>
+                        <div class="step-description">基于质量评分选择数据</div>
+                        <div class="step-metrics">
+                            <span class="metric">待处理</span>
+                        </div>
+                    </div>
+                    <div class="step-connector"></div>
+                </div>
+
+                <div class="flow-step" data-step="qcalc" data-status="pending">
+                    <div class="step-circle">
+                        <i class="fas fa-tint"></i>
+                        <div class="step-progress"></div>
+                    </div>
+                    <div class="step-info">
+                        <div class="step-title">流量计算</div>
+                        <div class="step-description">pump_flow_rate分摊计算</div>
+                        <div class="step-metrics">
+                            <span class="metric">待处理</span>
+                        </div>
+                    </div>
+                    <div class="step-connector"></div>
+                </div>
+
+                <div class="flow-step" data-step="hcalc" data-status="pending">
+                    <div class="step-circle">
+                        <i class="fas fa-arrow-up"></i>
+                        <div class="step-progress"></div>
+                    </div>
+                    <div class="step-info">
+                        <div class="step-title">扬程计算</div>
+                        <div class="step-description">基于压差和密度计算扬程</div>
+                        <div class="step-metrics">
+                            <span class="metric">待处理</span>
+                        </div>
+                    </div>
+                    <div class="step-connector"></div>
+                </div>
+
+                <div class="flow-step" data-step="etacalc" data-status="pending">
+                    <div class="step-circle">
+                        <i class="fas fa-percentage"></i>
+                        <div class="step-progress"></div>
+                    </div>
+                    <div class="step-info">
+                        <div class="step-title">效率计算</div>
+                        <div class="step-description">η = (ρ·g·Q·H)/(P·1000)</div>
+                        <div class="step-metrics">
+                            <span class="metric">待处理</span>
+                        </div>
+                    </div>
+                    <div class="step-connector"></div>
+                </div>
+
+                <div class="flow-step" data-step="persist" data-status="pending">
+                    <div class="step-circle">
+                        <i class="fas fa-save"></i>
+                        <div class="step-progress"></div>
+                    </div>
+                    <div class="step-info">
+                        <div class="step-title">数据持久化</div>
+                        <div class="step-description">保存到compute_runs表</div>
+                        <div class="step-metrics">
+                            <span class="metric">待处理</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主内容区域 -->
+        <div class="main-content">
+            <!-- 左侧面板 -->
+            <div class="left-panel">
+                <!-- 策略配置面板 -->
+                <div class="panel strategy-configuration">
+                    <div class="panel-title">
+                        🧩 数据补齐策略配置
+                        <div class="panel-actions">
+                            <button class="btn btn-sm btn-primary" onclick="DataPipeline.optimizeStrategy()">
+                                <i class="fas fa-magic"></i> 智能推荐
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="strategy-selector">
+                        <div class="strategy-grid">
+                            <div class="strategy-card active" data-strategy="ffill">
+                                <div class="strategy-header">
+                                    <i class="fas fa-forward"></i>
+                                    <span class="strategy-name">FFILL</span>
+                                    <span class="strategy-suitability excellent">适用</span>
+                                </div>
+                                <div class="strategy-description">前向填充，适合短期缺失</div>
+                                <div class="strategy-metrics">
+                                    <div class="metric-row">
+                                        <span>精度评分:</span>
+                                        <span class="metric-value">0.89</span>
+                                    </div>
+                                    <div class="metric-row">
+                                        <span>处理速度:</span>
+                                        <span class="metric-value">快速</span>
+                                    </div>
+                                    <div class="metric-row">
+                                        <span>适用场景:</span>
+                                        <span class="metric-value">≤6h缺失</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="strategy-card" data-strategy="mean">
+                                <div class="strategy-header">
+                                    <i class="fas fa-chart-line"></i>
+                                    <span class="strategy-name">MEAN</span>
+                                    <span class="strategy-suitability good">可用</span>
+                                </div>
+                                <div class="strategy-description">均值填充，稳定可靠</div>
+                                <div class="strategy-metrics">
+                                    <div class="metric-row">
+                                        <span>精度评分:</span>
+                                        <span class="metric-value">0.82</span>
+                                    </div>
+                                    <div class="metric-row">
+                                        <span>处理速度:</span>
+                                        <span class="metric-value">中等</span>
+                                    </div>
+                                    <div class="metric-row">
+                                        <span>适用场景:</span>
+                                        <span class="metric-value">通用</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="strategy-card disabled" data-strategy="reg">
+                                <div class="strategy-header">
+                                    <i class="fas fa-brain"></i>
+                                    <span class="strategy-name">REG</span>
+                                    <span class="strategy-suitability unavailable">不可用</span>
+                                </div>
+                                <div class="strategy-description">回归模型，需要曲线支持</div>
+                                <div class="strategy-metrics">
+                                    <div class="metric-row">
+                                        <span>精度评分:</span>
+                                        <span class="metric-value">0.95</span>
+                                    </div>
+                                    <div class="metric-row">
+                                        <span>处理速度:</span>
+                                        <span class="metric-value">较慢</span>
+                                    </div>
+                                    <div class="metric-row">
+                                        <span>适用场景:</span>
+                                        <span class="metric-value">有曲线</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="strategy-card disabled" data-strategy="curve">
+                                <div class="strategy-header">
+                                    <i class="fas fa-project-diagram"></i>
+                                    <span class="strategy-name">CURVE</span>
+                                    <span class="strategy-suitability unavailable">不可用</span>
+                                </div>
+                                <div class="strategy-description">特性曲线增强</div>
+                                <div class="strategy-metrics">
+                                    <div class="metric-row">
+                                        <span>精度评分:</span>
+                                        <span class="metric-value">0.93</span>
+                                    </div>
+                                    <div class="metric-row">
+                                        <span>处理速度:</span>
+                                        <span class="metric-value">慢</span>
+                                    </div>
+                                    <div class="metric-row">
+                                        <span>适用场景:</span>
+                                        <span class="metric-value">完整曲线</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 策略参数配置 -->
+                    <div class="strategy-parameters" id="strategyParameters">
+                        <h4>📋 FFILL策略参数配置</h4>
+                        <div class="parameter-grid">
+                            <div class="parameter-item">
+                                <label>最大填充间隔</label>
+                                <input type="number" value="6" min="1" max="24" step="1">
+                                <span class="unit">小时</span>
+                            </div>
+                            <div class="parameter-item">
+                                <label>质量权重</label>
+                                <input type="number" value="0.85" min="0" max="1" step="0.01">
+                                <span class="unit">系数</span>
+                            </div>
+                            <div class="parameter-item">
+                                <label>异常检测阈值</label>
+                                <input type="number" value="3" min="1" max="5" step="0.1">
+                                <span class="unit">σ</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 数据质量监控 -->
+                <div class="panel quality-monitoring">
+                    <div class="panel-title">
+                        📊 数据质量监控
+                        <div class="panel-actions">
+                            <button class="btn btn-sm btn-primary" onclick="DataPipeline.refreshQuality()">
+                                <i class="fas fa-sync"></i> 刷新
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="quality-overview">
+                        <div class="quality-score-card">
+                            <div class="score-circle">
+                                <div class="score-value">85.2</div>
+                                <div class="score-label">质量评分</div>
+                            </div>
+                            <div class="score-details">
+                                <div class="detail-item">
+                                    <span class="detail-label">完整性:</span>
+                                    <span class="detail-value excellent">96.8%</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">准确性:</span>
+                                    <span class="detail-value good">89.2%</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">一致性:</span>
+                                    <span class="detail-value warning">73.5%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 质量指标图表 -->
+                    <div class="chart-container small" id="qualityTrendChart">
+                        <canvas></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧面板 -->
+            <div class="right-panel">
+                <!-- 计算精度分析 -->
+                <div class="panel accuracy-analysis">
+                    <div class="panel-title">
+                        🎯 计算精度分析
+                        <div class="panel-actions">
+                            <select id="accuracyTimeRange">
+                                <option value="1h">最近1小时</option>
+                                <option value="6h">最近6小时</option>
+                                <option value="24h" selected>最近24小时</option>
+                                <option value="7d">最近7天</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="accuracy-metrics">
+                        <div class="metric-grid">
+                            <div class="metric-card excellent">
+                                <div class="metric-header">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span>扬程RMSE</span>
+                                </div>
+                                <div class="metric-value">1.2m</div>
+                                <div class="metric-trend trend-up">↗ -0.3m</div>
+                            </div>
+                            <div class="metric-card excellent">
+                                <div class="metric-header">
+                                    <i class="fas fa-percentage"></i>
+                                    <span>效率MAE</span>
+                                </div>
+                                <div class="metric-value">2.8%</div>
+                                <div class="metric-trend trend-up">↗ -0.2%</div>
+                            </div>
+                            <div class="metric-card good">
+                                <div class="metric-header">
+                                    <i class="fas fa-tint"></i>
+                                    <span>流量误差</span>
+                                </div>
+                                <div class="metric-value">3.5%</div>
+                                <div class="metric-trend trend-up">↗ -0.5%</div>
+                            </div>
+                            <div class="metric-card excellent">
+                                <div class="metric-header">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span>整体精度</span>
+                                </div>
+                                <div class="metric-value">94.2%</div>
+                                <div class="metric-trend trend-up">↗ +4.2%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 精度变化趋势 -->
+                    <div class="chart-container" id="accuracyTrendChart">
+                        <canvas></canvas>
+                    </div>
+                </div>
+
+                <!-- 实时参数校准 -->
+                <div class="panel parameter-calibration">
+                    <div class="panel-title">
+                        ⚙️ 实时参数校准监控
+                        <div class="panel-actions">
+                            <div class="calibration-status">
+                                <span class="status-indicator active"></span>
+                                <span>校准中</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="calibration-progress">
+                        <div class="progress-item">
+                            <div class="progress-header">
+                                <span class="progress-label">流量系数 C_Q</span>
+                                <span class="progress-value">1.035 ± 0.008</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 78%;"></div>
+                            </div>
+                            <div class="progress-status">收敛中 - 78%</div>
+                        </div>
+
+                        <div class="progress-item">
+                            <div class="progress-header">
+                                <span class="progress-label">扬程系数 C_H</span>
+                                <span class="progress-value">1.023 ± 0.005</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 92%;"></div>
+                            </div>
+                            <div class="progress-status">已收敛 - 92%</div>
+                        </div>
+
+                        <div class="progress-item">
+                            <div class="progress-header">
+                                <span class="progress-label">效率系数 C_η</span>
+                                <span class="progress-value">0.847 ± 0.012</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 65%;"></div>
+                            </div>
+                            <div class="progress-status">优化中 - 65%</div>
+                        </div>
+                    </div>
+
+                    <!-- 校准过程图表 -->
+                    <div class="chart-container small" id="calibrationChart">
+                        <canvas></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 详细分析面板 -->
+        <div class="analysis-panels">
+            <!-- 残差分析 -->
+            <div class="panel residual-analysis">
+                <div class="panel-title">
+                    📈 残差分析与异常检测
+                    <div class="panel-actions">
+                        <button class="btn btn-sm btn-primary" onclick="DataPipeline.analyzeResiduals()">
+                            <i class="fas fa-search"></i> 深度分析
+                        </button>
+                    </div>
+                </div>
+
+                <div class="residual-summary">
+                    <div class="summary-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">平均残差</div>
+                            <div class="stat-value">0.08m</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">标准差</div>
+                            <div class="stat-value">1.23m</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">异常点数量</div>
+                            <div class="stat-value">3个</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">正态性p值</div>
+                            <div class="stat-value">0.032</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-container" id="residualChart">
+                    <canvas></canvas>
+                </div>
+            </div>
+
+            <!-- 数据流监控 -->
+            <div class="panel dataflow-monitoring">
+                <div class="panel-title">
+                    🌊 数据流实时监控
+                    <div class="panel-actions">
+                        <button class="btn btn-sm btn-secondary" onclick="DataPipeline.pauseMonitoring()">
+                            <i class="fas fa-pause"></i> 暂停监控
+                        </button>
+                    </div>
+                </div>
+
+                <div class="dataflow-metrics">
+                    <div class="flow-metric">
+                        <div class="metric-icon">
+                            <i class="fas fa-arrow-down"></i>
+                        </div>
+                        <div class="metric-info">
+                            <div class="metric-label">输入速率</div>
+                            <div class="metric-value">245 记录/秒</div>
+                        </div>
+                    </div>
+
+                    <div class="flow-metric">
+                        <div class="metric-icon">
+                            <i class="fas fa-cog"></i>
+                        </div>
+                        <div class="metric-info">
+                            <div class="metric-label">处理速率</div>
+                            <div class="metric-value">238 记录/秒</div>
+                        </div>
+                    </div>
+
+                    <div class="flow-metric">
+                        <div class="metric-icon">
+                            <i class="fas fa-arrow-up"></i>
+                        </div>
+                        <div class="metric-info">
+                            <div class="metric-label">输出速率</div>
+                            <div class="metric-value">231 记录/秒</div>
+                        </div>
+                    </div>
+
+                    <div class="flow-metric">
+                        <div class="metric-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="metric-info">
+                            <div class="metric-label">平均延迟</div>
+                            <div class="metric-value">0.24 秒</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-container" id="dataflowChart">
+                    <canvas></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 日志监控面板 -->
+        <div class="panel log-monitoring">
+            <div class="panel-title">
+                📝 计算过程日志监控
+                <div class="panel-actions">
+                    <div class="log-filters">
+                        <button class="filter-btn active" data-level="all">全部</button>
+                        <button class="filter-btn" data-level="INFO">信息</button>
+                        <button class="filter-btn" data-level="WARN">警告</button>
+                        <button class="filter-btn" data-level="ERROR">错误</button>
+                        <button class="filter-btn" data-level="SUCCESS">成功</button>
+                    </div>
+                    <button class="btn btn-sm btn-primary" onclick="DataPipeline.exportLogs()">
+                        <i class="fas fa-download"></i> 导出日志
+                    </button>
+                </div>
+            </div>
+
+            <div class="log-container" id="logContainer">
+                <!-- 日志条目将动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 初始化脚本 -->
+    <script>
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function () {
+            // 初始化数据补充管道系统
+            DataPipeline.init();
+        });
+    </script>
+</body>
+
+</html>
