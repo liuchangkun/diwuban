@@ -88,7 +88,7 @@ def _sql_count_distinct_ts(settings, device_id: int, start: str, end: str) -> in
                 SELECT COUNT(*) FROM (
                   SELECT DISTINCT ts_bucket
                   FROM public.fact_measurements
-                  WHERE device_id=%s AND ts_bucket >= %s AND ts_bucket <= %s
+                  WHERE device_id=%s AND ts_bucket >= %s AND ts_bucket < %s
                 ) t
                 """,
                 (device_id, start, end),

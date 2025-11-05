@@ -1,0 +1,8 @@
+metric_key,priority,method_code,require_station_level,require_running,require_phase,min_input_coverage,enabled,remark
+pump_head,1,head_from_inout_pressure,false,1,"{1}",1.0,true,由进/出压力与标高差计算扬程
+pump_head,2,head_from_curve_lookup,false,1,"{1}",0.5,true,曲线查表（仅验证/优化预备，可作为兜底方法）
+pump_efficiency,1,eff_from_p_q_h,false,1,"{1}",1.0,true,由 P-Q-H 计算效率
+pump_efficiency,2,eff_from_curve_lookup,false,1,"{1}",0.5,true,曲线查表兜底
+pump_flow_rate,1,flow_from_p_h_eta,false,1,"{1}",1.0,true,由功率/扬程/效率反推流量（需 eta 可用）
+pump_flow_rate,2,flow_from_curve_lookup,true,1,"{1}",0.5,true,站级曲线兜底（需全站数据）
+

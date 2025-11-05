@@ -8,7 +8,30 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Iterable
 
-from zoneinfo import ZoneInfo
+# 兼容 Python 3.8+ 的时区处理
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    # Python < 3.9 或缺少 zoneinfo，使用 pytz 作为替代
+    try:
+        import pytz
+        
+        class ZoneInfo:
+            """pytz 兼容封装"""
+            def __init__(self, tz_name: str):
+                self._tz = pytz.timezone(tz_name)
+            
+            def localize(self, dt):
+                """pytz 兼容接口"""
+                if dt.tzinfo is None:
+                    return self._tz.localize(dt)
+                return dt.astimezone(self._tz)
+                
+    except ImportError:
+        raise ImportError(
+            "Neither zoneinfo (Python 3.9+) nor pytz is available. "
+            "Please install pytz: pip install pytz"
+        )
 
 # 为可导入 app 包，加入仓库根目录
 ROOT = Path(__file__).resolve().parents[2]
@@ -16,7 +39,12 @@ sys.path.insert(0, str(ROOT))
 
 from app.core.config.loader import load_settings  # noqa: E402
 
-LOCAL_TZ = ZoneInfo("Asia/Shanghai")
+# 初始化本地时区，兼容两种实现
+try:
+    LOCAL_TZ = ZoneInfo("Asia/Shanghai")
+except (AttributeError, TypeError):
+    # pytz 兼容模式
+    LOCAL_TZ = ZoneInfo("Asia/Shanghai")
 
 
 def iter_mapping_files(mapping_path: Path) -> Iterable[Path]:
@@ -36,7 +64,16 @@ def parse_dt_to_utc_hour(s: str) -> str | None:
     if len(t) >= 19:
         t = t[:19]
     try:
-        dt_local = datetime.strptime(t, "%Y-%m-%d %H:%M:%S").replace(tzinfo=LOCAL_TZ)
+        dt_naive = datetime.strptime(t, "%Y-%m-%d %H:%M:%S")
+        
+        # 兼容时区处理
+        if hasattr(LOCAL_TZ, 'localize'):
+            # pytz 兼容模式
+            dt_local = LOCAL_TZ.localize(dt_naive)
+        else:
+            # zoneinfo 模式
+            dt_local = dt_naive.replace(tzinfo=LOCAL_TZ)
+            
     except Exception:
         return None
     dt_utc = dt_local.astimezone(timezone.utc)

@@ -101,6 +101,11 @@ jobs:
           pre-commit run --all-files
 
       - name: Run quality gate
+        env:
+          QUALITY_POLICY_STRICT: "1"
+          QUALITY_DOCS_EXTENDED: "1"
+          QUALITY_DOCS_MARKERS_STRICT: "1"
+          QUALITY_PERSONA_STRICT: "1"
         run: |
           python scripts/quality_gate.py
 

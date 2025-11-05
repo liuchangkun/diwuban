@@ -11,12 +11,9 @@
 - 配置安全检查
 """
 
-import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-
-logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -141,6 +138,9 @@ class ConfigValidator:
                 "connect_timeout_ms",
                 "statement_timeout_ms",
                 "query_timeout_ms",
+                "connection_acquire_timeout_ms",
+                "connection_validation_timeout_ms",
+                "pool_shutdown_timeout_ms",
             ]
             for field in timeout_fields:
                 value = timeouts.get(field, 0)
@@ -148,6 +148,32 @@ class ConfigValidator:
                     result.add_error(
                         f"db.timeouts.{field}", value, f"{field}必须是非负整数（毫秒）"
                     )
+
+            # 使用 DbTimeoutSettings 的验证方法进行深度验证
+            try:
+                from app.core.config.database import DbTimeoutSettings
+
+                timeout_settings = DbTimeoutSettings(
+                    connect_timeout_ms=int(timeouts.get("connect_timeout_ms", 5000)),
+                    statement_timeout_ms=int(
+                        timeouts.get("statement_timeout_ms", 30000)
+                    ),
+                    query_timeout_ms=int(timeouts.get("query_timeout_ms", 60000)),
+                    connection_acquire_timeout_ms=int(
+                        timeouts.get("connection_acquire_timeout_ms", 10000)
+                    ),
+                    connection_validation_timeout_ms=int(
+                        timeouts.get("connection_validation_timeout_ms", 1000)
+                    ),
+                    pool_shutdown_timeout_ms=int(
+                        timeouts.get("pool_shutdown_timeout_ms", 30000)
+                    ),
+                )
+                validation_errors = timeout_settings.validate()
+                for error in validation_errors:
+                    result.add_error("db.timeouts", timeouts, error)
+            except Exception as e:
+                result.add_error("db.timeouts", timeouts, f"超时配置验证失败: {e}")
 
         return result
 
@@ -366,59 +392,8 @@ class ConfigValidator:
 
     @staticmethod
     def validate_logging_config(logging_config: Dict[str, Any]) -> ValidationResult:
-        """
-        验证日志配置
-
-        参数：
-            logging_config: 日志配置字典
-
-        返回：
-            ValidationResult: 验证结果
-        """
-        result = ValidationResult(True, [], [])
-
-        # 验证日志级别
-        level = logging_config.get("level", "INFO")
-        valid_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
-        if not isinstance(level, str) or level.upper() not in valid_levels:
-            result.add_error("logging.level", level, f"日志级别必须是: {valid_levels}")
-
-        # 验证日志格式
-        format_type = logging_config.get("format", "json")
-        valid_formats = ["json", "text"]
-        if not isinstance(format_type, str) or format_type not in valid_formats:
-            result.add_error(
-                "logging.format", format_type, f"日志格式必须是: {valid_formats}"
-            )
-
-        # 验证日志路由
-        routing = logging_config.get("routing", "by_run")
-        valid_routings = ["by_run", "by_module"]
-        if not isinstance(routing, str) or routing not in valid_routings:
-            result.add_error(
-                "logging.routing", routing, f"日志路由必须是: {valid_routings}"
-            )
-
-        # 验证保留天数
-        retention_days = logging_config.get("retention_days", 14)
-        if (
-            not isinstance(retention_days, int)
-            or retention_days < 1
-            or retention_days > 365
-        ):
-            result.add_error(
-                "logging.retention_days",
-                retention_days,
-                "日志保留天数必须是1-365之间的整数",
-            )
-        elif retention_days < 7:
-            result.add_warning(
-                "logging.retention_days",
-                retention_days,
-                "日志保留天数较短，建议至少7天",
-            )
-
-        return result
+        """已移除日志配置验证，保持兼容返回通过。"""
+        return ValidationResult(True, [], [])
 
     @staticmethod
     def validate_paths_exist(config: Dict[str, Any]) -> ValidationResult:
@@ -498,38 +473,6 @@ class ConfigValidator:
         return result
 
 
-def log_validation_result(
-    result: ValidationResult, logger: Optional[logging.Logger] = None
-) -> None:
-    """
-    记录验证结果日志
-
-    参数：
-        result: 验证结果
-        logger: 日志记录器，默认使用模块日志记录器
-    """
-    if logger is None:
-        logger = globals()["logger"]
-
-    if result.is_valid and not result.warnings:
-        logger.info("配置验证通过")
-        return
-
-    # 记录错误
-    for error in result.errors:
-        logger.error(
-            f"配置错误 [{error.field}]: {error.message}, 当前值: {error.value}"
-        )
-
-    # 记录警告
-    for warning in result.warnings:
-        logger.warning(
-            f"配置警告 [{warning.field}]: {warning.message}, 当前值: {warning.value}"
-        )
-
-    if not result.is_valid:
-        logger.error(
-            f"配置验证失败: {len(result.errors)} 个错误, {len(result.warnings)} 个警告"
-        )
-    else:
-        logger.info(f"配置验证通过: {len(result.warnings)} 个警告")
+def log_validation_result(result: ValidationResult) -> None:
+    """占位的验证结果处理（无日志输出）。"""
+    return None

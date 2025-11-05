@@ -12,27 +12,34 @@ FastAPI 主应用程序
     uvicorn app.main:app --host {web.server.host} --port {web.server.port}
 """
 
-# 日志落盘
-import logging
+# 基础依赖
 import time
 from contextlib import asynccontextmanager
-from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-import structlog
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.adapters.db import cleanup_database, init_database
-from app.api.middleware import APILoggingMiddleware, setup_api_logging
 from app.api.v1.router import api_v1_router
 from app.core.config.loader_new import load_settings
-from app.utils.logging_ext import JsonFormatter
+from app.core.logging.setup import (
+    clear_context,
+    init_logging,
+    log_activity,
+    set_context,
+)
 
 # 加载配置（包括Web服务配置）
 _settings = load_settings(Path("configs"))
+# 初始化日志（使用 system.yaml 时区作为兜底）
+try:
+    init_logging("configs", _settings.system.timezone.default)
+except Exception:
+    # 兜底避免因日志初始化失败阻断应用
+    pass
 
 
 @asynccontextmanager
@@ -42,35 +49,19 @@ async def lifespan(app: FastAPI):
 
     负责在应用启动时初始化资源，在应用关闭时清理资源。
     """
-    # 获取结构化日志器
-    logger = structlog.get_logger("app.startup")
 
-    # 应用启动
     try:
-        # 设置 API 日志
-        setup_api_logging()
-        logger.info("日志系统初始化完成")
-
         # 使用已加载的配置
         settings = _settings
 
         # 初始化数据库连接池
         init_database(settings)
-        logger.info("数据库连接池初始化完成")
 
-        logger.info(
-            "应用初始化完成",
-            host=settings.web.server.host,
-            port=settings.web.server.port,
-            debug=getattr(settings.web.app, "debug", False),
-            cors_enabled=getattr(settings.web.app, "cors_enabled", False),
-        )
         print(
             f"[OK] 应用初始化完成，Web服务配置: {settings.web.server.host}:{settings.web.server.port}"
         )
 
     except Exception as e:
-        logger.error("应用初始化失败", error=str(e), exc_info=True)
         print(f"[ERROR] 应用初始化失败: {e}")
         raise
 
@@ -78,12 +69,9 @@ async def lifespan(app: FastAPI):
 
     # 应用关闭
     try:
-        logger.info("开始应用清理")
         cleanup_database()
-        logger.info("应用清理完成")
         print("[OK] 应用清理完成")
     except Exception as e:
-        logger.error("应用清理失败", error=str(e), exc_info=True)
         print(f"[WARNING] 应用清理失败: {e}")
 
 
@@ -107,13 +95,41 @@ if getattr(_settings.web.app, "cors_enabled", False):
         allow_headers=["*"],
     )
 
-# 添加 API 日志中间件
-app.add_middleware(
-    APILoggingMiddleware,
-    log_request_body=True,
-    log_response_body=False,  # 生产环境建议关闭
-    max_body_size=8192,
-)
+
+# HTTP 请求日志与上下文中间件
+@app.middleware("http")
+async def logging_context_middleware(request: Request, call_next):
+    # 生成/提取 request_id & trace_id
+    rid = request.headers.get("x-request-id") or f"req-{int(time.time()*1000)}"
+    tid = request.headers.get("x-trace-id") or rid
+    set_context(request_id=rid, trace_id=tid)
+    path = str(request.url.path)
+    method = request.method
+    client_ip = request.client.host if request.client else "unknown"
+
+    # 进入日志
+    with log_activity(
+        name=f"http {method} {path}",
+        params={
+            "客户端IP": client_ip,
+            "请求头": {
+                k: v
+                for k, v in request.headers.items()
+                if k.lower() not in {"authorization"}
+            },
+        },
+    ):
+        try:
+            response = await call_next(request)
+            status = getattr(response, "status_code", 200)
+            # 退出日志（在 log_activity 中自动记录耗时）
+            return response
+        except Exception:
+            # 错误日志由 log_activity 捕获
+            raise
+        finally:
+            clear_context()
+
 
 # 开发模式下，禁止对 /static 的缓存，避免前端调试缓存干扰
 if getattr(_settings.web.app, "debug", False):
@@ -133,23 +149,6 @@ if getattr(_settings.web.app, "debug", False):
         return response
 
 
-# 配置 RotatingFileHandler 将结构化 JSON 日志落盘到 logs/api.log（10MB x 5）
-logs_dir = Path("logs")
-logs_dir.mkdir(parents=True, exist_ok=True)
-root_logger = logging.getLogger()
-root_logger.setLevel(logging.INFO)
-file_handler = RotatingFileHandler(
-    filename=str(logs_dir / "api.log"),
-    maxBytes=10 * 1024 * 1024,
-    backupCount=5,
-    encoding="utf-8",
-)
-file_handler.setFormatter(JsonFormatter())
-# 避免重复添加处理器
-if not any(isinstance(h, RotatingFileHandler) for h in root_logger.handlers):
-    root_logger.addHandler(file_handler)
-
-
 @app.get("/health")
 def health(request: Request):
     """
@@ -159,8 +158,16 @@ def health(request: Request):
     """
     from app.adapters.db import get_pool_stats, is_initialized
 
-    # 获取结构化日志器
-    logger = structlog.get_logger("api.health")
+    try:
+        from app.adapters.db.pool_telemetry import snapshot as _pool_telemetry_snapshot
+    except Exception:
+
+        def _pool_telemetry_snapshot():  # fallback
+            return {"error": "telemetry_unavailable"}
+
+
+
+
 
     start_time = time.time()
 
@@ -176,6 +183,7 @@ def health(request: Request):
             "database": {
                 "pool_initialized": db_initialized,
                 "pool_stats": pool_stats,
+                "pool_events": _pool_telemetry_snapshot(),
             },
             "request_info": {
                 "client_ip": request.client.host if request.client else "unknown",
@@ -183,19 +191,9 @@ def health(request: Request):
             },
         }
 
-        # 记录健康检查日志
-        logger.info(
-            "健康检查完成",
-            status="ok",
-            db_initialized=db_initialized,
-            pool_stats=pool_stats,
-            client_ip=request.client.host if request.client else "unknown",
-        )
-
         return response_data
 
     except Exception as e:
-        logger.error("健康检查失败", error=str(e), exc_info=True)
         return {
             "status": "error",
             "timestamp": time.time(),

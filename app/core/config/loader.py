@@ -6,7 +6,7 @@ from __future__ import annotations
 本模块负责应用程序的配置管理，提供统一的配置加载和验证机制：
 
 核心功能：
-- Settings：应用全局配置（db/ingest/merge/logging）
+- Settings：应用全局配置（db/ingest/merge/web）
 - load_settings：按目录优先级与 YAML 合并规则加载配置，且强制 ingest.base_dir = data
 - load_settings_with_sources：提供配置来源追踪的加载函数
 
@@ -17,7 +17,7 @@ from __future__ import annotations
 
 配置文件结构：
 - configs/database.yaml：数据库连接和池配置
-- configs/logging.yaml：日志格式、级别和路由配置
+
 - configs/ingest.yaml：数据导入和处理配置
 
 安全注意事项：
@@ -35,11 +35,11 @@ from __future__ import annotations
     # 访问配置项
     print(f"数据库主机: {settings.db.host}")
     print(f"导入工作线程: {settings.ingest.workers}")
-    print(f"日志级别: {settings.logging.level}")
+
 
 注意事项：
 - 修改配置字段需同步更新 docs/配置说明.md
-- logging 路由与格式需与 adapters.logging.init 对齐
+
 - 环境变量支持仅限白名单字段，见 ENV 覆盖部分
 """
 
@@ -360,296 +360,11 @@ class MergeSettings:
     segmented: SegmentedMergeSettings = SegmentedMergeSettings()
 
 
-@dataclass(frozen=True)
-class DbPoolSettings:
-    min_size: int = 1
-    max_size: int = 10
-    max_inactive_connection_lifetime: int = 3600  # 秒
+# 导入数据库配置类，避免重复定义
+from .database import DbPoolSettings, DbRetrySettings, DbSettings, DbTimeoutSettings
 
 
-@dataclass(frozen=True)
-class DbTimeoutSettings:
-    connect_timeout_ms: int = 5000
-    statement_timeout_ms: int = 30000
-    query_timeout_ms: int = 60000
-
-
-@dataclass(frozen=True)
-class DbRetrySettings:
-    max_retries: int = 3
-    retry_delay_ms: int = 1000
-    backoff_multiplier: float = 2.0
-
-
-@dataclass(frozen=True)
-class DbSettings:
-    """
-    数据库配置设置
-
-    包含数据库连接、连接池、超时和重试策略的全部配置。
-
-    安全注意事项：
-    - 数据库配置仅允许来自 database.yaml，不允许通过 ENV/CLI 覆盖
-    - 连接信息不应该在日志中明文输出
-    - DSN 优先级：dsn_write > dsn_read > host/name/user 组合
-
-    属性：
-        host: 数据库主机地址
-        name: 数据库名称
-        user: 连接用户名
-        dsn_read: 只读连接的完整 DSN（可选）
-        dsn_write: 读写连接的完整 DSN（可选）
-        pool: 连接池配置
-        timeouts: 超时配置
-        retry: 重试策略配置
-    """
-
-    # 注意：数据库配置仅允许来自 database.yaml，不允许通过 ENV/CLI 覆盖
-    host: str = "localhost"
-    name: str = "pump_station_optimization"
-    user: str = "postgres"
-    dsn_read: str | None = None
-    dsn_write: str | None = None
-    pool: DbPoolSettings = DbPoolSettings()
-    timeouts: DbTimeoutSettings = DbTimeoutSettings()
-    retry: DbRetrySettings = DbRetrySettings()
-
-
-@dataclass(frozen=True)
-class LoggingSql:
-    text: str = "full"
-    explain: str = "on_error"
-    top_n_slow: int = 5
-
-
-@dataclass(frozen=True)
-class LoggingRotation:
-    max_bytes: int = 104_857_600  # 100MB
-    backup_count: int = 7
-    rotation_interval: int = 86_400  # 秒，0 表示按大小轮转
-
-
-@dataclass(frozen=True)
-class LoggingFormatting:
-    timestamp_format: str = "%Y-%m-%d %H:%M:%S.%f"
-    max_message_length: int = 8192
-    field_order: tuple[str, ...] = ("timestamp", "level", "message", "extra")
-
-
-@dataclass(frozen=True)
-class LoggingPerformance:
-    buffer_size: int = 8192
-    flush_interval: float = 1.0
-    async_handler_queue_size: int = 1000
-
-
-@dataclass(frozen=True)
-class StartupCleanupSettings:
-    """
-    启动清理配置
-
-    用于控制程序启动时的清理行为，确保干净的运行环境。
-
-    属性：
-        clear_logs: 启动时清空logs目录
-        clear_database: 启动时清空数据库
-        logs_backup_count: 清理前保留的日志备份数
-        confirm_clear: 是否需要确认清理操作
-    """
-
-    # 默认关闭启动清理，避免误删数据；仅在显式启用时才执行
-    clear_logs: bool = False  # 改为默认 False，防止误清理日志
-    clear_database: bool = False  # 改为默认 False，防止误清空数据库
-    logs_backup_count: int = 3
-    confirm_clear: bool = False
-
-
-@dataclass(frozen=True)
-class DetailedLoggingSettings:
-    """
-    详细日志记录配置
-
-    用于控制日志记录的详细程度，支持函数级别的日志跟踪。
-
-    属性：
-        enable_function_entry: 记录函数进入
-        enable_function_exit: 记录函数退出
-        enable_parameter_logging: 记录函数参数
-        enable_context_logging: 记录上下文信息
-        enable_business_logging: 记录业务逻辑
-        enable_progress_logging: 记录进度信息
-        enable_performance_logging: 记录性能指标
-        enable_error_details: 记录详细错误信息
-        enable_internal_steps: 记录函数内部执行步骤
-        enable_condition_branches: 记录条件分支执行
-        enable_loop_iterations: 记录循环迭代过程
-        enable_intermediate_results: 记录中间结果
-        enable_data_validation: 记录数据验证过程
-        enable_resource_usage: 记录资源使用情况
-        enable_timing_details: 记录详细时间信息
-        internal_steps_interval: 内部步骤日志输出间隔（秒）
-        loop_log_interval: 循环日志输出间隔（次数）
-    """
-
-    enable_function_entry: bool = True
-    enable_function_exit: bool = True
-    enable_parameter_logging: bool = True
-    enable_context_logging: bool = True
-    enable_business_logging: bool = True
-    enable_progress_logging: bool = True
-    enable_performance_logging: bool = True
-    enable_error_details: bool = True
-    enable_internal_steps: bool = True
-    enable_condition_branches: bool = True
-    enable_loop_iterations: bool = True
-    enable_intermediate_results: bool = True
-    enable_data_validation: bool = True
-    enable_resource_usage: bool = True
-    enable_timing_details: bool = True
-    internal_steps_interval: int = 10
-    loop_log_interval: int = 100
-
-
-@dataclass(frozen=True)
-class KeyMetricsSettings:
-    """
-    关键信息日志配置
-
-    用于控制关键业务指标的日志记录，包括文件处理、数据统计等。
-
-    属性：
-        enable_file_count: 记录文件数量
-        enable_data_time_range: 记录数据时间范围
-        enable_processing_progress: 记录处理进度
-        enable_merge_statistics: 记录合并统计
-        enable_performance_metrics: 记录性能指标
-        enable_memory_usage: 记录内存使用
-        enable_database_stats: 记录数据库统计
-        enable_file_size_info: 记录文件大小信息
-        enable_throughput_metrics: 记录吞吐量指标
-        enable_error_statistics: 记录错误统计
-        enable_quality_metrics: 记录数据质量指标
-        enable_pipeline_stages: 记录管道阶段信息
-        enable_batch_statistics: 记录批处理统计
-        enable_resource_consumption: 记录资源消耗
-        enable_data_distribution: 记录数据分布信息
-        progress_report_interval: 进度报告间隔（行数）
-        metrics_summary_interval: 指标汇总间隔（秒）
-    """
-
-    enable_file_count: bool = True
-    enable_data_time_range: bool = True
-    enable_processing_progress: bool = True
-    enable_merge_statistics: bool = True
-    enable_performance_metrics: bool = True
-    enable_memory_usage: bool = True
-    enable_database_stats: bool = True
-    enable_file_size_info: bool = True
-    enable_throughput_metrics: bool = True
-    enable_error_statistics: bool = True
-    enable_quality_metrics: bool = True
-    enable_pipeline_stages: bool = True
-    enable_batch_statistics: bool = True
-    enable_resource_consumption: bool = True
-    enable_data_distribution: bool = True
-    progress_report_interval: int = 1000
-    metrics_summary_interval: int = 300
-
-
-@dataclass(frozen=True)
-class SqlExecutionSettings:
-    """
-    SQL执行日志配置
-
-    用于控制SQL语句执行的详细日志记录。
-
-    属性：
-        enable_statement_logging: 记录完整SQL语句
-        enable_execution_metrics: 记录执行指标
-        enable_parameter_logging: 记录SQL参数
-        enable_result_summary: 记录结果摘要
-        enable_slow_query_detection: 启用慢查询检测
-        slow_query_threshold_ms: 慢查询阈值（毫秒）
-        max_sql_length: SQL语句最大记录长度
-        sensitive_fields: 敏感字段列表
-    """
-
-    enable_statement_logging: bool = True
-    enable_execution_metrics: bool = True
-    enable_parameter_logging: bool = True
-    enable_result_summary: bool = True
-    enable_slow_query_detection: bool = True
-    slow_query_threshold_ms: int = 1000
-    max_sql_length: int = 2000
-    sensitive_fields: tuple[str, ...] = ("password", "token", "secret", "key")
-
-
-@dataclass(frozen=True)
-class InternalExecutionSettings:
-    """
-    函数内部执行过程配置
-
-    用于控制函数内部执行步骤的详细日志记录。
-
-    属性：
-        enable_step_logging: 启用步骤日志
-        enable_checkpoint_logging: 启用检查点日志
-        enable_branch_logging: 启用分支日志
-        enable_iteration_logging: 启用迭代日志
-        enable_validation_logging: 启用验证日志
-        enable_transformation_logging: 启用转换日志
-        step_detail_level: 步骤详细级别（low/medium/high）
-        iteration_log_frequency: 迭代日志频率（每多X次记录一次）
-        checkpoint_auto_interval: 自动检查点间隔（秒）
-    """
-
-    enable_step_logging: bool = True
-    enable_checkpoint_logging: bool = True
-    enable_branch_logging: bool = True
-    enable_iteration_logging: bool = True
-    enable_validation_logging: bool = True
-    enable_transformation_logging: bool = True
-    step_detail_level: str = "medium"
-    iteration_log_frequency: int = 100
-    checkpoint_auto_interval: int = 30
-
-
-@dataclass(frozen=True)
-class LoggingPerformance:
-    buffer_size: int = 8192
-    flush_interval: float = 1.0
-    async_handler_queue_size: int = 1000
-
-
-@dataclass(frozen=True)
-class SamplingSettings:
-    loop_log_every_n: int = 1000
-    min_interval_sec: float = 1.0
-    default_rate: float = 1.0
-    high_frequency_events: dict[str, float] = field(
-        default_factory=dict
-    )  # 事件采样率表
-    burst_limit: int = 100
-
-
-@dataclass(frozen=True)
-class LoggingSettings:
-    level: str = "INFO"
-    format: str = "json"  # json|text
-    routing: str = "by_run"  # by_run|by_module
-    queue_handler: bool = True
-    sql: LoggingSql = LoggingSql()
-    sampling: SamplingSettings = SamplingSettings()
-    rotation: LoggingRotation = LoggingRotation()
-    formatting: LoggingFormatting = LoggingFormatting()
-    performance: LoggingPerformance = LoggingPerformance()
-    redaction_enable: bool = False
-    retention_days: int = 14
-    startup_cleanup: StartupCleanupSettings = StartupCleanupSettings()
-    detailed_logging: DetailedLoggingSettings = DetailedLoggingSettings()
-    key_metrics: KeyMetricsSettings = KeyMetricsSettings()
-    sql_execution: SqlExecutionSettings = SqlExecutionSettings()
-    internal_execution: InternalExecutionSettings = InternalExecutionSettings()
+# DbSettings 已在 database.py 中定义，此处移除重复定义
 
 
 @dataclass(frozen=True)
@@ -664,7 +379,7 @@ class Settings:
     - db: 数据库连接和池配置
     - ingest: 数据导入和处理配置
     - merge: 数据合并和对齐配置
-    - logging: 日志系统配置
+
     - web: Web服务配置
 
     使用示例：
@@ -678,10 +393,6 @@ class Settings:
         workers = settings.ingest.workers
         batch_size = settings.ingest.batch.size
 
-        # 访问日志配置
-        log_level = settings.logging.level
-        log_format = settings.logging.format
-
         # 访问Web配置
         host = settings.web.server.host
         port = settings.web.server.port
@@ -690,7 +401,7 @@ class Settings:
     db: DbSettings = DbSettings()
     ingest: IngestSettings = IngestSettings()
     merge: MergeSettings = MergeSettings()
-    logging: LoggingSettings = LoggingSettings()
+
     web: WebSettings = WebSettings()
 
 
@@ -706,8 +417,8 @@ def load_settings(config_dir: Path) -> Settings:
     """加载配置（强制 ingest.base_dir 固定为 data）。
 
     - 目录优先级：传入 config_dir → ./configs → ./config
-    - 支持文件：ingest.yaml、logging.yaml、database.yaml、web.yaml
-    - 合并策略：ingest 支持 CLI/ENV > YAML > 默认；db/logging 仅 YAML > 默认；仅白名单字段；不允许覆盖 ingest.base_dir
+    - 支持文件：ingest.yaml、database.yaml、web.yaml
+    - 合并策略：ingest 支持 CLI/ENV > YAML > 默认；db 仅 YAML > 默认；仅白名单字段；不允许覆盖 ingest.base_dir
     """
     cfg = Settings()
 
@@ -717,34 +428,27 @@ def load_settings(config_dir: Path) -> Settings:
 
     cdir = _first_existing_dir(config_dir)
     ingest_path = cdir / "ingest.yaml"
-    logging_path = cdir / "logging.yaml"
+
     database_path = cdir / "database.yaml"
     web_path = cdir / "web.yaml"  # 添加web.yaml路径
 
-    data: dict = {}
+    data: dict[str, dict] = {}
     if ingest_path.exists():
-        data.setdefault("ingest", {})
         with ingest_path.open("r", encoding="utf-8") as f:
             data["ingest"] = yaml.safe_load(f) or {}
-    if logging_path.exists():
-        data.setdefault("logging", {})
-        with logging_path.open("r", encoding="utf-8") as f:
-            data["logging"] = yaml.safe_load(f) or {}
+
     if database_path.exists():
-        data.setdefault("db", {})
         with database_path.open("r", encoding="utf-8") as f:
             data["db"] = yaml.safe_load(f) or {}
     if web_path.exists():  # 添加web.yaml加载逻辑
-        data.setdefault("web", {})
         with web_path.open("r", encoding="utf-8") as f:
             data["web"] = yaml.safe_load(f) or {}
 
     # 合并：仅合并允许的键；ingest.base_dir 强制为 data
-    db = data.get("db", {})
-    ingest = data.get("ingest", {})
-    merge = data.get("merge", {})
-    logging_cfg = data.get("logging", {})
-    web_cfg = data.get("web", {})  # 获取web配置
+    db: dict = data.get("db", {})
+    ingest: dict = data.get("ingest", {})
+    merge: dict = data.get("merge", {})
+    web_cfg: dict = data.get("web", {})  # 获取web配置
 
     cfg = Settings(
         db=DbSettings(
@@ -752,6 +456,7 @@ def load_settings(config_dir: Path) -> Settings:
             host=str(db.get("host", cfg.db.host)),
             name=str(db.get("dbname", cfg.db.name)),
             user=str(db.get("user", cfg.db.user)),
+            password=db.get("password"),  # 读取密码字段
             dsn_read=db.get("dsn_read", cfg.db.dsn_read),
             dsn_write=db.get("dsn_write", cfg.db.dsn_write),
             pool=DbPoolSettings(
@@ -1060,463 +765,6 @@ def load_settings(config_dir: Path) -> Settings:
                 ),
             ),
         ),
-        logging=LoggingSettings(
-            # 严格按 YAML 加载，不读取 ENV/CLI
-            level=str(logging_cfg.get("level", cfg.logging.level)),
-            format=str(logging_cfg.get("format", cfg.logging.format)),
-            routing=str(logging_cfg.get("routing", cfg.logging.routing)),
-            queue_handler=(
-                bool(logging_cfg.get("performance", {}).get("queue_handler"))
-                if logging_cfg.get("performance")
-                else cfg.logging.queue_handler
-            ),
-            sql=LoggingSql(
-                text=str(logging_cfg.get("sql", {}).get("text", cfg.logging.sql.text)),
-                explain=str(
-                    logging_cfg.get("sql", {}).get("explain", cfg.logging.sql.explain)
-                ),
-                top_n_slow=int(
-                    logging_cfg.get("sql", {}).get(
-                        "top_n_slow", cfg.logging.sql.top_n_slow
-                    )
-                ),
-            ),
-            sampling=SamplingSettings(
-                loop_log_every_n=(
-                    int(
-                        logging_cfg.get("sampling", {}).get(
-                            "loop_log_every_n",
-                            cfg.logging.sampling.loop_log_every_n,
-                        )
-                    )
-                    if logging_cfg.get("sampling")
-                    else cfg.logging.sampling.loop_log_every_n
-                ),
-                min_interval_sec=(
-                    float(
-                        logging_cfg.get("sampling", {}).get(
-                            "min_interval_sec",
-                            cfg.logging.sampling.min_interval_sec,
-                        )
-                    )
-                    if logging_cfg.get("sampling")
-                    else cfg.logging.sampling.min_interval_sec
-                ),
-                default_rate=float(
-                    (logging_cfg.get("sampling", {}) or {}).get(
-                        "default_rate", cfg.logging.sampling.default_rate
-                    )
-                ),
-                high_frequency_events=(
-                    (logging_cfg.get("sampling", {}) or {}).get(
-                        "high_frequency_events",
-                        cfg.logging.sampling.high_frequency_events,
-                    )
-                    or {},
-                ),
-                burst_limit=int(
-                    (logging_cfg.get("sampling", {}) or {}).get(
-                        "burst_limit", cfg.logging.sampling.burst_limit
-                    )
-                ),
-            ),
-            rotation=LoggingRotation(
-                max_bytes=int(
-                    (logging_cfg.get("rotation", {}) or {}).get(
-                        "max_bytes", cfg.logging.rotation.max_bytes
-                    )
-                ),
-                backup_count=int(
-                    (logging_cfg.get("rotation", {}) or {}).get(
-                        "backup_count", cfg.logging.rotation.backup_count
-                    )
-                ),
-                rotation_interval=int(
-                    (logging_cfg.get("rotation", {}) or {}).get(
-                        "rotation_interval", cfg.logging.rotation.rotation_interval
-                    )
-                ),
-            ),
-            formatting=LoggingFormatting(
-                timestamp_format=str(
-                    (logging_cfg.get("formatting", {}) or {}).get(
-                        "timestamp_format", cfg.logging.formatting.timestamp_format
-                    )
-                ),
-                max_message_length=int(
-                    (logging_cfg.get("formatting", {}) or {}).get(
-                        "max_message_length",
-                        cfg.logging.formatting.max_message_length,
-                    )
-                ),
-                field_order=tuple(
-                    (logging_cfg.get("formatting", {}) or {}).get(
-                        "field_order", list(cfg.logging.formatting.field_order)
-                    )
-                ),
-            ),
-            performance=LoggingPerformance(
-                buffer_size=int(
-                    (logging_cfg.get("performance", {}) or {}).get(
-                        "buffer_size", cfg.logging.performance.buffer_size
-                    )
-                ),
-                flush_interval=float(
-                    (logging_cfg.get("performance", {}) or {}).get(
-                        "flush_interval", cfg.logging.performance.flush_interval
-                    )
-                ),
-                async_handler_queue_size=int(
-                    (logging_cfg.get("performance", {}) or {}).get(
-                        "async_handler_queue_size",
-                        cfg.logging.performance.async_handler_queue_size,
-                    )
-                ),
-            ),
-            redaction_enable=(
-                bool((logging_cfg.get("redaction", {}) or {}).get("enable"))
-                if logging_cfg.get("redaction")
-                else cfg.logging.redaction_enable
-            ),
-            retention_days=int(
-                logging_cfg.get("retention_days", cfg.logging.retention_days)
-            ),
-            startup_cleanup=StartupCleanupSettings(
-                clear_logs=bool(
-                    (logging_cfg.get("startup_cleanup", {}) or {}).get(
-                        "clear_logs", cfg.logging.startup_cleanup.clear_logs
-                    )
-                ),
-                clear_database=bool(
-                    (logging_cfg.get("startup_cleanup", {}) or {}).get(
-                        "clear_database", cfg.logging.startup_cleanup.clear_database
-                    )
-                ),
-                logs_backup_count=int(
-                    (logging_cfg.get("startup_cleanup", {}) or {}).get(
-                        "logs_backup_count",
-                        cfg.logging.startup_cleanup.logs_backup_count,
-                    )
-                ),
-                confirm_clear=bool(
-                    (logging_cfg.get("startup_cleanup", {}) or {}).get(
-                        "confirm_clear", cfg.logging.startup_cleanup.confirm_clear
-                    )
-                ),
-            ),
-            detailed_logging=DetailedLoggingSettings(
-                enable_function_entry=bool(
-                    (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "enable_function_entry",
-                        cfg.logging.detailed_logging.enable_function_entry,
-                    )
-                ),
-                enable_function_exit=bool(
-                    (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "enable_function_exit",
-                        cfg.logging.detailed_logging.enable_function_exit,
-                    )
-                ),
-                enable_parameter_logging=bool(
-                    (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "enable_parameter_logging",
-                        cfg.logging.detailed_logging.enable_parameter_logging,
-                    )
-                ),
-                enable_context_logging=bool(
-                    (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "enable_context_logging",
-                        cfg.logging.detailed_logging.enable_context_logging,
-                    )
-                ),
-                enable_business_logging=bool(
-                    (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "enable_business_logging",
-                        cfg.logging.detailed_logging.enable_business_logging,
-                    )
-                ),
-                enable_progress_logging=bool(
-                    (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "enable_progress_logging",
-                        cfg.logging.detailed_logging.enable_progress_logging,
-                    )
-                ),
-                enable_performance_logging=bool(
-                    (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "enable_performance_logging",
-                        cfg.logging.detailed_logging.enable_performance_logging,
-                    )
-                ),
-                enable_error_details=bool(
-                    (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "enable_error_details",
-                        cfg.logging.detailed_logging.enable_error_details,
-                    )
-                ),
-                enable_internal_steps=bool(
-                    (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "enable_internal_steps",
-                        cfg.logging.detailed_logging.enable_internal_steps,
-                    )
-                ),
-                enable_condition_branches=bool(
-                    (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "enable_condition_branches",
-                        cfg.logging.detailed_logging.enable_condition_branches,
-                    )
-                ),
-                enable_loop_iterations=bool(
-                    (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "enable_loop_iterations",
-                        cfg.logging.detailed_logging.enable_loop_iterations,
-                    )
-                ),
-                enable_intermediate_results=bool(
-                    (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "enable_intermediate_results",
-                        cfg.logging.detailed_logging.enable_intermediate_results,
-                    )
-                ),
-                enable_data_validation=bool(
-                    (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "enable_data_validation",
-                        cfg.logging.detailed_logging.enable_data_validation,
-                    )
-                ),
-                enable_resource_usage=bool(
-                    (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "enable_resource_usage",
-                        cfg.logging.detailed_logging.enable_resource_usage,
-                    )
-                ),
-                enable_timing_details=bool(
-                    (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "enable_timing_details",
-                        cfg.logging.detailed_logging.enable_timing_details,
-                    )
-                ),
-                internal_steps_interval=int(
-                    (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "internal_steps_interval",
-                        cfg.logging.detailed_logging.internal_steps_interval,
-                    )
-                ),
-                loop_log_interval=int(
-                    (logging_cfg.get("detailed_logging", {}) or {}).get(
-                        "loop_log_interval",
-                        cfg.logging.detailed_logging.loop_log_interval,
-                    )
-                ),
-            ),
-            key_metrics=KeyMetricsSettings(
-                enable_file_count=bool(
-                    (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "enable_file_count", cfg.logging.key_metrics.enable_file_count
-                    )
-                ),
-                enable_data_time_range=bool(
-                    (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "enable_data_time_range",
-                        cfg.logging.key_metrics.enable_data_time_range,
-                    )
-                ),
-                enable_processing_progress=bool(
-                    (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "enable_processing_progress",
-                        cfg.logging.key_metrics.enable_processing_progress,
-                    )
-                ),
-                enable_merge_statistics=bool(
-                    (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "enable_merge_statistics",
-                        cfg.logging.key_metrics.enable_merge_statistics,
-                    )
-                ),
-                enable_performance_metrics=bool(
-                    (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "enable_performance_metrics",
-                        cfg.logging.key_metrics.enable_performance_metrics,
-                    )
-                ),
-                enable_memory_usage=bool(
-                    (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "enable_memory_usage",
-                        cfg.logging.key_metrics.enable_memory_usage,
-                    )
-                ),
-                enable_database_stats=bool(
-                    (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "enable_database_stats",
-                        cfg.logging.key_metrics.enable_database_stats,
-                    )
-                ),
-                enable_file_size_info=bool(
-                    (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "enable_file_size_info",
-                        cfg.logging.key_metrics.enable_file_size_info,
-                    )
-                ),
-                enable_throughput_metrics=bool(
-                    (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "enable_throughput_metrics",
-                        cfg.logging.key_metrics.enable_throughput_metrics,
-                    )
-                ),
-                enable_error_statistics=bool(
-                    (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "enable_error_statistics",
-                        cfg.logging.key_metrics.enable_error_statistics,
-                    )
-                ),
-                enable_quality_metrics=bool(
-                    (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "enable_quality_metrics",
-                        cfg.logging.key_metrics.enable_quality_metrics,
-                    )
-                ),
-                enable_pipeline_stages=bool(
-                    (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "enable_pipeline_stages",
-                        cfg.logging.key_metrics.enable_pipeline_stages,
-                    )
-                ),
-                enable_batch_statistics=bool(
-                    (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "enable_batch_statistics",
-                        cfg.logging.key_metrics.enable_batch_statistics,
-                    )
-                ),
-                enable_resource_consumption=bool(
-                    (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "enable_resource_consumption",
-                        cfg.logging.key_metrics.enable_resource_consumption,
-                    )
-                ),
-                enable_data_distribution=bool(
-                    (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "enable_data_distribution",
-                        cfg.logging.key_metrics.enable_data_distribution,
-                    )
-                ),
-                progress_report_interval=int(
-                    (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "progress_report_interval",
-                        cfg.logging.key_metrics.progress_report_interval,
-                    )
-                ),
-                metrics_summary_interval=int(
-                    (logging_cfg.get("key_metrics", {}) or {}).get(
-                        "metrics_summary_interval",
-                        cfg.logging.key_metrics.metrics_summary_interval,
-                    )
-                ),
-            ),
-            sql_execution=SqlExecutionSettings(
-                enable_statement_logging=bool(
-                    (logging_cfg.get("sql_execution", {}) or {}).get(
-                        "enable_statement_logging",
-                        cfg.logging.sql_execution.enable_statement_logging,
-                    )
-                ),
-                enable_execution_metrics=bool(
-                    (logging_cfg.get("sql_execution", {}) or {}).get(
-                        "enable_execution_metrics",
-                        cfg.logging.sql_execution.enable_execution_metrics,
-                    )
-                ),
-                enable_parameter_logging=bool(
-                    (logging_cfg.get("sql_execution", {}) or {}).get(
-                        "enable_parameter_logging",
-                        cfg.logging.sql_execution.enable_parameter_logging,
-                    )
-                ),
-                enable_result_summary=bool(
-                    (logging_cfg.get("sql_execution", {}) or {}).get(
-                        "enable_result_summary",
-                        cfg.logging.sql_execution.enable_result_summary,
-                    )
-                ),
-                enable_slow_query_detection=bool(
-                    (logging_cfg.get("sql_execution", {}) or {}).get(
-                        "enable_slow_query_detection",
-                        cfg.logging.sql_execution.enable_slow_query_detection,
-                    )
-                ),
-                slow_query_threshold_ms=int(
-                    (logging_cfg.get("sql_execution", {}) or {}).get(
-                        "slow_query_threshold_ms",
-                        cfg.logging.sql_execution.slow_query_threshold_ms,
-                    )
-                ),
-                max_sql_length=int(
-                    (logging_cfg.get("sql_execution", {}) or {}).get(
-                        "max_sql_length", cfg.logging.sql_execution.max_sql_length
-                    )
-                ),
-                sensitive_fields=tuple(
-                    (logging_cfg.get("sql_execution", {}) or {}).get(
-                        "sensitive_fields",
-                        list(cfg.logging.sql_execution.sensitive_fields),
-                    )
-                ),
-            ),
-            internal_execution=InternalExecutionSettings(
-                enable_step_logging=bool(
-                    (logging_cfg.get("internal_execution", {}) or {}).get(
-                        "enable_step_logging",
-                        cfg.logging.internal_execution.enable_step_logging,
-                    )
-                ),
-                enable_checkpoint_logging=bool(
-                    (logging_cfg.get("internal_execution", {}) or {}).get(
-                        "enable_checkpoint_logging",
-                        cfg.logging.internal_execution.enable_checkpoint_logging,
-                    )
-                ),
-                enable_branch_logging=bool(
-                    (logging_cfg.get("internal_execution", {}) or {}).get(
-                        "enable_branch_logging",
-                        cfg.logging.internal_execution.enable_branch_logging,
-                    )
-                ),
-                enable_iteration_logging=bool(
-                    (logging_cfg.get("internal_execution", {}) or {}).get(
-                        "enable_iteration_logging",
-                        cfg.logging.internal_execution.enable_iteration_logging,
-                    )
-                ),
-                enable_validation_logging=bool(
-                    (logging_cfg.get("internal_execution", {}) or {}).get(
-                        "enable_validation_logging",
-                        cfg.logging.internal_execution.enable_validation_logging,
-                    )
-                ),
-                enable_transformation_logging=bool(
-                    (logging_cfg.get("internal_execution", {}) or {}).get(
-                        "enable_transformation_logging",
-                        cfg.logging.internal_execution.enable_transformation_logging,
-                    )
-                ),
-                step_detail_level=str(
-                    (logging_cfg.get("internal_execution", {}) or {}).get(
-                        "step_detail_level",
-                        cfg.logging.internal_execution.step_detail_level,
-                    )
-                ),
-                iteration_log_frequency=int(
-                    (logging_cfg.get("internal_execution", {}) or {}).get(
-                        "iteration_log_frequency",
-                        cfg.logging.internal_execution.iteration_log_frequency,
-                    )
-                ),
-                checkpoint_auto_interval=int(
-                    (logging_cfg.get("internal_execution", {}) or {}).get(
-                        "checkpoint_auto_interval",
-                        cfg.logging.internal_execution.checkpoint_auto_interval,
-                    )
-                ),
-            ),
-        ),
         web=WebSettings(  # 添加web配置处理逻辑
             server=WebServerSettings(
                 host=str(web_cfg.get("server", {}).get("host", cfg.web.server.host)),
@@ -1584,7 +832,7 @@ def load_settings_with_sources(config_dir: Path) -> tuple[Settings, dict]:
     # 仅读取 YAML 以判定来源（不改变 settings 值）
     cdir = _first_existing_dir(config_dir)
     ingest_path = cdir / "ingest.yaml"
-    logging_path = cdir / "logging.yaml"
+
     database_path = cdir / "database.yaml"
     web_path = cdir / "web.yaml"  # 添加web.yaml路径
 
@@ -1592,9 +840,7 @@ def load_settings_with_sources(config_dir: Path) -> tuple[Settings, dict]:
     if ingest_path.exists():
         with ingest_path.open("r", encoding="utf-8") as f:
             data["ingest"] = yaml.safe_load(f) or {}
-    if logging_path.exists():
-        with logging_path.open("r", encoding="utf-8") as f:
-            data["logging"] = yaml.safe_load(f) or {}
+
     if database_path.exists():
         with database_path.open("r", encoding="utf-8") as f:
             data["db"] = yaml.safe_load(f) or {}
@@ -1605,14 +851,14 @@ def load_settings_with_sources(config_dir: Path) -> tuple[Settings, dict]:
     db = data.get("db", {})
     ingest = data.get("ingest", {})
     merge = data.get("merge", {})
-    logging_cfg = data.get("logging", {})
+
     web_cfg = data.get("web", {})  # 获取web配置
 
     def src_yaml_only(yaml_has: bool) -> str:
         return "YAML" if yaml_has else "DEFAULT"
 
     def src_env_or_yaml(env_key: str, yaml_has: bool) -> str:
-        # 仅用于 ingest（允许 ENV 覆盖）；db/logging 禁止 ENV
+        # 仅用于 ingest（允许 ENV 覆盖）；db 禁止 ENV
         import os as _os
 
         return (
@@ -1669,41 +915,6 @@ def load_settings_with_sources(config_dir: Path) -> tuple[Settings, dict]:
                 "YAML"
                 if merge.get("tz", {}).get("missing_tz_policy") is not None
                 else "DEFAULT"
-            ),
-        },
-        "logging": {
-            "level": src_yaml_only("level" in logging_cfg),
-            "format": src_yaml_only("format" in logging_cfg),
-            "routing": src_yaml_only("routing" in logging_cfg),
-            "queue_handler": (
-                "YAML"
-                if (logging_cfg.get("performance", {}) or {}).get("queue_handler")
-                is not None
-                else "DEFAULT"
-            ),
-            "sql.text": (
-                "YAML"
-                if (logging_cfg.get("sql", {}) or {}).get("text") is not None
-                else "DEFAULT"
-            ),
-            "sql.explain": (
-                "YAML"
-                if (logging_cfg.get("sql", {}) or {}).get("explain") is not None
-                else "DEFAULT"
-            ),
-            "sampling.loop_log_every_n": (
-                "YAML"
-                if (logging_cfg.get("sampling", {}) or {}).get("loop_log_every_n")
-                is not None
-                else "DEFAULT"
-            ),
-            "redaction_enable": (
-                "YAML"
-                if (logging_cfg.get("redaction", {}) or {}).get("enable") is not None
-                else "DEFAULT"
-            ),
-            "retention_days": (
-                "YAML" if logging_cfg.get("retention_days") is not None else "DEFAULT"
             ),
         },
         "web": {  # 添加web配置的来源追踪

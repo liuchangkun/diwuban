@@ -1,18 +1,36 @@
 # PLAYBOOKS 索引（自动生成）
 
-| 日期       | 类型  | 编号 | 摘要                                                                                   |
-| ---------- | ----- | ---- | -------------------------------------------------------------------------------------- |
-| 2025-08-20 | DEC   | 001  | 默认启用 Context 7 与 Sequential thinking（MCP 工具集）                                |
-| 2025-08-20 | DEC   | 002  | 在行为约束新增“必须使用 MCP 工具以提升效率与一致性”的规则                              |
-| 2025-08-17 | BENCH | 001  | 阶段1 最小造数与秒级对齐验证（dev）                                                    |
-| 2025-08-17 | IMP   | 009  | 本地质量门禁稳定全绿；pcv.ps1 UTF-8 无乱码；memory_index 幂等兼容 mdformat             |
-| 2025-08-17 | IMP   | 010  | 补齐 safe_upsert_measurement_local（按 extra->>'tz'）与最小造数脚本                    |
-| 2025-08-17 | LES   | 002  | 避免 mdformat 与自定义脚本（memory_index）互相改写导致循环                             |
-| 2025-08-16 | CONF  | 006  | 添加整秒对齐 CHECK 约束；停用 Windows 计划任务，启用 APScheduler                       |
-| 2025-08-16 | CONF  | 007  | 新增中文文档与导航，归档英文旧文档到 docs/\_archive/2025-08-16/                        |
-| 2025-08-16 | DEC   | 008  | 统一按 UTC 秒级对齐、移除 Windows 计划任务、保留 APScheduler、提供本地时间 UPSERT 接口 |
-| 2025-08-16 | DEC   | 009  | 文档体系中文化重构与归档迁移（采用方案A：归档旧英文 → 重建中文文档体系）               |
-| 2025-08-16 | IMP   | 005  | 增强时间对齐与本地时间写入支持，新增整秒对齐约束与集成测试                             |
-| 2025-08-16 | IMP   | 006  | 文档体系中文化重构与导航整合（不继承旧错误内容）                                       |
-| 2025-08-16 | IMP   | 008  | 新增“泵站时间对齐实现”文档；自动采集字段/函数清单；补齐计划文档 32/33/34/35/37         |
-| 2025-08-16 | LES   | 001  | PowerShell 单行 psql 命令易受引号/变量影响，建议改用 \\i 方式执行脚本                  |
+说明
+- 此页为自动生成的导航索引；本次已清空历史记录
+
+状态
+- （已重置，等待新一轮自动写入）
+
+## 记忆自动摘要
+
+<!-- MEMORY_AUTO:BEGIN generated=scripts/dev/compose_memory_snapshot.py at=2025-09-25T00:36:35.322615+00:00 -->
+生成时间: 2025-09-25T00:36:35.322509+00:00
+
+| 日期 | 类型 | 标题 | 路径 |
+| --- | --- | --- | --- |
+| 2025-09-02 | ADR | ADR: 启用 MCP 工具集作为默认协作流程 | docs\ADR\ADR-2025-09-02-enable-mcp-default.md |
+|  | PLAYBOOK | 风险与技术债务清单（Risk & Tech Debt） | docs\PLAYBOOKS\风险与技术债务清单.md |
+|  | PLAYBOOK | 错误与修复记录（Bugs & Fixes） | docs\PLAYBOOKS\错误与修复记录.md |
+|  | PLAYBOOK | 配置变更记录 | docs\PLAYBOOKS\配置变更记录.md |
+|  | PLAYBOOK | 运行手册变更（Runbook Changes） | docs\PLAYBOOKS\运行手册变更.md |
+|  | PLAYBOOK | 经验教训（Lessons Learned） | docs\PLAYBOOKS\经验教训.md |
+|  | PLAYBOOK | 数据词汇与枚举变更（Data Dictionary & Enums） | docs\PLAYBOOKS\数据词汇与枚举变更.md |
+|  | PLAYBOOK | 数据库变更记录 | docs\PLAYBOOKS\数据库变更记录.md |
+|  | PLAYBOOK | 改进与优化记录（增量） | docs\PLAYBOOKS\改进与优化记录.md |
+|  | PLAYBOOK | 性能基准（Performance Benchmarks） | docs\PLAYBOOKS\性能基准.md |
+|  | PLAYBOOK | 开放问题与待澄清 | docs\PLAYBOOKS\开放问题与待澄清.md |
+|  | PLAYBOOK | 对话记忆（自动记录索引） | docs\PLAYBOOKS\对话记忆.md |
+|  | PLAYBOOK | 安全与授权记录（Security & Approvals） | docs\PLAYBOOKS\安全与授权记录.md |
+|  | PLAYBOOK | 决策记录 | docs\PLAYBOOKS\决策记录.md |
+|  | PLAYBOOK | 兼容性与迁移（Compatibility & Migration） | docs\PLAYBOOKS\兼容性与迁移.md |
+|  | PLAYBOOK | 假设与约束（Assumptions & Constraints） | docs\PLAYBOOKS\假设与约束.md |
+|  | PLAYBOOK | 事故与演练复盘（Incidents & Drills） | docs\PLAYBOOKS\事故与演练复盘.md |
+|  | PLAYBOOK | PLAYBOOKS 索引（自动生成） | docs\PLAYBOOKS\INDEX.md |
+|  | PLAYBOOK | PLAYBOOKS 索引（自动生成） | docs\PLAYBOOKS\索引.md |
+|  | PLAYBOOK | PLAYBOOKS 使用说明（自动化记忆与变更记录） | docs\PLAYBOOKS\使用说明.md |
+<!-- MEMORY_AUTO:END -->

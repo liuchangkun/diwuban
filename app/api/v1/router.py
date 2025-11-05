@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import data_admin, data_timeseries, logs, monitoring
+from app.api.v1.endpoints import data_admin, data_timeseries, monitoring
 
 api_v1_router = APIRouter()
 
@@ -16,4 +16,3 @@ api_v1_router.include_router(
 api_v1_router.include_router(
     monitoring.router, prefix="/monitoring", tags=["monitoring"]
 )
-api_v1_router.include_router(logs.router, prefix="/logs", tags=["logs"])

@@ -7,21 +7,18 @@ from __future__ import annotations
 """
 
 
+import time
 import logging
+
+_act = logging.getLogger("activity")
+
 from datetime import datetime, timedelta
 
 # 延迟导入 DB 网关，避免在无 psycopg 环境下导入失败（仅运行时需要）
 from typing import Any, Dict, cast
 
-from app.core.config.loader import Settings
+from app.core.config.loader_new import Settings
 from app.core.types import MergeStats
-from app.utils.logging_decorators import (
-    business_logger,
-    log_key_metrics,
-    create_internal_step_logger,
-)
-
-logger = logging.getLogger(__name__)
 
 
 def _parse_granularity(spec: str) -> int:
@@ -50,9 +47,11 @@ def _split_window(
     return out
 
 
-@business_logger("merge_window", enable_progress=True)
 def merge_window(
-    settings: Settings, window_start_utc: datetime, window_end_utc: datetime
+    settings: Settings,
+    window_start_utc: datetime,
+    window_end_utc: datetime,
+    device_id: int | None = None,
 ) -> MergeStats:
     """执行一个 UTC 窗口的集合式合并。
     - 支持分段合并（settings.merge.segmented.enabled）按 granularity 切片执行
@@ -60,13 +59,21 @@ def merge_window(
       affected_rows/rows_input/rows_deduped/rows_merged/dedup_ratio/sql_cost_ms（如存在）
     - 返回 MergeStats：与上面字段一致（部分字段可能不存在）
     """
-    # 创建内部步骤日志记录器
-    step_logger = create_internal_step_logger("merge_window", logger, settings)
+    t0 = time.perf_counter()
+    _act.info(
+        "[流程-开始] [数据合并]",
+        extra={
+            "extra_data": {
+                "window_start_utc": window_start_utc.isoformat(),
+                "window_end_utc": window_end_utc.isoformat(),
+                "device_id": device_id,
+            }
+        },
+    )
 
     # 使用普通字典累加，末尾再 cast 为 MergeStats，避免 TypedDict 的字面量键限制
     stats: Dict[str, Any] = {}
 
-    step_logger.step("解析合并配置")
     enabled = (
         getattr(settings.merge, "segmented", None) and settings.merge.segmented.enabled
     )
@@ -77,72 +84,104 @@ def merge_window(
     )
     step = _parse_granularity(str(gran))
 
-    step_logger.step(
-        "合并参数确定",
-        result=f"分段模式: {enabled}, 粒度: {gran}",
-        segmented=enabled,
-        granularity=gran,
-        step_seconds=step,
-    )
-
-    # 记录合并开始信息
-    log_key_metrics(
-        "合并窗口开始",
-        {
-            "window_start": window_start_utc.isoformat(),
-            "window_end": window_end_utc.isoformat(),
-            "segmented_enabled": enabled,
-            "granularity": gran,
-            "step_seconds": step,
-        },
-        logger,
-    )
-
     # 运行时导入，避免测试工具函数时强依赖 psycopg
+    from app.adapters.db.connection_lease import LeaseConfig, lease_connection
     from app.adapters.db.gateway import get_conn, run_merge_window
 
-    with get_conn(settings) as conn:
-        if enabled:
+    # 配置连接租借参数，针对长时间运行的合并操作
+    lease_config = LeaseConfig(
+        max_lease_time=180.0,  # 3分钟租借时间，适合合并操作
+        renewal_threshold=0.7,  # 70%时间后自动续租
+        batch_size=1000,
+        max_batch_time=60.0,  # 单个合并操作最大1分钟
+    )
+
+    if enabled:
+        # 分段合并模式：使用连接租借机制避免长时间占用连接
+        _act.info(
+            "[流程-阶段] [分段合并模式]",
+            extra={"extra_data": {"granularity": str(gran), "step_seconds": step}},
+        )
+
+        with lease_connection(settings, lease_config) as lease:
             from datetime import timezone
 
             # 确保时间带 tzinfo
+
             s = window_start_utc
             e = window_end_utc
             if s.tzinfo is None:
                 s = s.replace(tzinfo=timezone.utc)
             if e.tzinfo is None:
                 e = e.replace(tzinfo=timezone.utc)
-            for seg_s, seg_e in _split_window(s, e, step):
-                r = run_merge_window(
-                    conn,
-                    start_utc=seg_s,
-                    end_utc=seg_e,
-                    default_station_tz=settings.merge.tz.default_station_tz,
+
+            segments = list(_split_window(s, e, step))
+            total_segments = len(segments)
+
+            _act.info(
+                "[流程-阶段] [窗口已切分]",
+                extra={
+                    "extra_data": {
+                        "total_segments": total_segments,
+                        "step_seconds": step,
+                    }
+                },
+            )
+
+            for idx, (seg_s, seg_e) in enumerate(segments):
+                _act.info(
+                    "[流程-阶段] [分段处理]",
+                    extra={
+                        "extra_data": {
+                            "segment_index": idx + 1,
+                            "total_segments": total_segments,
+                            "segment_start": seg_s.isoformat(),
+                            "segment_end": seg_e.isoformat(),
+                        }
+                    },
                 )
-                r = cast(Dict[str, Any], r)
-                # 统一键名：rows_in → rows_input
-                for k_src, k_dst in (
-                    ("affected_rows", "affected_rows"),
-                    ("rows_in", "rows_input"),
-                    ("rows_deduped", "rows_deduped"),
-                    ("rows_merged", "rows_merged"),
-                    ("sql_cost_ms", "sql_cost_ms"),
-                ):
-                    stats[k_dst] = int(stats.get(k_dst, 0)) + int(r.get(k_src, 0) or 0)
-                if stats.get("rows_input"):
-                    stats["dedup_ratio"] = stats.get("rows_deduped", 0) / max(
-                        1, int(stats.get("rows_input", 0))
+                with lease.get_connection() as conn:
+                    r = run_merge_window(
+                        conn,
+                        start_utc=seg_s,
+                        end_utc=seg_e,
+                        default_station_tz=settings.merge.tz.default_station_tz,
+                        device_id=device_id,
                     )
-        else:
+                    r = cast(Dict[str, Any], r)
+
+                    # 统一键名：rows_in → rows_input
+                    for k_src, k_dst in (
+                        ("affected_rows", "affected_rows"),
+                        ("rows_in", "rows_input"),
+                        ("rows_deduped", "rows_deduped"),
+                        ("rows_merged", "rows_merged"),
+                        ("sql_cost_ms", "sql_cost_ms"),
+                    ):
+                        stats[k_dst] = int(stats.get(k_dst, 0)) + int(
+                            r.get(k_src, 0) or 0
+                        )
+
+                    if stats.get("rows_input"):
+                        stats["dedup_ratio"] = stats.get("rows_deduped", 0) / max(
+                            1, int(stats.get("rows_input", 0))
+                        )
+
+    else:
+        # 单次合并模式：使用普通连接
+        _act.info("[流程-阶段] [单次合并模式]")
+        with get_conn(settings) as conn:
             r = run_merge_window(
                 conn,
                 start_utc=window_start_utc,
                 end_utc=window_end_utc,
                 default_station_tz=settings.merge.tz.default_station_tz,
+                device_id=device_id,
             )
             # 非分段模式直接赋值统计
             if isinstance(r, dict):
                 for k_src, k_dst in (
+
                     ("affected_rows", "affected_rows"),
                     ("rows_in", "rows_input"),
                     ("rows_deduped", "rows_deduped"),
@@ -154,43 +193,22 @@ def merge_window(
                     stats["dedup_ratio"] = stats.get("rows_deduped", 0) / max(
                         1, int(stats.get("rows_input", 0))
                     )
-    # 对齐事件输出：补充影响行数与去重比指标
-    extra_payload = {
-        "window_start": window_start_utc.isoformat() + "Z",
-        "window_end": window_end_utc.isoformat() + "Z",
-        "segmented": bool(enabled),
-        "granularity": str(gran),
-    }
-    for k_src, k_dst in (
-        ("affected_rows", "affected_rows"),
-        ("rows_input", "rows_input"),
-        ("rows_deduped", "rows_deduped"),
-        ("rows_merged", "rows_merged"),
-        ("dedup_ratio", "dedup_ratio"),
-        ("sql_cost_ms", "sql_cost_ms"),
-    ):
-        if k_src in stats:
-            extra_payload[k_dst] = stats[k_src]
 
-    logger.info(
-        "合并完成",
-        extra={"event": "align.merge.window", "extra": extra_payload},
-    )
-
-    # 记录合并结果指标
-    log_key_metrics(
-        "合并窗口完成",
-        {
-            "affected_rows": stats.get("affected_rows", 0),
-            "rows_input": stats.get("rows_input", 0),
-            "rows_merged": stats.get("rows_merged", 0),
-            "rows_deduped": stats.get("rows_deduped", 0),
-            "dedup_ratio": round(stats.get("dedup_ratio", 0), 4),
-            "sql_cost_ms": stats.get("sql_cost_ms", 0),
-            "segmented": enabled,
-            "granularity": gran,
+    dur_ms = int((time.perf_counter() - t0) * 1000)
+    _act.info(
+        "[流程-完成] [数据合并]",
+        extra={
+            "extra_data": {
+                "segmented": bool(enabled),
+                "granularity": str(gran),
+                "duration_ms": dur_ms,
+                "affected_rows": int(stats.get("affected_rows", 0) or 0),
+                "rows_input": int(stats.get("rows_input", 0) or 0),
+                "rows_deduped": int(stats.get("rows_deduped", 0) or 0),
+                "rows_merged": int(stats.get("rows_merged", 0) or 0),
+                "dedup_ratio": stats.get("dedup_ratio", 0.0),
+            }
         },
-        logger,
     )
 
     return cast(MergeStats, stats)

@@ -13,8 +13,8 @@ from __future__ import annotations
 
 
 import json
-import logging
 import time
+import logging
 from pathlib import Path
 from typing import Iterable, Iterator, List
 
@@ -26,27 +26,12 @@ from app.adapters.db.gateway import (
     insert_rejects,
 )
 from app.adapters.fs.reader import iter_rows
-from app.core.config.loader import Settings
+from app.core.config.loader_new import Settings
 from app.core.types import CopyStats, RejectRow, ValidRow
 from app.services.ingest.backpressure import BackpressureController
 from app.services.ingest.source_hint import make_source_hint
-from app.utils.logging_decorators import (
-    business_logger,
-    create_internal_step_logger,
-    data_processing_logger,
-    file_operation_logger,
-)
-from app.utils.logging_ext import (
-    EventLogger,
-    SamplingGate,
-    log_ingest_begin,
-    log_ingest_end,
-    log_ingest_progress,
-)  # 移除未用常量与函数，降低静态告警
 
-# 性能日志记录器（与业务日志分离便于分析）
-perf_logger = logging.getLogger("perf")
-logger = logging.getLogger(__name__)
+_act = logging.getLogger("activity")
 
 
 def _ensure_staging(settings: Settings) -> None:
@@ -55,7 +40,6 @@ def _ensure_staging(settings: Settings) -> None:
         create_staging_if_not_exists(conn)
 
 
-@file_operation_logger()
 def _collect_files_from_mapping(
     mapping_path: Path, base_dir: Path
 ) -> Iterator[tuple[str, str, str, Path]]:
@@ -75,7 +59,6 @@ def _collect_files_from_mapping(
                     yield station_name, device_name, metric_key, p
 
 
-@data_processing_logger()
 def _valid_rows_for_file(
     csv_path: Path, station: str, device: str, metric_key: str, settings: Settings
 ) -> Iterator[ValidRow | RejectRow]:
@@ -149,7 +132,6 @@ def _p95(costs: List[int]) -> int:
     return arr[idx]
 
 
-@business_logger("copy_from_mapping", enable_progress=True)
 def copy_from_mapping(
     settings: Settings, mapping_path: Path, run_id: str | None = None
 ) -> CopyStats:
@@ -170,23 +152,31 @@ def copy_from_mapping(
       - run_id：可选；若提供将注入到 settings 作为 _runtime_run_id，参与 source_hint 生成
     - 返回：CopyStats 统计（文件总数/成功/失败、读取/加载/拒绝的行数、读取字节数等）
     """
-    # 创建内部步骤日志记录器
-    step_logger = create_internal_step_logger("copy_from_mapping", logger, settings)
 
-    step_logger.step("初始化导入环境")
+    t0 = time.perf_counter()
+
     base_dir = Path(settings.ingest.base_dir)
     _ensure_staging(settings)
 
     # 设置运行期 run_id 到 settings（进程内）
     if run_id:
-        step_logger.step("设置运行标识符", run_id=run_id)
         # 为避免 dataclass frozen，使用 object.__setattr__ 临时挂到对象上（仅 runtime 使用）
         object.__setattr__(settings, "_runtime_run_id", run_id)
         object.__setattr__(settings.ingest, "_runtime_run_id", run_id)
 
-    step_logger.step("收集文件清单")
     files = list(_collect_files_from_mapping(mapping_path, base_dir))
-    step_logger.step("文件清单收集完成", result=f"共发现 {len(files)} 个文件")
+    _act.info(
+        "[流程-开始] [数据导入]",
+        extra={
+            "extra_data": {
+                "mapping_file": str(mapping_path),
+                "base_dir": str(base_dir),
+                "file_count": len(files),
+                "run_id": run_id,
+            }
+        },
+    )
+
     stats: CopyStats = {
         "files_total": len(files),
         "files_succeeded": 0,
@@ -200,20 +190,9 @@ def copy_from_mapping(
     run_diag = {"bp_enter": 0, "bp_exit": 0, "p95_samples": []}
 
     if not files:
-        step_logger.branch("文件数量检查", False, "未找到任何文件")
-        from app.utils.logging_ext import EVENT_INGEST_PATH_RESOLVE
-
-        logger.warning(
-            "未找到任何文件（严格路径，无自适配）",
-            extra={"event": EVENT_INGEST_PATH_RESOLVE, "extra": {"not_found": True}},
-        )
-
         # 无文件可处理，直接返回统计
         return stats
 
-    step_logger.branch("文件数量检查", True, f"发现 {len(files)} 个文件")
-
-    step_logger.step("初始化背压控制器")
     # 控制器与状态
     ctrl = BackpressureController(
         batch_size=settings.ingest.commit_interval,
@@ -223,169 +202,114 @@ def copy_from_mapping(
     in_backpressure = False
     file_costs: List[int] = []
 
-    step_logger.checkpoint(
-        "file_processing_start",
-        {
-            "total_files": len(files),
-            "batch_size": ctrl.batch_size,
-            "workers": settings.ingest.workers,
-        },
-    )
 
     # 创建文件处理迭代器
-    _ = step_logger.iteration_start(
-        "文件处理循环", len(files)
-    )  # 仅触发日志，变量未使用
 
     conn = None  # 初始化连接变量，但实际在需要时获取连接
     for station, device, metric_key, path in files:
         if not path.exists():
-            logger.error(
-                "文件不存在",
+            # 文件不存在，跳过此文件
+            stats["files_failed"] = stats.get("files_failed", 0) + 1
+            _act.warning(
+                "[流程-跳过] [文件不存在]",
                 extra={
-                    "event": "ingest.path.resolve",
-                    "extra": {"path": str(path), "not_found": True},
+                    "extra_data": {
+                        "station": station,
+                        "device": device,
+                        "metric_key": metric_key,
+                        "file_path": str(path),
+                    }
                 },
             )
-            stats["files_failed"] = stats.get("files_failed", 0) + 1
             continue
 
-        rows_iter = list(
-            _valid_rows_for_file(path, station, device, metric_key, settings)
-        )
-        valids = [r for r in rows_iter if isinstance(r, ValidRow)]
-        rejects = [r for r in rows_iter if isinstance(r, RejectRow)]
-        stats["rows_read"] = stats.get("rows_read", 0) + len(rows_iter)
-
-        # ingest.load.begin（按文件）
-        log_ingest_begin(
-            EventLogger(logging.getLogger("root")),
-            file_path=str(path),
-            rows_total=len(rows_iter),
+        _act.info(
+            "[流程-阶段] [文件处理开始]",
+            extra={
+                "extra_data": {
+                    "station": station,
+                    "device": device,
+                    "metric_key": metric_key,
+                    "file_path": str(path),
+                }
+            },
         )
 
-        # 批次级 COPY 与背压：以固定批大小（初始取 commit_interval），输出每批 perf 指标
-        if valids:
+
+        # 流式读取与写入，避免一次性加载超大文件导致长时间卡住
+        batch_size = max(
+            1,
+            int(getattr(settings.ingest.batch, "size", 0) or settings.ingest.commit_interval),
+        )
+        valids_batch: list[ValidRow] = []
+        rejects: list[RejectRow] = []
+        file_started_epoch = time.time()
+        bytes_read = 0
+        t0 = time.perf_counter()
+        rows_read = 0
+        loaded_this_file = 0
+
+
+        # 小批量模式：统一使用普通连接，边读边 COPY
+        with get_conn(settings) as conn:
             try:
-                # 以 ingest.batch.size 优先，未设置则回退 commit_interval
-                batch_size = max(
-                    1,
-                    int(
-                        getattr(settings.ingest.batch, "size", 0)
-                        or settings.ingest.commit_interval
-                    ),
-                )
-                file_started_epoch = time.time()
-                bytes_read = 0
-                gate = SamplingGate(
-                    every_n=max(1, settings.logging.sampling.loop_log_every_n),
-                    min_interval_sec=max(
-                        0.0, float(settings.logging.sampling.min_interval_sec)
-                    ),
-                )
-                # 在需要时获取数据库连接
-                t0 = time.perf_counter()  # 将t0移到正确的位置
-                with get_conn(settings) as conn:
-                    for i in range(0, len(valids), batch_size):
-                        batch = valids[i : i + batch_size]
-                        lines = list(_lines_from_valid_rows(batch))
-                        t_batch = time.perf_counter()  # 使用新的变量名避免冲突
-                        loaded = copy_valid_lines(conn, lines)
-                        cost_ms = int((time.perf_counter() - t_batch) * 1000)
-                        stats["rows_loaded"] = stats.get("rows_loaded", 0) + loaded
+                for r in _valid_rows_for_file(path, station, device, metric_key, settings):
+                    rows_read += 1
+                    if isinstance(r, ValidRow):
+                        valids_batch.append(r)
+                        if len(valids_batch) >= batch_size:
+                            lines = list(_lines_from_valid_rows(valids_batch))
+                            t_batch = time.perf_counter()
+                            loaded = copy_valid_lines(conn, lines)
+                            loaded_this_file += loaded
 
-                        # ingest.load.progress（采样节流）
-                        batch_bytes = sum(len(line.encode("utf-8")) for line in lines)
-                        bytes_read += batch_bytes
-                        rows_done = i + len(batch)
-                        log_ingest_progress(
-                            EventLogger(logging.getLogger("root")),
-                            gate,
-                            rows_read=rows_done,
-                            bytes_read=bytes_read,
-                            batch_cost_ms=cost_ms,
-                            started_ts=file_started_epoch,
-                        )
+                            cost_ms = int((time.perf_counter() - t_batch) * 1000)
+                            stats["rows_loaded"] = stats.get("rows_loaded", 0) + loaded
+                            batch_bytes = sum(len(line.encode("utf-8")) for line in lines)
+                            bytes_read += batch_bytes
+                            valids_batch.clear()
+                    else:
+                        rejects.append(r)
 
-                        # 背压判定（基于批次 P95 与数据质量失败率）
-                        total = len(valids) + len(rejects)
-                        fail_rate = (len(rejects) / total) if total else 0.0
-                        k = max(1, int(settings.ingest.p95_window))
-                        file_costs.append(cost_ms)
-                        p95 = _p95(file_costs[-k:])
-                        adj = ctrl.decide(p95_ms=p95, fail_rate=fail_rate)
-                        if adj.get("action") in ("shrink_batch", "shrink_workers"):
-                            if not in_backpressure:
-                                in_backpressure = True
-                                from app.utils.logging_ext import (
-                                    EVENT_BACKPRESSURE_ENTER,
-                                )
+                # flush 剩余批次
+                if valids_batch:
+                    lines = list(_lines_from_valid_rows(valids_batch))
+                    t_batch = time.perf_counter()
+                    loaded = copy_valid_lines(conn, lines)
+                    cost_ms = int((time.perf_counter() - t_batch) * 1000)
+                    stats["rows_loaded"] = stats.get("rows_loaded", 0) + loaded
+                    loaded_this_file += loaded
+                    batch_bytes = sum(len(line.encode("utf-8")) for line in lines)
+                    bytes_read += batch_bytes
+                    valids_batch.clear()
 
-                                perf_logger.info(
-                                    EVENT_BACKPRESSURE_ENTER,
-                                    extra={
-                                        "event": EVENT_BACKPRESSURE_ENTER,
-                                        "extra": {
-                                            "p95_batch_ms": p95,
-                                            "p95_window": k,
-                                            "batch_cost_ms": cost_ms,
-                                            "rows_per_sec": round(
-                                                (len(batch) / max(1, cost_ms)) * 1000.0,
-                                                2,
-                                            ),
-                                            "fail_rate": fail_rate,
-                                            "adjustment": adj,
-                                        },
-                                    },
-                                )
-                            if adj.get("action") == "shrink_batch" and adj.get(
-                                "to_batch"
-                            ):
-                                batch_size = int(adj["to_batch"]) or batch_size
-                        elif adj.get("action") == "recover" and in_backpressure:
-                            in_backpressure = False
-                            from app.utils.logging_ext import (
-                                EVENT_BACKPRESSURE_EXIT,
-                            )
-
-                            perf_logger.info(
-                                EVENT_BACKPRESSURE_EXIT,
-                                extra={
-                                    "event": EVENT_BACKPRESSURE_EXIT,
-                                    "extra": {
-                                        "p95_batch_ms": p95,
-                                        "p95_window": k,
-                                        "batch_cost_ms": cost_ms,
-                                        "rows_per_sec": round(
-                                            (len(batch) / max(1, cost_ms)) * 1000.0, 2
-                                        ),
-                                        "fail_rate": fail_rate,
-                                    },
-                                },
-                            )
                 stats["files_succeeded"] = stats.get("files_succeeded", 0) + 1
-
-                # ingest.load.end（按文件）
-                total_cost = int((time.perf_counter() - t0) * 1000)
-                log_ingest_end(
-                    EventLogger(logging.getLogger("root")),
-                    rows_loaded=stats["rows_loaded"],
-                    cost_ms=total_cost,
-                )
-            except Exception:
-                logger.exception(
-                    "COPY 失败",
-                    extra={
-                        "event": "ingest.copy.failed",
-                        "extra": {"path": str(path)},
-                    },
-                )
+            except Exception as e:
+                # COPY 失败，计入失败数并继续处理下一个文件
                 stats["files_failed"] = stats.get("files_failed", 0) + 1
+                _act.error(
+                    "[流程-错误] [文件处理失败]",
+                    extra={
+                        "extra_data": {
+                            "station": station,
+                            "device": device,
+                            "metric_key": metric_key,
+                            "file_path": str(path),
+                            "error": str(e),
+                            "error_type": type(e).__name__,
+                        }
+                    },
+                    exc_info=True,
+                )
+
+        # 记录读取行数
+        stats["rows_read"] = stats.get("rows_read", 0) + rows_read
+
 
         if rejects:
             # 错误阈值控制：超过 per-file 阈值或错误百分比阈值则计失败并跳过写入
             eh = settings.ingest.error_handling
-            total = len(valids) + len(rejects)
+            total = rows_read
             over_count = len(rejects) > int(eh.max_errors_per_file)
             over_percent = (
                 (len(rejects) / total) * 100.0 > float(eh.error_threshold_percent)
@@ -393,20 +317,6 @@ def copy_from_mapping(
                 else False
             )
             if over_count or over_percent:
-                from app.utils.logging_ext import EVENT_INGEST_ERROR_THRESHOLD
-
-                logger.error(
-                    "错误超过阈值，跳过写入拒绝行",
-                    extra={
-                        "event": EVENT_INGEST_ERROR_THRESHOLD,
-                        "extra": {
-                            "rejects": len(rejects),
-                            "total": total,
-                            "over_count": over_count,
-                            "over_percent": over_percent,
-                        },
-                    },
-                )
                 stats["files_failed"] = stats.get("files_failed", 0) + 1
                 if not eh.continue_on_error:
                     # 中断整个处理流程（当前实现为按文件循环，continue_on_error=False 时结束本文件）
@@ -417,46 +327,39 @@ def copy_from_mapping(
                     insert_rejects(conn, rejects)
                 stats["rows_rejected"] = stats.get("rows_rejected", 0) + len(rejects)
 
+        file_cost_ms = int((time.perf_counter() - t0) * 1000)
+        _act.info(
+            "[流程-阶段] [文件处理完成]",
+            extra={
+                "extra_data": {
+                    "station": station,
+                    "device": device,
+                    "metric_key": metric_key,
+                    "file_path": str(path),
+                    "duration_ms": file_cost_ms,
+                    "rows_read": rows_read,
+                    "rows_loaded": loaded_this_file,
+                    "rows_rejected": len(rejects),
+                }
+            },
+        )
+
     # 整次 run 的 task.summary 输出（一次）
-    from app.utils.logging_ext import (
-        EventLogger as _EvtLog2,
+    # 结束统计
+    cost_ms = int((time.perf_counter() - t0) * 1000)
+    _act.info(
+        "[流程-完成] [数据导入]",
+        extra={
+            "extra_data": {
+                "duration_ms": cost_ms,
+                "files_total": stats.get("files_total"),
+                "files_succeeded": stats.get("files_succeeded"),
+                "files_failed": stats.get("files_failed"),
+                "rows_read": stats.get("rows_read"),
+                "rows_loaded": stats.get("rows_loaded"),
+                "rows_rejected": stats.get("rows_rejected"),
+            }
+        },
     )
-    from app.utils.logging_ext import (
-        TaskSummaryCollector as _RunSummary,
-    )
-    from app.utils.logging_ext import (
-        log_task_summary as _log_summary2,
-    )
-
-    _sum = _RunSummary(
-        rows_total=stats.get("rows_read", 0),
-        rows_merged=stats.get("rows_loaded", 0),
-        backpressure_count=run_diag["bp_enter"],
-    )
-    if run_diag["p95_samples"]:
-        ps2 = sorted(run_diag["p95_samples"])
-
-        def _percentile2(vals, q: float) -> int:
-            if not vals:
-                return 0
-            idx = int(max(0, min(len(vals) - 1, round(q * (len(vals) - 1)))))
-            return int(vals[idx])
-
-        _sum.diagnostics = {
-            "p50_batch_ms": _percentile2(ps2, 0.50),
-            "p90_batch_ms": _percentile2(ps2, 0.90),
-            "p95_batch_ms": _percentile2(ps2, 0.95),
-            "p99_batch_ms": _percentile2(ps2, 0.99),
-            "max_batch_ms": max(ps2) if ps2 else 0,
-            "min_batch_ms": min(ps2) if ps2 else 0,
-            "avg_fail_rate": 0.0,
-            "p95_fail_rate": 0.0,
-            "max_fail_rate": 0.0,
-            "samples_count": len(ps2),
-            "backpressure_enter": run_diag["bp_enter"],
-            "backpressure_exit": run_diag["bp_exit"],
-        }
-
-    _log_summary2(_EvtLog2(logging.getLogger("root")), _sum)
 
     return stats

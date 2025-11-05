@@ -3,10 +3,11 @@
 调试脚本：检查测量数据的实际分布
 """
 
-import psycopg2
+import sys
 from datetime import datetime, timedelta
 from pathlib import Path
-import sys
+
+import psycopg2
 
 # 添加项目路径
 sys.path.insert(0, str(Path(__file__).parent))
@@ -147,7 +148,7 @@ def check_measurement_data():
                         MAX(CASE WHEN metric_key = 'pump_active_power' THEN value END) as power,
                         MAX(CASE WHEN metric_key = 'pump_frequency' THEN value END) as frequency
                     FROM operation_data
-                    WHERE timestamp BETWEEN %s AND %s
+                    WHERE timestamp >= %s AND timestamp < %s
                     GROUP BY timestamp, device_id, device_name
                     ORDER BY timestamp DESC
                     LIMIT 20
@@ -162,7 +163,7 @@ def check_measurement_data():
                     SELECT COUNT(*) FROM (
                         SELECT DISTINCT timestamp, device_id
                         FROM operation_data
-                        WHERE timestamp BETWEEN %s AND %s
+                        WHERE timestamp >= %s AND timestamp < %s
                     ) as grouped_data
                 """
                 cur.execute(api_count_query, (api_start, api_end))

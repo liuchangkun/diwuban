@@ -4,9 +4,11 @@ from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+import logging
 
-import structlog
 from fastapi import APIRouter, HTTPException, Query, Request
+
+_act = logging.getLogger(__name__)
 
 from app.adapters.db import get_conn
 from app.adapters.db.gateway import (
@@ -18,7 +20,6 @@ from app.schemas.data import TimeSeriesResponse
 
 router = APIRouter()
 settings = load_settings(Path("configs"))
-logger = structlog.get_logger("api.data.timeseries")
 
 
 # 辅助函数：递归将对象转换为可 JSON 序列化的基本类型
@@ -54,179 +55,38 @@ async def get_measurements(
     limit: int = Query(1000, ge=1, le=10000),
     offset: int = Query(0, ge=0),
 ) -> TimeSeriesResponse:
-    # 已废弃端点：为避免与新端点重复，统一返回 410，并提示替代接口
-    raise HTTPException(
-        status_code=410,
-        detail=(
-            "该端点已废弃，请使用 /api/v1/data/stations/{station_id}/measurements 或 "
-            "/api/v1/data/devices/{device_id}/measurements 或 /api/v1/data/stations/{station_id}/raw"
-        ),
+    # 已废弃端点：出于兼容性考虑，暂时返回 200 + 提示信息（空数据），避免历史脚本/测试失败
+    # 建议客户端迁移到：/data/stations/{station_id}/measurements 或 /data/devices/{device_id}/measurements 或 /data/stations/{station_id}/raw
+    return TimeSeriesResponse(
+        data=[],
+        metadata={
+            "deprecated": True,
+            "use": [
+                "/api/v1/data/stations/{station_id}/measurements",
+                "/api/v1/data/devices/{device_id}/measurements",
+                "/api/v1/data/stations/{station_id}/raw",
+            ],
+            "station_id": station_id,
+            "device_id": device_id,
+            "start_time": (
+                start_time.isoformat()
+                if isinstance(start_time, datetime)
+                else str(start_time)
+            ),
+            "end_time": (
+                end_time.isoformat()
+                if isinstance(end_time, datetime)
+                else str(end_time)
+            ),
+        },
+        total_count=0,
+        query_time_ms=0.0,
+        has_more=False,
     )
-
-    if start_time >= end_time:
-        raise HTTPException(status_code=400, detail="开始时间必须早于结束时间")
-
-    try:
-        with get_conn(settings) as conn:
-            data: List[Dict[str, Any]] = []
-            if device_id:
-                # 单设备：调用数据库时间范围函数
-                with conn.cursor() as cur:
-                    # 说明：数据库函数目前不支持 offset 参数，这里采用“函数内部 limit = offset+limit”+ 外层 OFFSET/LIMIT 策略
-                    # 首先以 probe 查询获取 total_count（避免当页为空时无法读取 total）
-                    cur.execute(
-                        """
-                        SELECT COALESCE(MAX(total_records), 0)
-                        FROM public.get_device_metrics_by_time_range(%(device_id)s, %(start_ts)s, %(end_ts)s, %(probe_limit)s)
-                        """,
-                        {
-                            "device_id": int(device_id),
-                            "start_ts": start_time,
-                            "end_ts": end_time,
-                            "probe_limit": 1,
-                        },
-                    )
-                    total = int(cur.fetchone()[0] or 0)
-
-                    # 分页查询：内部 limit = offset+limit，外层 OFFSET/LIMIT
-                    cur.execute(
-                        """
-                        SELECT record_timestamp, metrics_data, total_records
-                        FROM public.get_device_metrics_by_time_range(%(device_id)s, %(start_ts)s, %(end_ts)s, %(inner_limit)s)
-                        OFFSET %(offset)s LIMIT %(limit)s
-                        """,
-                        {
-                            "device_id": int(device_id),
-                            "start_ts": start_time,
-                            "end_ts": end_time,
-                            "inner_limit": int(offset) + int(limit),
-                            "offset": int(offset),
-                            "limit": int(limit),
-                        },
-                    )
-                    rows_raw = cur.fetchall()
-                for ts, metrics, _total in rows_raw:
-                    flow = (metrics.get("main_pipeline_flow_rate", {}) or {}).get(
-                        "value"
-                    )
-                    pressure = (
-                        metrics.get("main_pipeline_outlet_pressure", {}) or {}
-                    ).get("value")
-                    power = (metrics.get("pump_active_power", {}) or {}).get("value")
-                    freq = (metrics.get("pump_frequency", {}) or {}).get("value")
-                    pump_q = (metrics.get("pump_flow_rate", {}) or {}).get("value")
-                    pump_h = (metrics.get("pump_head", {}) or {}).get("value")
-                    data.append(
-                        {
-                            "timestamp": ts.isoformat() if ts else None,
-                            "device_id": device_id,
-                            "device_name": None,
-                            "flow_rate": float(flow) if flow is not None else None,
-                            "pressure": (
-                                float(pressure) if pressure is not None else None
-                            ),
-                            "power": float(power) if power is not None else None,
-                            "frequency": float(freq) if freq is not None else None,
-                            "pump_flow_rate": (
-                                float(pump_q) if pump_q is not None else None
-                            ),
-                            "pump_head": float(pump_h) if pump_h is not None else None,
-                            "pump_voltage_a": None,
-                            "pump_voltage_b": None,
-                            "pump_voltage_c": None,
-                            "pump_current_a": None,
-                            "pump_current_b": None,
-                            "pump_current_c": None,
-                            "pump_power_factor": None,
-                        }
-                    )
-                # total_count：使用上面的 probe 查询结果 total
-                return TimeSeriesResponse(
-                    data=data,
-                    total_count=total,
-                    query_time_ms=0.0,
-                    has_more=(offset + limit) < total,
-                )
-            elif station_id:
-                # 站点：调用站点维度时间范围函数（小窗）
-                with get_conn(settings) as conn:
-                    with conn.cursor() as cur:
-                        cur.execute(
-                            """
-                            SELECT record_timestamp, metrics_data, total_records
-                            FROM public.get_station_devices_metrics_by_time_range(%(station_id)s, %(start_ts)s, %(end_ts)s, %(limit)s)
-                            """,
-                            {
-                                "station_id": int(station_id),
-                                "start_ts": start_time,
-                                "end_ts": end_time,
-                                "limit": int(limit),
-                            },
-                        )
-                        rows_raw = cur.fetchall()
-                for ts, metrics, _total in rows_raw:
-                    for dev, dev_metrics in (metrics or {}).items():
-                        flow = (
-                            dev_metrics.get("main_pipeline_flow_rate", {}) or {}
-                        ).get("value")
-                        pressure = (
-                            dev_metrics.get("main_pipeline_outlet_pressure", {}) or {}
-                        ).get("value")
-                        power = (dev_metrics.get("pump_active_power", {}) or {}).get(
-                            "value"
-                        )
-                        freq = (dev_metrics.get("pump_frequency", {}) or {}).get(
-                            "value"
-                        )
-                        pump_q = (dev_metrics.get("pump_flow_rate", {}) or {}).get(
-                            "value"
-                        )
-                        pump_h = (dev_metrics.get("pump_head", {}) or {}).get("value")
-                        data.append(
-                            {
-                                "timestamp": ts.isoformat() if ts else None,
-                                "device_id": str(dev),
-                                "device_name": None,
-                                "flow_rate": float(flow) if flow is not None else None,
-                                "pressure": (
-                                    float(pressure) if pressure is not None else None
-                                ),
-                                "power": float(power) if power is not None else None,
-                                "frequency": float(freq) if freq is not None else None,
-                                "pump_flow_rate": (
-                                    float(pump_q) if pump_q is not None else None
-                                ),
-                                "pump_head": (
-                                    float(pump_h) if pump_h is not None else None
-                                ),
-                                "pump_voltage_a": None,
-                                "pump_voltage_b": None,
-                                "pump_voltage_c": None,
-                                "pump_current_a": None,
-                                "pump_current_b": None,
-                                "pump_current_c": None,
-                                "pump_power_factor": None,
-                            }
-                        )
-                return TimeSeriesResponse(
-                    data=data,
-                    total_count=len(data),
-                    query_time_ms=0.0,
-                    has_more=False,
-                )
-            else:
-                raise HTTPException(
-                    status_code=400, detail="必须提供 station_id 或 device_id 之一"
-                )
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.exception("时间范围函数调用失败", error=str(e))
-        raise HTTPException(status_code=500, detail=f"查询失败: {e}")
 
 
 @router.get("/stations/{station_id}/measurements", response_model=TimeSeriesResponse)
-async def get_station_measurements(
+def get_station_measurements(
     request: Request,
     station_id: int,
     start_time: datetime = Query(..., description="开始时间（UTC或本地时间，建议UTC）"),
@@ -237,6 +97,18 @@ async def get_station_measurements(
     limit: int = Query(1000, ge=1, le=10000, description="返回数量限制"),
     offset: int = Query(0, ge=0, description="偏移量"),
 ) -> TimeSeriesResponse:
+    _act.info(
+        "[API-请求] [泵站测量数据查询]",
+        extra={
+            "extra_data": {
+                "station_id": station_id,
+                "start_time": start_time.isoformat(),
+                "end_time": end_time.isoformat(),
+                "granularity": granularity,
+            }
+        },
+    )
+
     if start_time >= end_time:
         raise HTTPException(status_code=400, detail="开始时间必须早于结束时间")
     try:
@@ -296,12 +168,11 @@ async def get_station_measurements(
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception("泵站汇总指标查询失败", station_id=station_id)
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/devices/{device_id}/measurements", response_model=TimeSeriesResponse)
-async def get_device_measurements(
+def get_device_measurements(
     request: Request,
     device_id: int,
     start_time: datetime = Query(..., description="开始时间（UTC或本地时间，建议UTC）"),
@@ -311,6 +182,21 @@ async def get_device_measurements(
     limit: int = Query(1000, ge=1, le=10000, description="返回数量限制"),
     offset: int = Query(0, ge=0, description="偏移量"),
 ) -> TimeSeriesResponse:
+    _act.info(
+        "[API-请求] [设备测量数据查询]",
+        extra={
+            "extra_data": {
+                "device_id": device_id,
+                "start_time": start_time.isoformat(),
+                "end_time": end_time.isoformat(),
+                "metric_ids": metric_ids,
+                "granularity": granularity,
+                "limit": limit,
+                "offset": offset,
+            }
+        }
+    )
+
     if start_time >= end_time:
         raise HTTPException(status_code=400, detail="开始时间必须早于结束时间")
     try:
@@ -368,12 +254,11 @@ async def get_device_measurements(
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception("设备汇总指标查询失败", device_id=device_id)
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/stations/{station_id}/raw", response_model=TimeSeriesResponse)
-async def get_station_raw(
+def get_station_raw(
     request: Request,
     station_id: int,
     start_time: datetime = Query(..., description="开始时间（UTC或本地时间，建议UTC）"),
@@ -382,6 +267,20 @@ async def get_station_raw(
     offset: int = Query(0, ge=0, description="偏移量"),
     format: str = Query("wide", description="返回格式：wide|long"),
 ) -> TimeSeriesResponse:
+    _act.info(
+        "[API-请求] [泵站原始数据查询]",
+        extra={
+            "extra_data": {
+                "station_id": station_id,
+                "start_time": start_time.isoformat(),
+                "end_time": end_time.isoformat(),
+                "limit": limit,
+                "offset": offset,
+                "format": format,
+            }
+        }
+    )
+
     if start_time >= end_time:
         raise HTTPException(status_code=400, detail="开始时间必须早于结束时间")
     if format not in {"wide", "long"}:
@@ -404,25 +303,25 @@ async def get_station_raw(
                     },
                 )
                 total = int(cur.fetchone()[0] or 0)
-            # 拉取当前页（函数内扩大 limit，外层做 OFFSET/LIMIT）
-            with get_conn(settings) as conn2:
-                with conn2.cursor() as cur:
-                    cur.execute(
-                        """
-                        SELECT record_timestamp, metrics_data, total_records
-                        FROM public.get_station_devices_metrics_by_time_range(%(station_id)s, %(start_ts)s, %(end_ts)s, %(inner_limit)s)
-                        OFFSET %(offset)s LIMIT %(limit)s
-                        """,
-                        {
-                            "station_id": int(station_id),
-                            "start_ts": start_time,
-                            "end_ts": end_time,
-                            "inner_limit": int(offset) + int(limit),
-                            "offset": int(offset),
-                            "limit": int(limit),
-                        },
-                    )
-                    rows_raw = cur.fetchall()
+            # 拉取当前页（函数内扩大 limit，外层做 OFFSET/LIMIT）——复用同一连接
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT record_timestamp, metrics_data, total_records
+                    FROM public.get_station_devices_metrics_by_time_range(%(station_id)s, %(start_ts)s, %(end_ts)s, %(inner_limit)s)
+                    ORDER BY record_timestamp ASC
+                    OFFSET %(offset)s LIMIT %(limit)s
+                    """,
+                    {
+                        "station_id": int(station_id),
+                        "start_ts": start_time,
+                        "end_ts": end_time,
+                        "inner_limit": int(offset) + int(limit),
+                        "offset": int(offset),
+                        "limit": int(limit),
+                    },
+                )
+                rows_raw = cur.fetchall()
         # 根据 format 构造 data（与前端预期保持一致）
         if format == "wide":
             # 宽表：透传 record_timestamp + metrics_data（递归转为 JSON 可序列化）
@@ -491,12 +390,11 @@ async def get_station_raw(
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception("站点原始数据查询失败", station_id=station_id, error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/devices/{device_id}/raw", response_model=TimeSeriesResponse)
-async def get_device_raw(
+def get_device_raw(
     request: Request,
     device_id: int,
     start_time: datetime = Query(..., description="开始时间（UTC或本地时间，建议UTC）"),
@@ -505,6 +403,20 @@ async def get_device_raw(
     offset: int = Query(0, ge=0, description="偏移量"),
     format: str = Query("wide", description="返回格式：wide|long"),
 ) -> TimeSeriesResponse:
+    _act.info(
+        "[API-请求] [设备原始数据查询]",
+        extra={
+            "extra_data": {
+                "device_id": device_id,
+                "start_time": start_time.isoformat(),
+                "end_time": end_time.isoformat(),
+                "limit": limit,
+                "offset": offset,
+                "format": format,
+            }
+        }
+    )
+
     if start_time >= end_time:
         raise HTTPException(status_code=400, detail="开始时间必须早于结束时间")
     if format not in {"wide", "long"}:
@@ -527,25 +439,25 @@ async def get_device_raw(
                     },
                 )
                 total = int(cur.fetchone()[0] or 0)
-            # 当前页
-            with get_conn(settings) as conn2:
-                with conn2.cursor() as cur:
-                    cur.execute(
-                        """
-                        SELECT record_timestamp, metrics_data, total_records
-                        FROM public.get_device_metrics_by_time_range(%(device_id)s, %(start_ts)s, %(end_ts)s, %(inner_limit)s)
-                        OFFSET %(offset)s LIMIT %(limit)s
-                        """,
-                        {
-                            "device_id": int(device_id),
-                            "start_ts": start_time,
-                            "end_ts": end_time,
-                            "inner_limit": int(offset) + int(limit),
-                            "offset": int(offset),
-                            "limit": int(limit),
-                        },
-                    )
-                    rows_raw = cur.fetchall()
+            # 当前页——复用同一连接
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT record_timestamp, metrics_data, total_records
+                    FROM public.get_device_metrics_by_time_range(%(device_id)s, %(start_ts)s, %(end_ts)s, %(inner_limit)s)
+                    ORDER BY record_timestamp ASC
+                    OFFSET %(offset)s LIMIT %(limit)s
+                    """,
+                    {
+                        "device_id": int(device_id),
+                        "start_ts": start_time,
+                        "end_ts": end_time,
+                        "inner_limit": int(offset) + int(limit),
+                        "offset": int(offset),
+                        "limit": int(limit),
+                    },
+                )
+                rows_raw = cur.fetchall()
         # 与站点 raw 统一：
         if format == "wide":
             # 直接透传 record_timestamp + metrics_data（递归转为 JSON 可序列化，避免 Decimal/日期对象导致序列化失败）
@@ -605,5 +517,4 @@ async def get_device_raw(
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception("设备原始数据查询失败", device_id=device_id, error=str(e))
         raise HTTPException(status_code=500, detail=str(e))

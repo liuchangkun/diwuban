@@ -4,7 +4,7 @@
 本模块负责应用程序的配置管理，提供统一的配置加载和验证机制。
 
 核心功能：
-- Settings：应用全局配置（db/ingest/merge/logging/web/system）
+- Settings：应用全局配置（db/ingest/merge/web/system）
 - load_settings：按目录优先级与 YAML 合并规则加载配置
 - load_settings_with_sources：提供配置来源追踪的加载函数
 - 配置验证：确保配置的正确性和完整性
@@ -15,25 +15,27 @@
 2. 数据库配置仅允许来自 database.yaml，不允许通过 ENV/CLI 覆盖
 3. 部分 ingest 配置支持环境变量覆盖（见白名单）
 4. 系统配置提供全局默认值，避免硬编码
+5. 已移除日志配置，所有日志相关功能不再加载
 
 配置文件结构：
 - configs/database.yaml：数据库连接和池配置
-- configs/logging.yaml：日志格式、级别和路由配置
+
 - configs/ingest.yaml：数据导入和处理配置
 - configs/web.yaml：Web服务配置
 - configs/system.yaml：系统通用配置
 """
 
-import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
+from threading import RLock
 from typing import Any, Dict, Tuple
 
 import yaml  # type: ignore[import-untyped]
 
 # 导入拆分的配置模块
 from .database import DbPoolSettings, DbRetrySettings, DbSettings, DbTimeoutSettings
+from .error_handling import ErrorHandlingSettings as ErrorHandlingConfig
 from .ingest import (
     BackpressureThresholds,
     BatchSettingsExt,
@@ -45,23 +47,6 @@ from .ingest import (
     IngestPerformance,
     IngestSettings,
 )
-from .logging import LoggingSettings
-from .logging_advanced import (
-    DetailedLoggingSettings,
-    InternalExecutionSettings,
-    KeyMetricsSettings,
-    SqlExecutionSettings,
-    StartupCleanupSettings,
-)
-from .logging_base import (
-    LoggingFormatting,
-    LoggingPerformance,
-    LoggingRotation,
-    LoggingSql,
-    SamplingSettings,
-)
-from .logging_filters import LoggingFiltersSettings
-from .logging_output import LoggingOutputSettings
 from .merge import IngestWindow, MergeSettings, MergeTzPolicy, SegmentedMergeSettings
 from .system import (
     SystemDirectoriesSettings,
@@ -69,7 +54,7 @@ from .system import (
     SystemSettings,
     SystemTimezoneSettings,
 )
-from .validation import ConfigValidator, log_validation_result
+from .validation import ConfigValidator
 from .web import (
     WebApiSettings,
     WebAppSettings,
@@ -78,8 +63,9 @@ from .web import (
     WebSettings,
 )
 
-# 模块日志记录器
-logger = logging.getLogger(__name__)
+# 进程内缓存：避免重复加载配置；按规范化目录键控
+_SETTINGS_CACHE: dict[str, "Settings"] = {}
+_SETTINGS_CACHE_LOCK = RLock()
 
 
 @dataclass(frozen=True)
@@ -94,7 +80,7 @@ class Settings:
     - db: 数据库连接和池配置
     - ingest: 数据导入和处理配置
     - merge: 数据合并和对齐配置
-    - logging: 日志系统配置
+
     - web: Web服务配置
     - system: 系统通用配置
 
@@ -115,9 +101,10 @@ class Settings:
     db: DbSettings = DbSettings()
     ingest: IngestSettings = IngestSettings()
     merge: MergeSettings = MergeSettings()
-    logging: LoggingSettings = LoggingSettings()
+
     web: WebSettings = WebSettings()
     system: SystemSettings = SystemSettings()
+    error_handling: ErrorHandlingConfig = ErrorHandlingConfig()
 
 
 def _first_existing_dir(config_dir: Path) -> Path:
@@ -133,7 +120,7 @@ def load_settings(config_dir: Path) -> Settings:
     加载配置（解决硬编码问题，支持配置外置化）。
 
     - 目录优先级：传入 config_dir → ./configs → ./config
-    - 支持文件：database.yaml、logging.yaml、ingest.yaml、web.yaml、system.yaml
+    - 支持文件：database.yaml、ingest.yaml、merge.yaml、web.yaml、system.yaml、error_handling.yaml
     - 合并策略：ingest 支持 CLI/ENV > YAML > 默认；db/logging 仅 YAML > 默认
     - 硬编码消除：所有默认值均从 system.yaml 读取
 
@@ -148,11 +135,11 @@ def load_settings(config_dir: Path) -> Settings:
     # 加载各个配置文件
     config_files = {
         "database": cdir / "database.yaml",
-        "logging": cdir / "logging.yaml",
         "ingest": cdir / "ingest.yaml",
         "merge": cdir / "merge.yaml",
         "web": cdir / "web.yaml",
         "system": cdir / "system.yaml",
+        "error_handling": cdir / "error_handling.yaml",
     }
 
     data: Dict[str, Any] = {}
@@ -162,17 +149,14 @@ def load_settings(config_dir: Path) -> Settings:
                 with config_path.open("r", encoding="utf-8") as f:
                     loaded_data = yaml.safe_load(f)
                     data[config_name] = loaded_data or {}
-                    logger.info(f"成功加载配置文件: {config_path}")
-            except Exception as e:
-                logger.error(f"加载配置文件失败 {config_path}: {e}")
+            except Exception:
                 data[config_name] = {}
         else:
-            logger.warning(f"配置文件不存在，使用默认配置: {config_path}")
             data[config_name] = {}
 
     # 验证配置
     validation_result = ConfigValidator.validate_complete_config(data)
-    log_validation_result(validation_result, logger)
+    # 跳过日志记录
 
     if not validation_result.is_valid:
         raise ValueError(f"配置验证失败: {len(validation_result.errors)} 个错误")
@@ -207,22 +191,19 @@ def load_settings(config_dir: Path) -> Settings:
     # 构建合并配置（使用系统默认时区）
     merge_settings = _build_merge_settings(data.get("merge", {}), default_timezone)
 
-    # 构建日志配置（仅从 YAML 加载，使用系统默认值）
-    logging_settings = _build_logging_settings(data.get("logging", {}), logs_dir)
+    # 构建错误处理配置（仅从 YAML 加载）
+    error_handling_settings = _build_error_handling_settings(
+        data.get("error_handling", {})
+    )
 
     # 构建最终配置对象
     settings = Settings(
         db=db_settings,
         ingest=ingest_settings,
         merge=merge_settings,
-        logging=logging_settings,
         web=web_settings,
         system=system_settings,
-    )
-
-    logger.info(
-        f"配置加载完成，数据目录: {settings.system.directories.data}, "
-        f"Web端口: {settings.web.server.port}, 默认时区: {settings.system.timezone.default}"
+        error_handling=error_handling_settings,
     )
 
     return settings
@@ -288,6 +269,7 @@ def _build_database_settings(db_config: Dict[str, Any]) -> DbSettings:
         host=str(db_config.get("host", "localhost")),
         name=str(db_config.get("dbname", "pump_station_optimization")),
         user=str(db_config.get("user", "postgres")),
+        password=db_config.get("password"),  # 读取密码字段
         dsn_read=db_config.get("dsn_read"),
         dsn_write=db_config.get("dsn_write"),
         pool=DbPoolSettings(
@@ -303,12 +285,22 @@ def _build_database_settings(db_config: Dict[str, Any]) -> DbSettings:
                 timeouts_config.get("statement_timeout_ms", 30000)
             ),
             query_timeout_ms=int(timeouts_config.get("query_timeout_ms", 60000)),
+            connection_acquire_timeout_ms=int(
+                timeouts_config.get("connection_acquire_timeout_ms", 10000)
+            ),
+            connection_validation_timeout_ms=int(
+                timeouts_config.get("connection_validation_timeout_ms", 1000)
+            ),
+            pool_shutdown_timeout_ms=int(
+                timeouts_config.get("pool_shutdown_timeout_ms", 30000)
+            ),
         ),
         retry=DbRetrySettings(
             max_retries=int(retry_config.get("max_retries", 3)),
             retry_delay_ms=int(retry_config.get("retry_delay_ms", 1000)),
             backoff_multiplier=float(retry_config.get("backoff_multiplier", 2.0)),
         ),
+        staging_unlogged=bool(db_config.get("staging_unlogged", False)),
     )
 
 
@@ -482,234 +474,7 @@ def _build_merge_settings(
     )
 
 
-def _build_logging_settings(
-    logging_config: Dict[str, Any], logs_dir: str
-) -> LoggingSettings:
-    """构建日志配置（仅从 YAML 加载，使用系统默认值）"""
-    # SQL 配置
-    sql_config = logging_config.get("sql", {})
-    sql_settings = LoggingSql(
-        text=str(sql_config.get("text", "ERROR")),
-        explain=str(sql_config.get("explain", "ERROR")),
-        top_n_slow=int(sql_config.get("top_n_slow", 10)),
-    )
-
-    # 采样配置
-    sampling_config = logging_config.get("sampling", {})
-    sampling_settings = SamplingSettings(
-        loop_log_every_n=int(sampling_config.get("loop_log_every_n", 1000)),
-        min_interval_sec=float(sampling_config.get("min_interval_sec", 1.0)),
-        default_rate=float(sampling_config.get("default_rate", 1.0)),
-        high_frequency_events=sampling_config.get("high_frequency_events", {}),
-        burst_limit=int(sampling_config.get("burst_limit", 10)),
-    )
-
-    # 轮转配置
-    rotation_config = logging_config.get("rotation", {})
-    rotation_settings = LoggingRotation(
-        max_bytes=int(rotation_config.get("max_bytes", 10485760)),  # 10MB
-        backup_count=int(rotation_config.get("backup_count", 5)),
-        rotation_interval=int(rotation_config.get("rotation_interval", 3600)),  # 1小时
-    )
-
-    # 格式化配置
-    formatting_config = logging_config.get("formatting", {})
-    formatting_settings = LoggingFormatting(
-        timestamp_format=str(
-            formatting_config.get("timestamp_format", "%Y-%m-%d %H:%M:%S")
-        ),
-        max_message_length=int(formatting_config.get("max_message_length", 1000)),
-        field_order=tuple(
-            formatting_config.get(
-                "field_order", ["timestamp", "level", "logger", "message", "run_id"]
-            )
-        ),
-    )
-
-    # 性能配置
-    performance_config = logging_config.get("performance", {})
-    performance_settings = LoggingPerformance(
-        buffer_size=int(performance_config.get("buffer_size", 8192)),
-        flush_interval=float(performance_config.get("flush_interval", 1.0)),
-        async_handler_queue_size=int(
-            performance_config.get("async_handler_queue_size", 1000)
-        ),
-    )
-
-    # 启动清理配置
-    startup_config = logging_config.get("startup_cleanup", {})
-    startup_settings = StartupCleanupSettings(
-        clear_logs=bool(startup_config.get("clear_logs", True)),
-        clear_database=bool(startup_config.get("clear_database", True)),
-        logs_backup_count=int(startup_config.get("logs_backup_count", 3)),
-        confirm_clear=bool(startup_config.get("confirm_clear", False)),
-    )
-
-    # 详细日志配置
-    detailed_config = logging_config.get("detailed_logging", {})
-    detailed_settings = DetailedLoggingSettings(
-        enable_function_entry=bool(detailed_config.get("enable_function_entry", True)),
-        enable_function_exit=bool(detailed_config.get("enable_function_exit", True)),
-        enable_parameter_logging=bool(
-            detailed_config.get("enable_parameter_logging", True)
-        ),
-        enable_context_logging=bool(
-            detailed_config.get("enable_context_logging", True)
-        ),
-        enable_business_logging=bool(
-            detailed_config.get("enable_business_logging", True)
-        ),
-        enable_progress_logging=bool(
-            detailed_config.get("enable_progress_logging", True)
-        ),
-        enable_performance_logging=bool(
-            detailed_config.get("enable_performance_logging", True)
-        ),
-        enable_error_details=bool(detailed_config.get("enable_error_details", True)),
-        enable_internal_steps=bool(detailed_config.get("enable_internal_steps", True)),
-        enable_condition_branches=bool(
-            detailed_config.get("enable_condition_branches", True)
-        ),
-        enable_loop_iterations=bool(
-            detailed_config.get("enable_loop_iterations", True)
-        ),
-        enable_intermediate_results=bool(
-            detailed_config.get("enable_intermediate_results", True)
-        ),
-        enable_data_validation=bool(
-            detailed_config.get("enable_data_validation", True)
-        ),
-        enable_resource_usage=bool(detailed_config.get("enable_resource_usage", True)),
-        enable_timing_details=bool(detailed_config.get("enable_timing_details", True)),
-        internal_steps_interval=int(detailed_config.get("internal_steps_interval", 10)),
-        loop_log_interval=int(detailed_config.get("loop_log_interval", 100)),
-    )
-
-    # 关键指标配置
-    metrics_config = logging_config.get("key_metrics", {})
-    metrics_settings = KeyMetricsSettings(
-        enable_file_count=bool(metrics_config.get("enable_file_count", True)),
-        enable_data_time_range=bool(metrics_config.get("enable_data_time_range", True)),
-        enable_processing_progress=bool(
-            metrics_config.get("enable_processing_progress", True)
-        ),
-        enable_merge_statistics=bool(
-            metrics_config.get("enable_merge_statistics", True)
-        ),
-        enable_performance_metrics=bool(
-            metrics_config.get("enable_performance_metrics", True)
-        ),
-        enable_memory_usage=bool(metrics_config.get("enable_memory_usage", True)),
-        enable_database_stats=bool(metrics_config.get("enable_database_stats", True)),
-        enable_file_size_info=bool(metrics_config.get("enable_file_size_info", True)),
-        enable_throughput_metrics=bool(
-            metrics_config.get("enable_throughput_metrics", True)
-        ),
-        enable_error_statistics=bool(
-            metrics_config.get("enable_error_statistics", True)
-        ),
-        enable_quality_metrics=bool(metrics_config.get("enable_quality_metrics", True)),
-        enable_pipeline_stages=bool(metrics_config.get("enable_pipeline_stages", True)),
-        enable_batch_statistics=bool(
-            metrics_config.get("enable_batch_statistics", True)
-        ),
-        enable_resource_consumption=bool(
-            metrics_config.get("enable_resource_consumption", True)
-        ),
-        enable_data_distribution=bool(
-            metrics_config.get("enable_data_distribution", True)
-        ),
-        progress_report_interval=int(
-            metrics_config.get("progress_report_interval", 1000)
-        ),
-        metrics_summary_interval=int(
-            metrics_config.get("metrics_summary_interval", 300)
-        ),
-    )
-
-    # SQL 执行配置
-    sql_exec_config = logging_config.get("sql_execution", {})
-    sql_exec_settings = SqlExecutionSettings(
-        enable_statement_logging=bool(
-            sql_exec_config.get("enable_statement_logging", True)
-        ),
-        enable_execution_metrics=bool(
-            sql_exec_config.get("enable_execution_metrics", True)
-        ),
-        enable_parameter_logging=bool(
-            sql_exec_config.get("enable_parameter_logging", True)
-        ),
-        enable_result_summary=bool(sql_exec_config.get("enable_result_summary", True)),
-        enable_slow_query_detection=bool(
-            sql_exec_config.get("enable_slow_query_detection", True)
-        ),
-        slow_query_threshold_ms=int(
-            sql_exec_config.get("slow_query_threshold_ms", 1000)
-        ),
-        max_sql_length=int(sql_exec_config.get("max_sql_length", 2000)),
-        sensitive_fields=tuple(
-            sql_exec_config.get(
-                "sensitive_fields", ["password", "token", "secret", "key"]
-            )
-        ),
-    )
-
-    # 内部执行配置
-    internal_exec_config = logging_config.get("internal_execution", {})
-    internal_exec_settings = InternalExecutionSettings(
-        enable_step_logging=bool(internal_exec_config.get("enable_step_logging", True)),
-        enable_checkpoint_logging=bool(
-            internal_exec_config.get("enable_checkpoint_logging", True)
-        ),
-        enable_branch_logging=bool(
-            internal_exec_config.get("enable_branch_logging", True)
-        ),
-        enable_iteration_logging=bool(
-            internal_exec_config.get("enable_iteration_logging", True)
-        ),
-        enable_validation_logging=bool(
-            internal_exec_config.get("enable_validation_logging", True)
-        ),
-        enable_transformation_logging=bool(
-            internal_exec_config.get("enable_transformation_logging", True)
-        ),
-        step_detail_level=str(
-            internal_exec_config.get("step_detail_level", "detailed")
-        ),
-        iteration_log_frequency=int(
-            internal_exec_config.get("iteration_log_frequency", 100)
-        ),
-        checkpoint_auto_interval=int(
-            internal_exec_config.get("checkpoint_auto_interval", 1000)
-        ),
-    )
-
-    # 输出配置
-    output_settings = LoggingOutputSettings()  # 使用默认值，后续可从 YAML 加载
-
-    # 过滤配置
-    filters_settings = LoggingFiltersSettings()  # 使用默认值，后续可从 YAML 加载
-
-    return LoggingSettings(
-        level=str(logging_config.get("level", "INFO")),
-        format=str(logging_config.get("format", "json")),
-        routing=str(logging_config.get("routing", "by_run")),
-        queue_handler=bool(performance_config.get("queue_handler", True)),
-        sql=sql_settings,
-        sampling=sampling_settings,
-        rotation=rotation_settings,
-        formatting=formatting_settings,
-        performance=performance_settings,
-        redaction_enable=bool(logging_config.get("redaction", {}).get("enable", False)),
-        retention_days=int(logging_config.get("retention_days", 14)),
-        startup_cleanup=startup_settings,
-        detailed_logging=detailed_settings,
-        key_metrics=metrics_settings,
-        sql_execution=sql_exec_settings,
-        internal_execution=internal_exec_settings,
-        output=output_settings,
-        filters=filters_settings,
-    )
+# 已移除日志相关配置构建函数
 
 
 def _build_config_sources(config_dir: Path) -> Dict[str, Any]:
@@ -879,47 +644,351 @@ def _build_config_sources(config_dir: Path) -> Dict[str, Any]:
                 yaml_data.get("merge", {}), "segmented.granularity"
             ),
         },
-        "logging": {
-            "level": _get_yaml_field_source(yaml_data.get("logging", {}), "level"),
-            "format": _get_yaml_field_source(yaml_data.get("logging", {}), "format"),
-            "routing": _get_yaml_field_source(yaml_data.get("logging", {}), "routing"),
-            "queue_handler": _get_yaml_field_source(
-                yaml_data.get("logging", {}), "performance.queue_handler"
-            ),
-            "sql.text": _get_yaml_field_source(
-                yaml_data.get("logging", {}), "sql.text"
-            ),
-            "sql.explain": _get_yaml_field_source(
-                yaml_data.get("logging", {}), "sql.explain"
-            ),
-            "sampling.loop_log_every_n": _get_yaml_field_source(
-                yaml_data.get("logging", {}), "sampling.loop_log_every_n"
-            ),
-            "redaction.enable": _get_yaml_field_source(
-                yaml_data.get("logging", {}), "redaction.enable"
-            ),
-            "retention_days": _get_yaml_field_source(
-                yaml_data.get("logging", {}), "retention_days"
-            ),
-            "startup_cleanup.clear_logs": _get_yaml_field_source(
-                yaml_data.get("logging", {}), "startup_cleanup.clear_logs"
-            ),
-            "detailed_logging.enable_function_entry": _get_yaml_field_source(
-                yaml_data.get("logging", {}), "detailed_logging.enable_function_entry"
-            ),
-            "key_metrics.enable_file_count": _get_yaml_field_source(
-                yaml_data.get("logging", {}), "key_metrics.enable_file_count"
-            ),
-            "sql_execution.enable_statement_logging": _get_yaml_field_source(
-                yaml_data.get("logging", {}), "sql_execution.enable_statement_logging"
-            ),
-            "internal_execution.enable_step_logging": _get_yaml_field_source(
-                yaml_data.get("logging", {}), "internal_execution.enable_step_logging"
-            ),
-        },
     }
 
     return sources
+
+
+def _build_error_handling_settings(
+    error_handling_config: Dict[str, Any],
+) -> ErrorHandlingConfig:
+    """构建错误处理配置（仅从 YAML 加载）"""
+    from .error_handling import (
+        AlertingConfig,
+        AnalysisValidationConfig,
+        CircuitBreakerSettings,
+        CircuitBreakerValidationConfig,
+        ErrorAnalysisSettings,
+        ErrorRecordingConfig,
+        HotReloadConfig,
+        InitializationSettings,
+        MonitoringDecoratorConfig,
+        MonitoringSettings,
+        PatternDetectionConfig,
+        PerformanceMonitoringConfig,
+        ReportingConfig,
+        RetrySettings,
+        RetryValidationConfig,
+        StartupConfig,
+        TrendAnalysisConfig,
+        ValidationSettings,
+    )
+
+    # 构建重试配置
+    retry_config = error_handling_config.get("retry", {})
+    retry_settings = RetrySettings(
+        default=_build_retry_policy_config(retry_config.get("default", {})),
+        network_errors=_build_retry_policy_config(
+            retry_config.get("network_errors", {})
+        ),
+        database_connection_errors=_build_retry_policy_config(
+            retry_config.get("database_connection_errors", {})
+        ),
+        high_priority_errors=_build_retry_policy_config(
+            retry_config.get("high_priority_errors", {})
+        ),
+        degradable_errors=_build_retry_policy_config(
+            retry_config.get("degradable_errors", {})
+        ),
+        resource_exhausted_errors=_build_retry_policy_config(
+            retry_config.get("resource_exhausted_errors", {})
+        ),
+    )
+
+    # 构建断路器配置
+    circuit_breaker_config = error_handling_config.get("circuit_breaker", {})
+    circuit_breaker_settings = CircuitBreakerSettings(
+        default=_build_circuit_breaker_config(
+            circuit_breaker_config.get("default", {})
+        ),
+        database_operations=_build_circuit_breaker_config(
+            circuit_breaker_config.get("database_operations", {})
+        ),
+        database_connection_creation=_build_circuit_breaker_config(
+            circuit_breaker_config.get("database_connection_creation", {})
+        ),
+        api_calls=_build_circuit_breaker_config(
+            circuit_breaker_config.get("api_calls", {})
+        ),
+        file_operations=_build_circuit_breaker_config(
+            circuit_breaker_config.get("file_operations", {})
+        ),
+        network_operations=_build_circuit_breaker_config(
+            circuit_breaker_config.get("network_operations", {})
+        ),
+    )
+
+    # 构建错误分析配置
+    analysis_config = error_handling_config.get("error_analysis", {})
+    error_analysis_settings = ErrorAnalysisSettings(
+        recording=ErrorRecordingConfig(
+            max_records=int(
+                analysis_config.get("recording", {}).get("max_records", 10000)
+            ),
+            analysis_window=int(
+                analysis_config.get("recording", {}).get("analysis_window", 3600)
+            ),
+            cleanup_interval=int(
+                analysis_config.get("recording", {}).get("cleanup_interval", 300)
+            ),
+            auto_cleanup=bool(
+                analysis_config.get("recording", {}).get("auto_cleanup", True)
+            ),
+        ),
+        pattern_detection=PatternDetectionConfig(
+            min_frequency=int(
+                analysis_config.get("pattern_detection", {}).get("min_frequency", 3)
+            ),
+            time_window=int(
+                analysis_config.get("pattern_detection", {}).get("time_window", 1800)
+            ),
+            similarity_threshold=float(
+                analysis_config.get("pattern_detection", {}).get(
+                    "similarity_threshold", 0.8
+                )
+            ),
+            enable_auto_detection=bool(
+                analysis_config.get("pattern_detection", {}).get(
+                    "enable_auto_detection", True
+                )
+            ),
+        ),
+        trend_analysis=TrendAnalysisConfig(
+            analysis_interval=int(
+                analysis_config.get("trend_analysis", {}).get("analysis_interval", 300)
+            ),
+            trend_window=int(
+                analysis_config.get("trend_analysis", {}).get("trend_window", 3600)
+            ),
+            rate_threshold=float(
+                analysis_config.get("trend_analysis", {}).get("rate_threshold", 0.1)
+            ),
+            enable_prediction=bool(
+                analysis_config.get("trend_analysis", {}).get("enable_prediction", True)
+            ),
+        ),
+        reporting=ReportingConfig(
+            auto_generate=bool(
+                analysis_config.get("reporting", {}).get("auto_generate", True)
+            ),
+            report_interval=int(
+                analysis_config.get("reporting", {}).get("report_interval", 1800)
+            ),
+            max_reports=int(
+                analysis_config.get("reporting", {}).get("max_reports", 100)
+            ),
+            include_patterns=bool(
+                analysis_config.get("reporting", {}).get("include_patterns", True)
+            ),
+            include_trends=bool(
+                analysis_config.get("reporting", {}).get("include_trends", True)
+            ),
+            include_suggestions=bool(
+                analysis_config.get("reporting", {}).get("include_suggestions", True)
+            ),
+        ),
+    )
+
+    # 构建监控配置
+    monitoring_config = error_handling_config.get("monitoring", {})
+    monitoring_settings = MonitoringSettings(
+        decorator=MonitoringDecoratorConfig(
+            enable_context_capture=bool(
+                monitoring_config.get("decorator", {}).get(
+                    "enable_context_capture", True
+                )
+            ),
+            max_context_size=int(
+                monitoring_config.get("decorator", {}).get("max_context_size", 1000)
+            ),
+            capture_args=bool(
+                monitoring_config.get("decorator", {}).get("capture_args", True)
+            ),
+            capture_return=bool(
+                monitoring_config.get("decorator", {}).get("capture_return", False)
+            ),
+            exclude_sensitive_keys=monitoring_config.get("decorator", {}).get(
+                "exclude_sensitive_keys", ["password", "token", "secret", "key", "auth"]
+            ),
+        ),
+        performance=PerformanceMonitoringConfig(
+            enable_timing=bool(
+                monitoring_config.get("performance", {}).get("enable_timing", True)
+            ),
+            slow_threshold=float(
+                monitoring_config.get("performance", {}).get("slow_threshold", 5.0)
+            ),
+            memory_monitoring=bool(
+                monitoring_config.get("performance", {}).get("memory_monitoring", False)
+            ),
+        ),
+        alerting=AlertingConfig(
+            enable_alerts=bool(
+                monitoring_config.get("alerting", {}).get("enable_alerts", False)
+            ),
+            error_rate_threshold=float(
+                monitoring_config.get("alerting", {}).get("error_rate_threshold", 0.05)
+            ),
+            consecutive_failures_threshold=int(
+                monitoring_config.get("alerting", {}).get(
+                    "consecutive_failures_threshold", 10
+                )
+            ),
+            circuit_breaker_open_alert=bool(
+                monitoring_config.get("alerting", {}).get(
+                    "circuit_breaker_open_alert", True
+                )
+            ),
+        ),
+    )
+
+    # 构建验证配置
+    validation_config = error_handling_config.get("validation", {})
+    validation_settings = ValidationSettings(
+        retry_validation=RetryValidationConfig(
+            max_retries_limit=int(
+                validation_config.get("retry_validation", {}).get(
+                    "max_retries_limit", 10
+                )
+            ),
+            max_delay_limit=float(
+                validation_config.get("retry_validation", {}).get(
+                    "max_delay_limit", 300.0
+                )
+            ),
+            min_base_delay=float(
+                validation_config.get("retry_validation", {}).get(
+                    "min_base_delay", 0.01
+                )
+            ),
+            valid_strategies=validation_config.get("retry_validation", {}).get(
+                "valid_strategies", ["fixed", "linear", "exponential", "fibonacci"]
+            ),
+        ),
+        circuit_breaker_validation=CircuitBreakerValidationConfig(
+            max_failure_threshold=int(
+                validation_config.get("circuit_breaker_validation", {}).get(
+                    "max_failure_threshold", 20
+                )
+            ),
+            max_recovery_timeout=float(
+                validation_config.get("circuit_breaker_validation", {}).get(
+                    "max_recovery_timeout", 600.0
+                )
+            ),
+            min_recovery_timeout=float(
+                validation_config.get("circuit_breaker_validation", {}).get(
+                    "min_recovery_timeout", 5.0
+                )
+            ),
+            max_half_open_calls=int(
+                validation_config.get("circuit_breaker_validation", {}).get(
+                    "max_half_open_calls", 10
+                )
+            ),
+        ),
+        analysis_validation=AnalysisValidationConfig(
+            max_records_limit=int(
+                validation_config.get("analysis_validation", {}).get(
+                    "max_records_limit", 100000
+                )
+            ),
+            max_analysis_window=int(
+                validation_config.get("analysis_validation", {}).get(
+                    "max_analysis_window", 86400
+                )
+            ),
+            min_analysis_window=int(
+                validation_config.get("analysis_validation", {}).get(
+                    "min_analysis_window", 60
+                )
+            ),
+            max_context_size_limit=int(
+                validation_config.get("analysis_validation", {}).get(
+                    "max_context_size_limit", 10000
+                )
+            ),
+        ),
+    )
+
+    # 构建初始化配置
+    initialization_config = error_handling_config.get("initialization", {})
+    initialization_settings = InitializationSettings(
+        startup=StartupConfig(
+            validate_config=bool(
+                initialization_config.get("startup", {}).get("validate_config", True)
+            ),
+            initialize_components=bool(
+                initialization_config.get("startup", {}).get(
+                    "initialize_components", True
+                )
+            ),
+            fail_on_invalid_config=bool(
+                initialization_config.get("startup", {}).get(
+                    "fail_on_invalid_config", True
+                )
+            ),
+        ),
+        hot_reload=HotReloadConfig(
+            enable_hot_reload=bool(
+                initialization_config.get("hot_reload", {}).get(
+                    "enable_hot_reload", False
+                )
+            ),
+            watch_config_files=bool(
+                initialization_config.get("hot_reload", {}).get(
+                    "watch_config_files", False
+                )
+            ),
+            reload_interval=int(
+                initialization_config.get("hot_reload", {}).get("reload_interval", 60)
+            ),
+            backup_on_reload=bool(
+                initialization_config.get("hot_reload", {}).get(
+                    "backup_on_reload", True
+                )
+            ),
+        ),
+    )
+
+    return ErrorHandlingConfig(
+        retry=retry_settings,
+        circuit_breaker=circuit_breaker_settings,
+        error_analysis=error_analysis_settings,
+        monitoring=monitoring_settings,
+        validation=validation_settings,
+        initialization=initialization_settings,
+    )
+
+
+def _build_retry_policy_config(policy_config: Dict[str, Any]):
+    """构建重试策略配置"""
+    from .error_handling import RetryPolicyConfig
+
+    return RetryPolicyConfig(
+        max_retries=int(policy_config.get("max_retries", 3)),
+        base_delay=float(policy_config.get("base_delay", 1.0)),
+        max_delay=float(policy_config.get("max_delay", 60.0)),
+        backoff_multiplier=float(policy_config.get("backoff_multiplier", 2.0)),
+        jitter=bool(policy_config.get("jitter", True)),
+        strategy=str(policy_config.get("strategy", "exponential")),
+    )
+
+
+def _build_circuit_breaker_config(
+    breaker_config: Dict[str, Any],
+):
+    """构建断路器配置"""
+    from .error_handling import CircuitBreakerConfig
+
+    return CircuitBreakerConfig(
+        failure_threshold=int(breaker_config.get("failure_threshold", 5)),
+        recovery_timeout=float(breaker_config.get("recovery_timeout", 60.0)),
+        half_open_max_calls=int(breaker_config.get("half_open_max_calls", 3)),
+        half_open_success_threshold=int(
+            breaker_config.get("half_open_success_threshold", 2)
+        ),
+    )
 
 
 def _get_bool_env(env_key: str, default_value: bool) -> bool:

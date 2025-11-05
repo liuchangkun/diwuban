@@ -12,6 +12,9 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+# 确保可以导入 app 包
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 DOC = ROOT / "docs" / "应用接口说明.md"
 
 

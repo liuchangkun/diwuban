@@ -10,7 +10,7 @@ source_hint 生成（ingest.source_hint）
 from datetime import datetime
 from pathlib import Path
 
-from app.core.config.loader import Settings
+from app.core.config.loader_new import Settings
 
 
 def make_source_hint(settings: Settings, base_dir: Path, csv_path: Path) -> str:

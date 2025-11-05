@@ -1,18 +1,24 @@
+# [弃用/占位][方案A-标注] 本服务当前未被仓库其他模块引用（扫描于 2025-09-24）。保留作研究/示例；不在生产路径使用。
+# 如需启用，请补充调用入口与测试，并移除此标注；长期未启用建议按方案B归档或方案C删除。
+
 """
 泵组特性曲线拟合与增强数据补齐实现
 """
 
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from enum import Enum
 from typing import Dict, List, Optional, Tuple
+
 import numpy as np
 import pandas as pd
-from dataclasses import dataclass
-from enum import Enum
-import logging
-from datetime import datetime, timedelta
 
 from app.adapters.db.gateway import DatabaseGateway
 
-logger = logging.getLogger(__name__)
+
+import logging
+
+_act = logging.getLogger(__name__)
 
 
 class PumpGroupCurveType(Enum):
@@ -41,12 +47,25 @@ class PumpGroupCurveFitter:
     async def fit_pump_group_curves(self, station_id: str, days: int = 30) -> Dict:
         """拟合泵组特性曲线"""
 
+        _act.info(
+            "[流程-开始] [泵组曲线拟合]",
+            extra={"extra_data": {"station_id": station_id, "days": days}},
+        )
+
         # 获取泵组数据
         pump_data = await self._get_pump_group_data(station_id, days)
 
         if pump_data.empty:
-            logger.warning(f"泵站 {station_id} 缺少泵组数据")
+            _act.warning(
+                "[流程-跳过] [泵组数据为空]",
+                extra={"extra_data": {"station_id": station_id}},
+            )
             return {}
+
+        _act.info(
+            "[流程-阶段] [泵组数据已获取]",
+            extra={"extra_data": {"data_points": len(pump_data)}},
+        )
 
         results = {}
 
@@ -60,16 +79,51 @@ class PumpGroupCurveFitter:
 
         for curve_type in curve_types:
             try:
+                _act.info(
+                    "[流程-阶段] [单曲线拟合开始]",
+                    extra={"extra_data": {"curve_type": curve_type.value}},
+                )
                 result = await self._fit_single_curve(curve_type, pump_data)
                 results[curve_type.value] = result
+                _act.info(
+                    "[流程-阶段] [单曲线拟合完成]",
+                    extra={
+                        "extra_data": {
+                            "curve_type": curve_type.value,
+                            "method": result.get("method", "unknown"),
+                        }
+                    },
+                )
             except Exception as e:
-                logger.error(f"拟合曲线 {curve_type.value} 失败: {e}")
+                _act.warning(
+                    "[流程-错误] [曲线拟合失败]",
+                    extra={
+                        "extra_data": {
+                            "curve_type": curve_type.value,
+                            "error": str(e),
+                        }
+                    },
+                )
                 results[curve_type.value] = self._get_default_curve(curve_type)
+
+        _act.info(
+            "[流程-完成] [泵组曲线拟合]",
+            extra={
+                "extra_data": {
+                    "station_id": station_id,
+                    "curve_count": len(results),
+                }
+            },
+        )
 
         return results
 
     async def _get_pump_group_data(self, station_id: str, days: int) -> pd.DataFrame:
         """获取泵组数据"""
+        _act.info(
+            "[数据库-查询] [泵组数据查询开始]",
+            extra={"extra_data": {"station_id": station_id, "days": days}},
+        )
 
         end_time = datetime.now()
         start_time = end_time - timedelta(days=days)
@@ -83,7 +137,7 @@ class PumpGroupCurveFitter:
         FROM fact_measurements fm
         JOIN dim_devices d ON fm.device_id = d.device_id
         WHERE fm.station_id = %s
-            AND fm.metric_time BETWEEN %s AND %s
+            AND fm.metric_time >= %s AND fm.metric_time < %s
             AND d.device_type = 'pump'
             AND fm.metric_type IN (
                 'pump_flow_rate', 'pump_efficiency',
@@ -95,6 +149,10 @@ class PumpGroupCurveFitter:
         result = await self.gateway.execute_query(sql, station_id, start_time, end_time)
 
         if not result:
+            _act.warning(
+                "[数据库-查询] [泵组数据为空]",
+                extra={"extra_data": {"station_id": station_id}},
+            )
             return pd.DataFrame()
 
         df = pd.DataFrame(result)
@@ -104,6 +162,10 @@ class PumpGroupCurveFitter:
             values="metric_value",
         ).reset_index()
 
+        _act.info(
+            "[数据库-查询] [泵组数据查询完成]",
+            extra={"extra_data": {"total_rows": len(pivot_df)}},
+        )
         return pivot_df
 
     async def _fit_single_curve(
@@ -285,10 +347,6 @@ class PumpGroupCurveFitter:
         # 综合筛选
         valid_mask = ffill_mask & mean_fill_mask & smooth_mask
 
-        logger.info(
-            f"数据筛选: 原始{len(x_data)}条，保留{np.sum(valid_mask)}条原始数据"
-        )
-
         return x_data[valid_mask], y_data[valid_mask]
 
     async def _fit_with_fallback(
@@ -310,8 +368,7 @@ class PumpGroupCurveFitter:
                         "quality": quality,
                         "curve_type": curve_type.value,
                     }
-            except Exception as e:
-                logger.warning(f"拟合方法 {method} 失败: {e}")
+            except Exception:
                 continue
 
         return self._get_default_curve(curve_type)
@@ -508,7 +565,7 @@ class CurveEnhancedCompletion:
         SELECT metric_type, AVG(metric_value) as avg_value
         FROM fact_measurements
         WHERE station_id = %s
-            AND metric_time BETWEEN %s AND %s
+            AND metric_time >= %s AND metric_time < %s
             AND metric_value IS NOT NULL
         GROUP BY metric_type
         """

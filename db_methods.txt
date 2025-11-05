@@ -1,0 +1,31 @@
+               method_id                |          metric_key           |  method_code  | is_enabled 
+----------------------------------------+-------------------------------+---------------+------------
+ PIN_COEF_V1                            | main_pipeline_inlet_pressure  | PIN_COEF_V1   | t
+ main_pipeline_inlet_pressure_method_a  | main_pipeline_inlet_pressure  | A             | t
+ main_pipeline_inlet_pressure_method_b  | main_pipeline_inlet_pressure  | B             | t
+ main_pipeline_inlet_pressure_method_c  | main_pipeline_inlet_pressure  | C             | t
+ main_pipeline_outlet_pressure_method_a | main_pipeline_outlet_pressure | A             | t
+ main_pipeline_outlet_pressure_method_b | main_pipeline_outlet_pressure | B             | t
+ main_pipeline_outlet_pressure_method_c | main_pipeline_outlet_pressure | C             | t
+ pump_cumulative_flow_method_a          | pump_cumulative_flow          | A             | t
+ pump_cumulative_flow_method_b          | pump_cumulative_flow          | B             | t
+ EFF_SIMPLE_V1                          | pump_efficiency               | EFF_SIMPLE_V1 | t
+ pump_flow_rate_method_a                | pump_flow_rate                | A             | t
+ pump_flow_rate_method_b                | pump_flow_rate                | B             | t
+ pump_flow_rate_method_c                | pump_flow_rate                | C             | t
+ pump_flow_rate_method_d                | pump_flow_rate                | D             | t
+ pump_flow_rate_method_e                | pump_flow_rate                | E             | t
+ pump_flow_rate_method_f                | pump_flow_rate                | F             | f
+ HEAD_COEF_V1                           | pump_head                     | HEAD_COEF_V1  | t
+ pump_head_method_main                  | pump_head                     | MAIN          | t
+ pump_outlet_pressure_method_a          | pump_outlet_pressure          | A             | t
+ pump_outlet_pressure_method_b          | pump_outlet_pressure          | B             | t
+ pump_outlet_pressure_method_c          | pump_outlet_pressure          | C             | t
+ pump_outlet_pressure_method_d          | pump_outlet_pressure          | D             | t
+ pump_speed_method_a                    | pump_speed                    | A             | t
+ pump_speed_method_b                    | pump_speed                    | B             | t
+ pump_speed_method_c                    | pump_speed                    | C             | t
+ pump_torque_method_a                   | pump_torque                   | A             | t
+ pump_torque_method_b                   | pump_torque                   | B             | t
+(27 ÐÐ¼ÇÂ¼)
+

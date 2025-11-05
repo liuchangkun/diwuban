@@ -76,6 +76,15 @@
 - [ ] 已使用 Sequential thinking 进行任务分解与反思验证（或在下方说明豁免原因）
 - 豁免说明（如未使用上述工具，请简述原因与替代措施；需提供替代验证证据与风险评估）：
 
+## 【必选】已按 MCP 工具流程执行
+
+- [ ] 任务分解：已使用 TaskManager 建立任务清单（Investigate→实施→验证→文档/PLAYBOOKS），并逐步推进
+- [ ] 信息检索：已使用 Context 7 获取库/框架文档片段用于方案核对（或注明豁免）
+- [ ] 过程管理：已使用 Sequential thinking 进行计划与反思验证（或注明豁免）
+- [ ] 审计与记忆：已在 PLAYBOOKS 记录对应条目，并用 Memory 保存长期有用的记忆
+- [ ] 验证与产物：已通过最小验证（命令、cwd、退出码、关键日志），并在下方“如何验证/E2E 产物”区块粘贴
+
+
 ## MCP 使用（必选）
 
 - [ ] 已使用 MCP 进行任务分解与验证（Investigate→实施→验证→文档/PLAYBOOKS）
@@ -92,6 +101,22 @@
 
   - logs/modules/sql.log：db.exec.succeeded 或 failed（含 sql_op/target_table/affected_rows/sql_cost_ms）
   - logs/modules/root.log：align.merge.window 或 ingest.copy.batch
+
+
+## 选择本次使用的 Persona（必选，至少 1 项）
+- [ ] 文档专家（docs-expert）
+- [ ] 前端专家（fe-expert）
+- [ ] Python 专家（python-pro）
+- [ ] 数据处理专家（data-processing-expert）
+- [ ] 智慧水务专家（smart-water-expert）
+- [ ] 机器学习深度计算专家（ml-dl-expert）
+- [ ] 人工智能工程师（ai-engineer）
+- [ ] DevOps 故障排除员（devops-troubleshooter）
+- [ ] 架构师评审（arch-reviewer）
+- [ ] 测试自动化专家（test-automator）
+- [ ] 性能工程师（performance-engineer）
+- [ ] API 文档工程师（api-documenter）
+- [ ] 代码审查员（code-reviewer）
 
 ## 日志与诊断产物链接（推荐）
 

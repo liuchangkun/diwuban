@@ -5,14 +5,18 @@ host: localhost
 port: 5432
 dbname: pump_station_optimization
 user: postgres
-# password: q507073 已移除，使用 pgpass.conf 免密登录
-dsn_read: null              # 可选：postgresql://user:password@host:port/dbname
-dsn_write: null             # 可选：postgresql://user:password@host:port/dbname
+password: q5707073
+dsn_read: postgresql://postgres:q5707073@localhost:5432/pump_station_optimization
+dsn_write: postgresql://postgres:q5707073@localhost:5432/pump_station_optimization
+
+
+# staging 表持久化策略开关（默认 LOGGED）；仅用于“若不存在则创建”的代码路径
+staging_unlogged: false
 
 # 连接池配置
 pool:
   min_size: 1          # 最小连接数：保持活跃的最少连接数量
-  max_size: 10         # 最大连接数：并发连接上限，影响系统负载
+  max_size: 20         # 最大连接数：并发连接上限（并行执行规则生成需要更多连接：4个并行任务 + 其他操作）
   max_inactive_connection_lifetime: 3600  # 非活跃连接生存时间（秒）
 
 # 超时设置（毫秒）
@@ -20,6 +24,9 @@ timeouts:
   connect_timeout_ms: 5000      # 连接超时：建立连接的最大等待时间
   statement_timeout_ms: 30000   # 语句超时：单个SQL执行的最大时间
   query_timeout_ms: 60000       # 查询超时：复杂查询的最大执行时间
+  connection_acquire_timeout_ms: 10000   # 获取连接超时：从连接池获取连接的最大等待时间
+  connection_validation_timeout_ms: 1000 # 连接验证超时：验证连接健康状态的最大时间
+  pool_shutdown_timeout_ms: 30000        # 连接池关闭超时：关闭连接池的最大等待时间
 
 # 重试策略
 retry:

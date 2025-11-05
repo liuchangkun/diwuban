@@ -15,7 +15,6 @@ from __future__ import annotations
 """
 
 
-import logging
 import time
 import time as _time
 from contextlib import contextmanager
@@ -25,18 +24,14 @@ from typing import Iterable, Iterator
 
 import psycopg
 
+from app.adapters.db.transaction import auto_commit, transaction
 from app.core.config.loader_new import Settings
 from app.core.exceptions import DatabaseConnectionError, DatabaseError
 from app.core.types import RejectRow, ValidRow
-from app.utils.logging_decorators import (
-    create_sql_logger,
-    database_operation_logger,
-    log_sql_execution,
-    log_sql_statement,
-)
 
-# 获取日志记录器
-logger = logging.getLogger(__name__)
+import logging
+
+_act = logging.getLogger(__name__)
 
 
 @dataclass
@@ -53,11 +48,11 @@ class DbConnParams:
 
 def make_dsn(settings: Settings) -> str:
     """根据配置生成 DSN。
-    - 若提供 dsn_write 则优先使用；否则尝试 dsn_read；再否则拼接 host/name/user
-    - 示例："host=localhost dbname=pump_station_optimization user=postgres"
+    - 若提供 dsn_write 则优先使用；否则尝试 dsn_read；再否则拼接 host/name/user/password
+    - 示例："host=localhost dbname=pump_station_optimization user=postgres password=xxx"
     """
 
-    """根据配置生成 DSN。优先使用 dsn_write/dsn_read；否则使用 host/name/user 组合。
+    """根据配置生成 DSN。优先使用 dsn_write/dsn_read；否则使用 host/name/user/password 组合。
     当前项目默认不脱敏，完整输出在 args/config 快照中。
     """
     db = settings.db
@@ -65,7 +60,12 @@ def make_dsn(settings: Settings) -> str:
         return db.dsn_write
     if db.dsn_read:
         return db.dsn_read
-    return f"host={db.host} dbname={db.name} user={db.user}"
+
+    # 构建 DSN 字符串，包含密码（如果有）
+    dsn_parts = [f"host={db.host}", f"dbname={db.name}", f"user={db.user}"]
+    if db.password:
+        dsn_parts.append(f"password={db.password}")
+    return " ".join(dsn_parts)
 
 
 @contextmanager
@@ -85,16 +85,83 @@ def get_conn(settings: Settings) -> Iterator[psycopg.Connection]:
     - 重试：settings.db.retry（max_retries/retry_delay_ms/backoff_multiplier）
     """
 
-    # 尝试使用连接池
+    # 尝试使用连接池（更严格的错误处理：仅在“确未初始化/不可用”时回退；否则上抛以避免掩盖故障）
     try:
-        from app.adapters.db.pool import get_connection
+        from app.adapters.db.exec_wrapper import wrap_connection_if_enabled
+        from app.adapters.db.pool import (
+            get_connection as _pool_get_connection,
+        )
+        from app.adapters.db.pool import (
+            get_pool_stats as _pool_stats,
+        )
 
-        with get_connection() as conn:
+        with _pool_get_connection() as _conn:
+            conn = wrap_connection_if_enabled(_conn)
             yield conn
         return
-    except (ImportError, DatabaseError):
-        # 连接池未初始化或不可用，回退到直连模式
-        logger.debug("连接池不可用，使用直连模式")
+    except ImportError as e:
+        # 模块不可用（例如精简运行环境）；记录一次告警并回退
+        try:
+            import logging as _logging
+
+            from app.core.logging.setup import log_db_pool as _log_pool
+
+            _log_pool(
+                "POOL_FALLBACK",
+                {"reason": "import_error", "error": str(e)},
+                _logging.WARNING,
+            )
+        except Exception:
+            pass
+        # 记录遥测并回退到直连
+        try:
+            import app.adapters.db.pool_telemetry as _pt
+
+            _pt.record_fallback("import_error")
+        except Exception:
+            pass
+        pass
+    except DatabaseError as e:
+        # 连接池路径失败。区分“未初始化”与“已初始化但故障”。
+        try:
+            stats = _pool_stats()
+        except Exception:
+            stats = {"error": "pool_stats_unavailable"}
+
+        # 记录日志
+        try:
+            import logging as _logging
+
+            from app.core.logging.setup import log_db_pool as _log_pool
+
+            _detail = {
+                "reason": "pool_path_failed",
+                "error": str(e),
+                "stats": stats,
+            }
+            _log_pool("POOL_ERROR", _detail, _logging.ERROR)
+        except Exception:
+            pass
+
+        # 若确认为“未初始化”（或无法获取统计），则回退直连；否则上抛避免掩盖真实故障
+        if isinstance(stats, dict) and stats.get("error"):
+            # 记录遥测并回退到直连
+            try:
+                import app.adapters.db.pool_telemetry as _pt
+
+                _pt.record_fallback("uninitialized_or_unavailable")
+            except Exception:
+                pass
+            pass
+        else:
+            # 记录遥测并上抛，避免掩盖故障
+            try:
+                import app.adapters.db.pool_telemetry as _pt
+
+                _pt.record_error("initialized_pool_failed")
+            except Exception:
+                pass
+            raise
 
     # 直连模式（原逻辑）
     dsn = make_dsn(settings)
@@ -108,21 +175,31 @@ def get_conn(settings: Settings) -> Iterator[psycopg.Connection]:
     # 仅针对“连接建立”进行重试
     for i in range(attempts):
         try:
-            conn = psycopg.connect(
+            _ct_secs = int(settings.db.timeouts.connect_timeout_seconds())
+            _raw_conn = psycopg.connect(
                 dsn,
-                connect_timeout=max(
-                    0, int(settings.db.timeouts.connect_timeout_ms) // 1000
-                ),
+                connect_timeout=_ct_secs,
             )
+            try:
+                from app.adapters.db.exec_wrapper import (
+                    wrap_connection_if_enabled as _wrap,
+                )
+            except Exception:
+
+                def _wrap(x):
+                    return x
+
+            conn = _wrap(_raw_conn)
             break
         except Exception as e:
             if i < attempts - 1:
                 _time.sleep(delay)
                 delay *= backoff
             else:
+                _ctx = {"dsn_preview": dsn[:50] + "...", "attempts": attempts}
                 raise DatabaseConnectionError(
                     f"无法建立数据库连接: {e}",
-                    context={"dsn_preview": dsn[:50] + "...", "attempts": attempts},
+                    context=_ctx,
                 ) from e
 
     try:
@@ -130,22 +207,11 @@ def get_conn(settings: Settings) -> Iterator[psycopg.Connection]:
         try:
             assert conn is not None
             with conn.cursor() as cur:
-                # PostgreSQL需要时间单位字符串格式，不能使用参数化查询
-                timeout_ms = int(settings.db.timeouts.statement_timeout_ms)
-                timeout_sql = f"SET statement_timeout TO '{timeout_ms}ms'"
+                # 使用统一的语句超时SQL
+                timeout_sql = settings.db.timeouts.statement_timeout_sql()
                 cur.execute(timeout_sql)
-        except (psycopg.DatabaseError, psycopg.InterfaceError) as e:
-            # 记录超时设置失败，回滚事务避免后续操作失败
-            logger.warning(
-                "设置语句超时失败，使用默认超时设置",
-                extra={
-                    "event": "db.statement_timeout.set_failed",
-                    "extra": {
-                        "timeout_ms": int(settings.db.timeouts.statement_timeout_ms),
-                        "error": str(e),
-                    },
-                },
-            )
+        except (psycopg.DatabaseError, psycopg.InterfaceError):
+            # 设置语句超时失败，回滚事务避免后续操作失败
             # 回滚事务以清除错误状态
             try:
                 if conn is not None:
@@ -159,21 +225,41 @@ def get_conn(settings: Settings) -> Iterator[psycopg.Connection]:
         try:
             if conn is not None:
                 conn.close()
-        except (psycopg.InterfaceError, psycopg.OperationalError) as e:
-            # 连接关闭失败通常不影响业务逻辑，但需要记录
-            logger.debug(
-                "连接关闭时发生错误",
-                extra={
-                    "event": "db.connection.close_failed",
-                    "extra": {"error": str(e)},
-                },
+        except (psycopg.InterfaceError, psycopg.OperationalError):
+            # 连接关闭失败通常不影响业务逻辑
+            pass
+
+
+def create_staging_if_not_exists(
+    conn: psycopg.Connection, staging_unlogged: bool | None = None
+) -> None:
+    """创建 staging_raw / staging_rejects 表（可配置 LOGGED/UNLOGGED）。
+
+    - 默认遵循配置 settings.db.staging_unlogged（缺省 False → LOGGED）
+    - 仅在不存在时创建；不会改变已存在表的持久化属性
+    """
+    # 解析持久化开关：优先使用入参；否则读取 settings；最终默认 False
+    if staging_unlogged is None:
+        try:
+            from pathlib import Path
+
+            from app.core.config.loader_new import load_settings
+
+            settings = load_settings(Path("configs"))
+            db_cfg = getattr(settings, "db", None)
+            staging_unlogged = (
+                bool(getattr(db_cfg, "staging_unlogged", False))
+                if db_cfg is not None
+                else False
             )
+        except Exception:
+            staging_unlogged = False
 
+    # PostgreSQL 仅支持在 CREATE TABLE 中指定 UNLOGGED；LOGGED 为默认，不应显式写出
+    persistence_kw = "UNLOGGED " if staging_unlogged else ""
 
-@database_operation_logger()
-def create_staging_if_not_exists(conn: psycopg.Connection) -> None:
-    sql = """
-    CREATE UNLOGGED TABLE IF NOT EXISTS public.staging_raw (
+    sql = f"""
+    CREATE {persistence_kw}TABLE IF NOT EXISTS public.staging_raw (
         station_name text,
         device_name text,
         metric_key text,
@@ -184,7 +270,7 @@ def create_staging_if_not_exists(conn: psycopg.Connection) -> None:
         loaded_at timestamptz DEFAULT now()
     ) WITH (autovacuum_enabled=true);
 
-    CREATE UNLOGGED TABLE IF NOT EXISTS public.staging_rejects (
+    CREATE {persistence_kw}TABLE IF NOT EXISTS public.staging_rejects (
         station_name text,
         device_name text,
         metric_key text,
@@ -197,37 +283,15 @@ def create_staging_if_not_exists(conn: psycopg.Connection) -> None:
     ) WITH (autovacuum_enabled=true);
     """
 
-    # 记录SQL语句
-    log_sql_statement(sql, logger=logger)
-
-    start_time = time.time()
     try:
-        with conn.cursor() as cur:
-            cur.execute(sql)
-            conn.commit()
-
-        execution_time = (time.time() - start_time) * 1000
-        log_sql_execution(
-            sql_type="DDL",
-            sql_summary="创建临时表 staging_raw 和 staging_rejects",
-            execution_time_ms=execution_time,
-            table_name="staging_raw,staging_rejects",
-            logger=logger,
-        )
-    except Exception as e:
-        execution_time = (time.time() - start_time) * 1000
-        log_sql_execution(
-            sql_type="DDL",
-            sql_summary="创建临时表 staging_raw 和 staging_rejects",
-            execution_time_ms=execution_time,
-            table_name="staging_raw,staging_rejects",
-            error=str(e),
-            logger=logger,
-        )
+        # 使用自动提交模式进行DDL操作
+        with auto_commit(conn):
+            with conn.cursor() as cur:
+                cur.execute(sql)
+    except Exception:
         raise
 
 
-@database_operation_logger()
 def copy_valid_rows(conn: psycopg.Connection, rows: Iterable[ValidRow]) -> int:
     """使用 COPY 将有效行写入 staging_raw。返回行数。
 
@@ -262,89 +326,117 @@ def copy_valid_rows(conn: psycopg.Connection, rows: Iterable[ValidRow]) -> int:
     return copy_valid_lines(conn, csv_lines)
 
 
-@database_operation_logger()
 def insert_rejects(conn: psycopg.Connection, rejects: Iterable[RejectRow]) -> int:
+    """
+    插入拒绝记录到 staging_rejects 表
+
+    优化说明：
+    - 对于大批量数据自动分片处理，避免长时间占用连接
+    - 每个批次使用独立的事务，提高并发性能
+    - 监控批次执行时间，动态调整批次大小
+    """
     sql = "INSERT INTO public.staging_rejects (source_hint, error_msg) VALUES (%s, %s)"
 
     reject_list = [(r.source_hint, r.error_msg) for r in rejects]
     reject_count = len(reject_list)
 
-    log_sql_statement(sql, {"reject_count": reject_count}, logger)
+    # 如果数据量较小，直接处理
+    if reject_count <= 500:
+        return _insert_rejects_batch(conn, reject_list, sql)
+
+    # 大批量数据分片处理
+
+    total_inserted = 0
+    batch_size = 500
+
+    for i in range(0, reject_count, batch_size):
+        batch = reject_list[i : i + batch_size]
+        batch_inserted = _insert_rejects_batch(conn, batch, sql)
+        total_inserted += batch_inserted
+
+    return total_inserted
+
+
+def _insert_rejects_batch(
+    conn: psycopg.Connection, reject_batch: list, sql: str
+) -> int:
+    """插入单个批次的拒绝记录"""
+    batch_count = len(reject_batch)
 
     start_time = time.time()
     try:
-        with conn.cursor() as cur:
-            cur.executemany(sql, reject_list)
-        conn.commit()
+        # 使用事务管理器确保一致性
+        with transaction(conn):
+            with conn.cursor() as cur:
+                cur.executemany(sql, reject_batch)
 
         execution_time = (time.time() - start_time) * 1000
-        log_sql_execution(
-            sql_type="INSERT",
-            sql_summary=f"插入拒绝记录 {reject_count} 条",
-            execution_time_ms=execution_time,
-            affected_rows=reject_count,
-            table_name="staging_rejects",
-            parameters={"reject_count": reject_count},
-            logger=logger,
-        )
-        return reject_count
-    except Exception as e:
+        return batch_count
+    except Exception:
         execution_time = (time.time() - start_time) * 1000
-        log_sql_execution(
-            sql_type="INSERT",
-            sql_summary=f"插入拒绝记录 {reject_count} 条",
-            execution_time_ms=execution_time,
-            table_name="staging_rejects",
-            error=str(e),
-            logger=logger,
-        )
         raise
 
 
-@database_operation_logger()
 def copy_valid_lines(conn: psycopg.Connection, lines: Iterable[str]) -> int:
-    """使用 COPY 将预格式化的 CSV 行写入 staging_raw。返回行数。"""
+    """
+    使用 COPY 将预格式化的 CSV 行写入 staging_raw
+
+    优化说明：
+    - 对于大批量数据自动分片处理，避免长时间占用连接
+    - 监控 COPY 操作执行时间，防止连接超时
+    - 提供批次进度反馈
+    """
     copy_sql = 'COPY public.staging_raw (station_name, device_name, metric_key, "TagName", "DataTime", "DataValue", source_hint) FROM STDIN WITH (FORMAT CSV)'
 
+    # 将迭代器转换为列表以便计算总数和分片
+    lines_list = list(lines)
+    total_count = len(lines_list)
+
+    # 如果数据量较小，直接处理
+    if total_count <= 2000:
+        return _copy_valid_lines_batch(conn, lines_list, copy_sql)
+
+    # 大批量数据分片处理
+
+    total_copied = 0
+    batch_size = 2000
+
+    for i in range(0, total_count, batch_size):
+        batch_lines = lines_list[i : i + batch_size]
+        batch_copied = _copy_valid_lines_batch(conn, batch_lines, copy_sql)
+        total_copied += batch_copied
+
+    return total_copied
+
+
+def _copy_valid_lines_batch(
+    conn: psycopg.Connection, lines_batch: list, copy_sql: str
+) -> int:
+    """执行单个批次的 COPY 操作"""
+    batch_count = len(lines_batch)
+
     # 记录SQL语句
-    log_sql_statement(copy_sql, logger=logger)
+    from app.core.logging.setup import log_sql
 
-    count = 0
     start_time = time.time()
-
     try:
         with conn.cursor() as cur:
             with cur.copy(copy_sql) as cp:
-                for line in lines:
+                for line in lines_batch:
                     cp.write(line)
-                    count += 1
         conn.commit()
 
-        execution_time = (time.time() - start_time) * 1000
-        log_sql_execution(
-            sql_type="COPY",
-            sql_summary=f"COPY 导入 {count} 行数据到 staging_raw",
-            execution_time_ms=execution_time,
-            affected_rows=count,
-            table_name="staging_raw",
-            parameters={"lines_count": count},
-            logger=logger,
-        )
-        return count
+        execution_time = int((time.time() - start_time) * 1000)
+        log_sql(copy_sql, params=None, duration_ms=execution_time, rows=batch_count)
+        return batch_count
     except Exception as e:
-        execution_time = (time.time() - start_time) * 1000
-        log_sql_execution(
-            sql_type="COPY",
-            sql_summary="COPY 导入数据到 staging_raw",
-            execution_time_ms=execution_time,
-            table_name="staging_raw",
-            error=str(e),
-            logger=logger,
+        execution_time = int((time.time() - start_time) * 1000)
+        log_sql(
+            copy_sql, params=None, duration_ms=execution_time, rows=None, error=str(e)
         )
         raise
 
 
-@database_operation_logger()
 def get_staging_time_range(
     conn: psycopg.Connection, default_station_tz: str = "Asia/Shanghai"
 ) -> tuple[datetime | None, datetime | None, int]:
@@ -359,7 +451,7 @@ def get_staging_time_range(
       SELECT
         (to_timestamp(rtrim(replace(split_part(sr."DataTime", '.', 1), 'T', ' '), 'Z'), 'YYYY-MM-DD HH24:MI:SS') AT TIME ZONE COALESCE(ds.extra->>'tz', %(default_tz)s)) AS ts_utc
       FROM public.staging_raw sr
-      JOIN public.dim_stations ds ON ds.name = sr.station_name
+      LEFT JOIN public.dim_stations ds ON ds.name = sr.station_name
     )
     SELECT min(ts_utc), max(ts_utc), count(*) FROM parsed;
     """
@@ -367,11 +459,16 @@ def get_staging_time_range(
     params = {"default_tz": default_station_tz}
 
     # 记录SQL语句
-    log_sql_statement(sql, params, logger)
+    from app.core.logging.setup import log_sql
 
     start_time = time.time()
     try:
         with conn.cursor() as cur:
+            # 放宽本次调用的语句超时，避免在 staging_raw 体量较大时探测窗口超时
+            try:
+                cur.execute("SET LOCAL statement_timeout = '120s'")
+            except Exception:
+                pass
             cur.execute(sql, params)
             row = cur.fetchone()
 
@@ -379,30 +476,15 @@ def get_staging_time_range(
             max_time = row[1] if row and row[1] else None
             count = int(row[2]) if row and row[2] else 0
 
-        execution_time = (time.time() - start_time) * 1000
-        log_sql_execution(
-            sql_type="SELECT",
-            sql_summary=f"获取 staging_raw 数据时间范围，共 {count} 行",
-            execution_time_ms=execution_time,
-            table_name="staging_raw,dim_stations",
-            parameters=params,
-            logger=logger,
-        )
+        execution_time = int((time.time() - start_time) * 1000)
+        log_sql(sql, params=params, duration_ms=execution_time, rows=count)
         return min_time, max_time, count
     except Exception as e:
-        execution_time = (time.time() - start_time) * 1000
-        log_sql_execution(
-            sql_type="SELECT",
-            sql_summary="获取 staging_raw 数据时间范围",
-            execution_time_ms=execution_time,
-            table_name="staging_raw,dim_stations",
-            error=str(e),
-            logger=logger,
-        )
+        execution_time = int((time.time() - start_time) * 1000)
+        log_sql(sql, params=params, duration_ms=execution_time, rows=None, error=str(e))
         raise
 
 
-@database_operation_logger()
 def count_tz_fallback(
     conn: psycopg.Connection, start_utc: str, end_utc: str, default_station_tz: str
 ) -> int:
@@ -423,7 +505,7 @@ WHERE tz IS NULL AND date_trunc('second', ts_utc) >= %(start)s AND date_trunc('s
     params = {"start": start_utc, "end": end_utc, "default_tz": default_station_tz}
 
     # 记录SQL语句
-    log_sql_statement(sql, params, logger)
+    from app.core.logging.setup import log_sql
 
     start_time = time.time()
     try:
@@ -432,26 +514,12 @@ WHERE tz IS NULL AND date_trunc('second', ts_utc) >= %(start)s AND date_trunc('s
             row = cur.fetchone()
             result = int(row[0]) if row else 0
 
-        execution_time = (time.time() - start_time) * 1000
-        log_sql_execution(
-            sql_type="SELECT",
-            sql_summary=f"统计时区兜底行数，窗口: {start_utc} ~ {end_utc}",
-            execution_time_ms=execution_time,
-            table_name="staging_raw,dim_stations",
-            parameters=params,
-            logger=logger,
-        )
+        execution_time = int((time.time() - start_time) * 1000)
+        log_sql(sql, params=params, duration_ms=execution_time, rows=result)
         return result
     except Exception as e:
-        execution_time = (time.time() - start_time) * 1000
-        log_sql_execution(
-            sql_type="SELECT",
-            sql_summary=f"统计时区兜底行数，窗口: {start_utc} ~ {end_utc}",
-            execution_time_ms=execution_time,
-            table_name="staging_raw,dim_stations",
-            error=str(e),
-            logger=logger,
-        )
+        execution_time = int((time.time() - start_time) * 1000)
+        log_sql(sql, params=params, duration_ms=execution_time, rows=None, error=str(e))
         raise
 
 
@@ -544,16 +612,20 @@ def _ensure_fact_weekly_partitions(
                     except Exception:
                         pass
                 cur_dt = nxt
-        conn.commit()
+        # 使用自动提交模式进行DDL操作
+        with auto_commit(conn):
+            pass  # DDL操作已在上面的循环中完成
     except Exception:
-        # 避免将连接置于 aborted 状态，确保后续 MERGE 可继续
-        conn.rollback()
+        # 分区创建失败不应该影响后续操作
         raise
 
 
-@create_sql_logger("合并数据窗口")
 def run_merge_window(
-    conn: psycopg.Connection, start_utc, end_utc, default_station_tz: str
+    conn: psycopg.Connection,
+    start_utc,
+    end_utc,
+    default_station_tz: str,
+    device_id: int | None = None,
 ) -> dict:
     """执行集合式合并窗口（SQL骨架），记录 SQL 摘要日志并返回统计。
 
@@ -564,8 +636,20 @@ def run_merge_window(
     - rows_merged: int（写入/更新到 fact 的最终行数）
     - dedup_ratio: float = rows_deduped / max(1, rows_in)
     - sql_cost_ms: int
+
+    说明：当提供 device_id 时，仅处理该设备的数据。
     """
-    sql_logger = logging.getLogger("sql")
+
+    _act.info(
+        "[数据库-执行] [合并窗口开始]",
+        extra={
+            "extra_data": {
+                "start_utc": str(start_utc),
+                "end_utc": str(end_utc),
+                "device_id": device_id,
+            }
+        },
+    )
 
     # 修复：将datetime参数转换为字符串，解决PostgreSQL时区类型不匹配问题
     if hasattr(start_utc, "isoformat"):
@@ -587,6 +671,7 @@ WITH parsed AS (
   JOIN public.dim_stations ds ON ds.name = sr.station_name
   JOIN public.dim_devices dd ON dd.station_id = ds.id AND dd.name = sr.device_name
   JOIN public.dim_metric_config dmc ON dmc.metric_key = sr.metric_key
+  WHERE (%(device_id)s::int IS NULL OR dd.id = %(device_id)s::int)
 ), dedup AS (
   SELECT *,
          date_trunc('second', ts_utc) AS ts_bucket,
@@ -596,10 +681,18 @@ WITH parsed AS (
          ) AS rn
   FROM parsed
 )
-INSERT INTO public.fact_measurements(station_id, device_id, metric_id, ts_raw, ts_bucket, value, source_hint)
-SELECT station_id, device_id, metric_id, ts_utc, ts_bucket, val, source_hint
+INSERT INTO public.fact_measurements(id, station_id, device_id, metric_id, ts_raw, ts_bucket, value, source_hint)
+SELECT (
+  CASE WHEN pg_get_serial_sequence('public.fact_measurements','id') IS NOT NULL THEN
+    nextval(pg_get_serial_sequence('public.fact_measurements','id'))
+  ELSE
+    abs(('x' || substr(md5(
+      station_id::text || '-' || device_id::text || '-' || metric_id::text || '-' || ts_bucket::text
+    ), 1, 16))::bit(64)::bigint)
+  END
+), station_id, device_id, metric_id, ts_utc, ts_bucket, val, source_hint
 FROM dedup
-WHERE rn = 1 AND ts_bucket >= %(start)s AND ts_bucket < %(end)s
+WHERE rn = 1 AND ts_bucket >= %(start)s::timestamptz AND ts_bucket < %(end)s::timestamptz
 ON CONFLICT (station_id, device_id, metric_id, ts_bucket)
 DO UPDATE SET value = EXCLUDED.value, source_hint = EXCLUDED.source_hint, ts_raw = EXCLUDED.ts_raw;
 """
@@ -608,69 +701,39 @@ DO UPDATE SET value = EXCLUDED.value, source_hint = EXCLUDED.source_hint, ts_raw
         "start": start_utc,
         "end": end_utc,
         "default_tz": default_station_tz,
+        "device_id": device_id,
     }
 
     # 记录完整的SQL语句（DEBUG级别）
-    log_sql_statement(sql, params, sql_logger)
+    from app.core.logging.setup import log_sql
 
-    # 合并前确保目标时间窗所需的周分区已存在
+    log_sql(sql, params=params)
+
+    # 合并前：若 fact_measurements 不是 Hypertable，则尽力确保周分区存在；
+    # 若已是 Hypertable，则跳过手工分区逻辑（Timescale 自动分片）。
     try:
-        _ensure_fact_weekly_partitions(conn, start_utc, end_utc)
+        with conn.cursor() as _cur_chk:
+            _cur_chk.execute(
+                "SELECT EXISTS (SELECT 1 FROM timescaledb_information.hypertables WHERE hypertable_schema='public' AND hypertable_name='fact_measurements')"
+            )
+            _fact_is_ht = bool(_cur_chk.fetchone()[0])
+        if not _fact_is_ht:
+            try:
+                _ensure_fact_weekly_partitions(conn, start_utc, end_utc)
+            except Exception:
+                pass
     except Exception:
         pass
 
-    sql_logger.info(
-        "merge started",
-        extra={
-            "event": "db.exec.started",
-            "extra": {
-                "target_table": "public.fact_measurements",
-                "sql_op": "MERGE",
-                "window_start": start_utc,
-                "window_end": end_utc,
-                "window_size_seconds": None,
-                "iso_week_utc": None,
-            },
-        },
-    )
     t0 = time.perf_counter()
     try:
-        with conn.cursor() as cur:
-            cur.execute(sql, params)
-            affected = cur.rowcount
-        conn.commit()
+        # 使用事务管理器确保一致性
+        with transaction(conn):
+            with conn.cursor() as cur:
+                cur.execute(sql, params)
+                affected = cur.rowcount
         cost_ms = int((time.perf_counter() - t0) * 1000)
 
-        # 使用增强的日志记录
-        log_sql_execution(
-            sql_type="MERGE",
-            sql_summary=f"合并数据到 fact_measurements, 窗口: {start_utc} ~ {end_utc}",
-            execution_time_ms=cost_ms,
-            affected_rows=affected,
-            table_name="fact_measurements",
-            parameters={
-                "window_start": str(start_utc),
-                "window_end": str(end_utc),
-                "default_tz": default_station_tz,
-            },
-            logger=sql_logger,
-        )
-
-        # 保留原有的日志记录以保持兼容性
-        sql_logger.info(
-            "merge succeeded",
-            extra={
-                "event": "db.exec.succeeded",
-                "extra": {
-                    "target_table": "public.fact_measurements",
-                    "sql_op": "MERGE",
-                    "affected_rows": affected,
-                    "sql_cost_ms": cost_ms,
-                    "window_start": start_utc,
-                    "window_end": end_utc,
-                },
-            },
-        )
         # 使用与 MERGE 相同的 parsed/dedup 逻辑统计窗口行数与去重情况
         stats_sql = """
 WITH parsed AS (
@@ -683,19 +746,18 @@ WITH parsed AS (
   JOIN public.dim_stations ds ON ds.name = sr.station_name
   JOIN public.dim_devices dd ON dd.station_id = ds.id AND dd.name = sr.device_name
   JOIN public.dim_metric_config dmc ON dmc.metric_key = sr.metric_key
+  WHERE (%(device_id)s::int IS NULL OR dd.id = %(device_id)s::int)
 ), dedup AS (
   SELECT *, date_trunc('second', ts_utc) AS ts_bucket,
          row_number() OVER (PARTITION BY station_id, device_id, metric_id, date_trunc('second', ts_utc) ORDER BY ts_utc DESC) AS rn
   FROM parsed
 )
 SELECT
-  count(*) FILTER (WHERE rn = 1 AND date_trunc('second', ts_utc) >= %(start)s AND date_trunc('second', ts_utc) < %(end)s) AS rows_merged,
-  count(*) FILTER (WHERE rn > 1 AND date_trunc('second', ts_utc) >= %(start)s AND date_trunc('second', ts_utc) < %(end)s) AS rows_deduped,
-  count(*) FILTER (WHERE date_trunc('second', ts_utc) >= %(start)s AND date_trunc('second', ts_utc) < %(end)s) AS rows_in
+  count(*) FILTER (WHERE rn = 1 AND date_trunc('second', ts_utc) >= %(start)s::timestamptz AND date_trunc('second', ts_utc) < %(end)s::timestamptz) AS rows_merged,
+  count(*) FILTER (WHERE rn > 1 AND date_trunc('second', ts_utc) >= %(start)s::timestamptz AND date_trunc('second', ts_utc) < %(end)s::timestamptz) AS rows_deduped,
+  count(*) FILTER (WHERE date_trunc('second', ts_utc) >= %(start)s::timestamptz AND date_trunc('second', ts_utc) < %(end)s::timestamptz) AS rows_in
 FROM dedup;
 """
-        # 记录统计查询SQL语句
-        log_sql_statement(stats_sql, params, sql_logger)
 
         with conn.cursor() as cur:
             cur.execute(stats_sql, params)
@@ -704,7 +766,8 @@ FROM dedup;
         rows_deduped = int(srow[1]) if srow else 0
         rows_in = int(srow[2]) if srow else 0
         dedup_ratio = (rows_deduped / rows_in) if rows_in else 0.0
-        return {
+
+        result = {
             "affected_rows": int(affected),
             "rows_in": rows_in,
             "rows_deduped": rows_deduped,
@@ -712,24 +775,23 @@ FROM dedup;
             "dedup_ratio": dedup_ratio,
             "sql_cost_ms": int(cost_ms),
         }
-    except Exception as e:
-        conn.rollback()
-        cost_ms = int((time.perf_counter() - t0) * 1000)
 
-        # 使用增强的错误日志记录
-        log_sql_execution(
-            sql_type="MERGE",
-            sql_summary=f"合并数据到 fact_measurements, 窗口: {start_utc} ~ {end_utc}",
-            execution_time_ms=cost_ms,
-            table_name="fact_measurements",
-            parameters={
-                "window_start": str(start_utc),
-                "window_end": str(end_utc),
-                "default_tz": default_station_tz,
+        _act.info(
+            "[数据库-执行] [合并窗口完成]",
+            extra={
+                "extra_data": {
+                    "rows_in": rows_in,
+                    "rows_merged": rows_merged,
+                    "rows_deduped": rows_deduped,
+                    "dedup_ratio": f"{dedup_ratio:.2%}",
+                    "duration_ms": int(cost_ms),
+                }
             },
-            error=str(e),
-            logger=sql_logger,
         )
+
+        return result
+    except Exception as e:
+        cost_ms = int((time.perf_counter() - t0) * 1000)
 
         payload = {
             "target_table": "public.fact_measurements",
@@ -746,13 +808,9 @@ FROM dedup;
                 payload["explain"] = plan[:2000]
         except Exception:
             pass
-        sql_logger.error(
-            "merge failed", extra={"event": "db.exec.failed", "extra": payload}
-        )
         raise
 
 
-@database_operation_logger()
 def get_station_devices_metrics_by_time_range(
     conn: psycopg.Connection,
     station_id: int,
@@ -801,16 +859,38 @@ def get_station_devices_metrics_by_time_range(
     """
 
     # 记录 SQL
-    log_sql_statement(sql, params, logger)
+    from app.core.logging.setup import log_sql
+
+    log_sql(sql, params=params)
 
     # 执行查询并标准化输出
     from datetime import date as _date
     from datetime import datetime as _dt
     from decimal import Decimal as _Dec
 
+    # 记录 DB 函数调用（应用侧）
+    from app.core.logging.setup import log_db_function
+
+    _t0 = time.perf_counter()
     with conn.cursor() as cur:
         cur.execute(sql, params)
         rows = cur.fetchall()
+    _cost_ms = int((time.perf_counter() - _t0) * 1000)
+    try:
+        log_db_function(
+            "reporting.get_metrics_auto_multi",
+            args={
+                "station_ids": params.get("station_ids"),
+                "device_ids": params.get("device_ids"),
+                "metric_ids": params.get("metric_ids"),
+                "start_ts": params.get("start_ts"),
+                "end_ts": params.get("end_ts"),
+            },
+            duration_ms=_cost_ms,
+            rows=len(rows),
+        )
+    except Exception:
+        pass
 
     def _to_primitive(v):
         if isinstance(v, _Dec):
@@ -841,7 +921,6 @@ def get_station_devices_metrics_by_time_range(
     return result
 
 
-@database_operation_logger()
 def get_device_metrics_by_time_range(
     conn: psycopg.Connection,
     device_id: int,
@@ -907,15 +986,34 @@ def get_device_metrics_by_time_range(
     """
 
     # 记录 SQL
-    log_sql_statement(sql, params, logger)
 
     from datetime import date as _date
     from datetime import datetime as _dt
     from decimal import Decimal as _Dec
 
+    # 记录 DB 函数调用（应用侧）
+    from app.core.logging.setup import log_db_function as _log_db_fn2
+
+    _t1 = time.perf_counter()
     with conn.cursor() as cur:
         cur.execute(sql, params)
         rows = cur.fetchall()
+    _cost_ms2 = int((time.perf_counter() - _t1) * 1000)
+    try:
+        _log_db_fn2(
+            "reporting.get_metrics_auto_multi",
+            args={
+                "station_ids": params.get("station_ids"),
+                "device_ids": params.get("device_ids"),
+                "metric_ids": params.get("metric_ids"),
+                "start_ts": params.get("start_ts"),
+                "end_ts": params.get("end_ts"),
+            },
+            duration_ms=_cost_ms2,
+            rows=len(rows),
+        )
+    except Exception:
+        pass
 
     def _to_primitive(v):
         if isinstance(v, _Dec):

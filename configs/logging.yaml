@@ -1,111 +1,193 @@
-# 日志配置（仅 YAML；严禁 ENV/CLI 覆盖）
-# - 默认使用 JSON 格式；路由 by_run|by_module
-level: DEBUG                # 全局日志级别：DEBUG/INFO/WARN/ERROR
-format: json                # json|text（默认 json）
-routing: by_run             # by_run|by_module
-
-# 启动清理配置
-startup_cleanup:
-  clear_logs: true          # 启动时清空logs目录
-  clear_database: true      # 启动时清空数据库
-  logs_backup_count: 3      # 清理前保留的日志备份数
-  confirm_clear: false      # 是否需要确认清理操作
-
-# 详细日志记录配置
-detailed_logging:
-  enable_function_entry: true     # 记录函数进入
-  enable_function_exit: true      # 记录函数退出
-  enable_parameter_logging: true  # 记录函数参数
-  enable_context_logging: true    # 记录上下文信息
-  enable_business_logging: true   # 记录业务逻辑
-  enable_progress_logging: true   # 记录进度信息
-  enable_performance_logging: true # 记录性能指标
-  enable_error_details: true      # 记录详细错误信息
-  enable_internal_steps: true     # 记录函数内部执行步骤
-  enable_condition_branches: true # 记录条件分支执行
-  enable_loop_iterations: true    # 记录循环迭代过程
-  enable_intermediate_results: true # 记录中间结果
-  enable_data_validation: true    # 记录数据验证过程
-  enable_resource_usage: true     # 记录资源使用情况
-  enable_timing_details: true     # 记录详细时间信息
-  internal_steps_interval: 10     # 内部步骤日志输出间隔（秒）
-  loop_log_interval: 100          # 循环日志输出间隔（次数）
-
-# 关键信息日志配置
-key_metrics:
-  enable_file_count: true         # 记录文件数量
-  enable_data_time_range: true    # 记录数据时间范围
-  enable_processing_progress: true # 记录处理进度
-  enable_merge_statistics: true   # 记录合并统计
-  enable_performance_metrics: true # 记录性能指标
-  enable_memory_usage: true       # 记录内存使用
-  enable_database_stats: true     # 记录数据库统计
-  enable_file_size_info: true     # 记录文件大小信息
-  enable_throughput_metrics: true # 记录吞吐量指标
-  enable_error_statistics: true   # 记录错误统计
-  enable_quality_metrics: true    # 记录数据质量指标
-  enable_pipeline_stages: true    # 记录管道阶段信息
-  enable_batch_statistics: true   # 记录批处理统计
-  enable_resource_consumption: true # 记录资源消耗
-  enable_data_distribution: true  # 记录数据分布信息
-  progress_report_interval: 1000  # 进度报告间隔（行数）
-  metrics_summary_interval: 300   # 指标汇总间隔（秒）
-
-# 文件轮转配置
-rotation:
-  max_bytes: 104857600         # 单文件最大大小（字节）：100MB，超过后轮转
-  backup_count: 7              # 备份文件数量：保留的历史日志文件数
-  rotation_interval: 86400     # 轮转间隔（秒）：按时间轮转的周期
-
-# 采样控制
-sampling:
-  loop_log_every_n: 1000
-  # default_rate: 1.0                 # 默认采样率（0~1），不配置则按应用默认
-  # high_frequency_events:             # 为高频事件单独设置采样率；不配置则按 default_rate
-  #   ingest.copy.batch: 0.1
-  #   backpressure.enter: 1.0
-  #   backpressure.exit: 1.0       # 高频循环事件的采样频率（每 N 条输出一次）
-  default_rate: 1.0            # 默认采样率：1.0 表示不采样
-  high_frequency_events:
-    "ingest.copy.batch": 0.1  # 批量导入事件采样率
-  burst_limit: 100             # 突发限制：短时间内同类事件的最大数量
-
-# 格式化设置
-formatting:
-  timestamp_format: "%Y-%m-%d %H:%M:%S.%f"  # 时间戳格式
-  max_message_length: 8192     # 消息最大长度：超过截断
-  field_order: ["timestamp", "level", "message", "extra"]  # 字段顺序
-
-# 性能优化
-performance:
-  buffer_size: 8192            # 缓冲区大小：写入缓冲区字节数
-  flush_interval: 1.0          # 刷新间隔（秒）：强制刷新缓冲区的周期
-  async_handler_queue_size: 1000  # 异步处理队列大小
-  queue_handler: true          # 启用异步写盘（QueueHandler/Listener）
-
-redaction:
-  enable: false                # 默认不脱敏；如需启用设置为 true
-retention_days: 14             # 日志保留天数
-
-# SQL执行日志配置
-sql_execution:
-  enable_statement_logging: true  # 记录完整SQL语句
-  enable_execution_metrics: true  # 记录执行指标
-  enable_parameter_logging: true  # 记录SQL参数
-  enable_result_summary: true     # 记录结果摘要
-  enable_slow_query_detection: true # 启用慢查询检测
-  slow_query_threshold_ms: 1000   # 慢查询阈值（毫秒）
-  max_sql_length: 2000           # SQL语句最大记录长度
-  sensitive_fields: ["password", "token", "secret", "key"]  # 敏感字段列表
-
-# 函数内部执行过程配置
-internal_execution:
-  enable_step_logging: true       # 启用步骤日志
-  enable_checkpoint_logging: true # 启用检查点日志
-  enable_branch_logging: true     # 启用分支日志
-  enable_iteration_logging: true  # 启用迭代日志
-  enable_validation_logging: true # 启用验证日志
-  enable_transformation_logging: true # 启用转换日志
-  step_detail_level: "medium"     # 步骤详细级别：low/medium/high
-  iteration_log_frequency: 100    # 迭代日志频率（每多X次记录一次）
-  checkpoint_auto_interval: 30    # 自动检查点间隔（秒）
+# 日志系统配置（MVP）
+logging: # 日志系统根配置
+  timezone: "Asia/Shanghai" # 日志时间戳时区
+  time_format: "%Y-%m-%d %H:%M:%S.%f+08" # 时间格式（含微秒，时区固定+08）
+  level: "INFO" # 根 logger 级别（影响默认阈值）
+  format: "pipe" # 输出格式：pipe|json|keyvalue（当前实现 pipe 管道分隔）
+  localize: true # 是否将 extra_json 的键中文化
+  sql_slow_ms: 1000 # 慢SQL阈值（毫秒；>=该值标记为慢SQL）
+  sql:
+    explain_on_slow: true # 慢SQL时尝试采集 EXPLAIN 摘要（仅 SELECT）
+    explain_timeout_ms: 200 # EXPLAIN 最长等待时间
+    explain_max_length: 2000 # EXPLAIN 文本最大长度（超出截断）
+  capture: # 采集策略（自动参数/返回值脱敏与截断）
+    params: true # 是否采集函数入参（方案A自动采集）
+    return: true # 是否采集函数返回值
+    max_field_length: 2000 # 字符串最大长度；超出则截断并追加...
+    mask_keys: [password, token, id_card] # 需要脱敏的键（不区分大小写）
+  activity: # 过程日志增强
+    step_slow_ms: 200 # 步骤慢阈值（>0 则启用）
+    capture_result_summary: true # 对返回结果做摘要（shape/len/统计/哈希）
+    summary_max_length: 1000 # 摘要文本最大长度
+  jobs:
+    retry_log: # 作业重试日志控制
+      enabled: true
+      include_policy: true # 是否输出策略细节（backoff/jitter 等）
+      threshold_ms: 50 # 超过该值才输出详细重试日志
+  dependencies:
+    http_out:
+      enabled: true # 是否记录出站HTTP日志
+      mask_headers: [authorization, cookie]
+  cache:
+    enabled: true # 是否记录缓存日志
+    slow_ms: 20 # 缓存操作慢阈值（仅在慢或未命中时输出）
+  database:
+    tx:
+      enabled: true # 是否记录事务边界（BEGIN/COMMIT/ROLLBACK）
+    pool_log:
+      enabled: true # 是否记录连接池关键事件
+      acquire_slow_ms: 200 # 获取连接慢阈值
+      create_slow_ms: 200 # 创建连接慢阈值
+      health_check_slow_ms: 100 # 健康检查慢阈值
+      include_thread: true
+      include_stack: false
+  async:
+    enabled: true
+    queue_size: 100000
+    batch_size: 200
+    flush_interval_ms: 100
+    backpressure: "drop_debug" # block|drop_debug|drop_oldest
+    force_sync_levels: ["CRITICAL"]
+  hot_reload:
+    enabled: true
+    backend: "watchfiles" # none|watchfiles
+  outputs:
+    - name: "console" # 输出名称（可自定义多个 console/file 输出）
+      type: "console" # 输出类型：console=控制台，file=文件
+      enabled: true # 是否启用该输出
+      level: "DEBUG" # 该输出拦截的最小日志级别
+      color: false # 控制台彩色是否启用（为避免重定向ANSI与UTF-16问题，默认关闭）
+      colors: # 级别→颜色映射（值可用颜色名或ANSI码；优先使用此映射，否则用内置默认）
+        DEBUG: grey # 灰（或使用 "\u001b[90m"）
+        INFO: green # 绿
+        WARNING: yellow # 黄
+        ERROR: red # 红
+        CRITICAL: bright_red # 亮红
+    - name: "app_file"
+      type: "file"
+      enabled: true
+      level: "INFO"
+      path: "logs/app.log"
+      rotate:
+        type: "size"
+        max_bytes: 104857600
+        backup_count: 50
+        compress: false
+    - name: "error_file"
+      type: "file"
+      enabled: true
+      level: "ERROR"
+      path: "logs/error.log"
+      rotate:
+        type: "size"
+        max_bytes: 10485760
+        backup_count: 50
+    - name: "sql_file"
+      type: "file"
+      enabled: true
+      level: "INFO"
+      path: "logs/sql.log"
+      rotate:
+        type: "size"
+        max_bytes: 104857600
+        backup_count: 50
+      route:
+        only_loggers: ["sql"]
+    - name: "anomaly_file"
+      type: "file"
+      enabled: true
+      level: "INFO"
+      path: "logs/anomaly_diagnosis.log"
+      rotate:
+        type: "size"
+        max_bytes: 104857600
+        backup_count: 50
+        compress: false
+      route:
+        only_loggers: ["anomaly", "db.func", "db.view"]  # 移除 sql，避免污染异常诊断文件
+    - name: "db_pool_file"
+      type: "file"
+      enabled: true
+      level: "INFO"
+      path: "logs/db_pool.log"
+      rotate:
+        type: "size"
+        max_bytes: 104857600
+        backup_count: 50
+      route:
+        only_loggers: ["db.pool"]
+  fields:
+    include:
+      - timestamp
+      - pid
+      - processName
+      - threadId
+      - 线程名
+      - filename
+      - module
+      - funcName
+      - lineno
+      - level
+      - message
+      - extra_json
+    # 中英文字段映射配置（完全替代代码内硬编码）
+    localize_map:
+      type: "类型"
+      event: "事件"
+      params: "参数"
+      duration_ms: "耗时ms"
+      resource_delta: "资源变化"
+      return: "返回值"
+      sql: "SQL语句"
+      rows: "行数"
+      error: "错误信息"
+      action: "操作"
+      status: "状态"
+      detail: "详情"
+      request_id: "请求ID"
+      trace_id: "追踪ID"
+      user_id: "用户ID"
+      tenant: "租户"
+      slow: "慢SQL"
+      result: "结果"
+      threadName: "线程名"
+      window: "窗口"
+      start: "开始"
+      end: "结束"
+      device_id: "设备ID"
+      run_id: "运行ID"
+      dedup_ratio: "去重比例"
+      sql_cost_ms: "SQL耗时ms"
+      rows_merged: "合并行数"
+      rows_deduped: "去重行数"
+      rows_input: "输入行数"
+      affected_rows: "影响行数"
+      stats: "统计"
+      flags: "标志"
+      codes: "质量码"
+      diag_level: "诊断级别"
+      pool_id: "连接池ID"
+      use_count: "使用次数"
+      wait_ms: "等待ms"
+      total: "总连接"
+      idle: "空闲连接"
+      active: "活动连接"
+      age_ms: "连接年龄ms"
+      idle_ms: "空闲时长ms"
+      duration: "耗时"
+      dsn_preview: "连接串预览"
+  deps:
+    psutil: "auto"
+    colorlog: "auto"
+    concurrent_log_handler: "auto"
+    orjson: "auto"
+  palette: # 颜色名称→ANSI 映射（PipeFormatter 不再硬编码）
+    grey: "\u001b[90m"
+    gray: "\u001b[90m"
+    green: "\u001b[32m"
+    yellow: "\u001b[33m"
+    red: "\u001b[31m"
+    bright_red: "\u001b[91m"
+    blue: "\u001b[34m"
+    cyan: "\u001b[36m"
+    magenta: "\u001b[35m"

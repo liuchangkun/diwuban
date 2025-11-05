@@ -5,19 +5,20 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List
 
-import structlog
 from fastapi import APIRouter, HTTPException, Query, Request
 
+import logging
+
 from app.adapters.db.gateway import get_conn
-from app.api.middleware import DatabaseLoggingMixin
 from app.core.config.loader_new import load_settings
 from app.models import DeviceSummary, StationSummary
 from app.models.metric import MetricInfo
 from app.services.data_import import DataImportService
 
+_act = logging.getLogger(__name__)
+
 router = APIRouter()
 settings = load_settings(Path("configs"))
-logger = structlog.get_logger("api.data.admin")
 
 
 @router.get("/stations", response_model=List[StationSummary])
@@ -25,12 +26,11 @@ async def get_stations(request: Request) -> List[StationSummary]:
     """
     获取所有泵站的概览信息
     """
-    query_start_time = time.time()
-
     logger.info(
-        "泵站概览查询开始",
-        client_ip=request.client.host if request.client else "unknown",
+        "[API-请求] [获取泵站列表]",
+        extra={"extra_data": {"endpoint": "/stations"}}
     )
+    query_start_time = time.time()
 
     try:
         stations: List[StationSummary] = []
@@ -58,15 +58,17 @@ async def get_stations(request: Request) -> List[StationSummary]:
         with get_conn(settings) as conn:
             with conn.cursor() as cur:
                 cur.execute(sql)
-                sql_duration = (time.time() - sql_exec_time) * 1000
-                DatabaseLoggingMixin.log_sql_execution(
-                    sql=sql, duration_ms=sql_duration
-                )
+                sql_duration = int((time.time() - sql_exec_time) * 1000)
                 rows = cur.fetchall()
-                logger.info(
-                    "泵站数据查询完成",
-                    stations_count=len(rows),
-                    duration_ms=round(sql_duration, 2),
+                _act.info(
+                    "[API-查询] 泵站列表查询",
+                    extra={
+                        "extra_data": {
+                            "view": "public.station_device_rated_params_view",
+                            "duration_ms": sql_duration,
+                            "rows": len(rows),
+                        }
+                    },
                 )
                 for row in rows:
                     (
@@ -90,20 +92,8 @@ async def get_stations(request: Request) -> List[StationSummary]:
                         )
                     )
         total_duration = (time.time() - query_start_time) * 1000
-        logger.info(
-            "泵站概览查询成功",
-            stations_returned=len(stations),
-            total_duration_ms=round(total_duration, 2),
-        )
         return stations
     except Exception as e:
-        total_duration = (time.time() - query_start_time) * 1000
-        logger.error(
-            "泵站概览查询失败",
-            error=str(e),
-            duration_ms=round(total_duration, 2),
-            exc_info=True,
-        )
         raise HTTPException(status_code=500, detail=f"泵站查询失败: {str(e)}")
 
 
@@ -115,12 +105,11 @@ async def get_station_devices(station_id: str, request: Request) -> List[DeviceS
     - rated_power 优先取 device_rated_params.param_key='rated_power' 的 value_numeric，其次回退 device.rated_power
     - 兼容当前前端结构
     """
-    query_start_time = time.time()
     logger.info(
-        "泵站设备查询开始",
-        station_id=station_id,
-        client_ip=request.client.host if request.client else "unknown",
+        "[API-请求] [获取设备列表]",
+        extra={"extra_data": {"station_id": station_id, "endpoint": "/stations/{station_id}/devices"}}
     )
+    query_start_time = time.time()
     try:
         devices: List[DeviceSummary] = []
         sql = """
@@ -144,17 +133,18 @@ async def get_station_devices(station_id: str, request: Request) -> List[DeviceS
         with get_conn(settings) as conn:
             with conn.cursor() as cur:
                 cur.execute(sql, (station_id,))
-                sql_duration = (time.time() - sql_exec_time) * 1000
-                DatabaseLoggingMixin.log_sql_execution(
-                    sql=sql, params=(station_id,), duration_ms=sql_duration
-                )
+                sql_duration = int((time.time() - sql_exec_time) * 1000)
                 rows = cur.fetchall()
-                logger.info(
-                    "设备数据查询完成",
-                    station_id=station_id,
-                    devices_count=len(rows),
-                    duration_ms=round(sql_duration, 2),
-                )
+                # 视图调用日志
+                try:
+                    log_db_view(
+                        "public.station_device_rated_params_view",
+                        filters={"station_id": station_id},
+                        duration_ms=sql_duration,
+                        rows=len(rows),
+                    )
+                except Exception:
+                    pass
                 for row in rows:
                     (
                         device_id,
@@ -179,23 +169,8 @@ async def get_station_devices(station_id: str, request: Request) -> List[DeviceS
                             station_name=station_name,
                         )
                     )
-        total_duration = (time.time() - query_start_time) * 1000
-        logger.info(
-            "泵站设备查询成功",
-            station_id=station_id,
-            devices_returned=len(devices),
-            total_duration_ms=round(total_duration, 2),
-        )
         return devices
     except Exception as e:
-        total_duration = (time.time() - query_start_time) * 1000
-        logger.error(
-            "泵站设备查询失败",
-            station_id=station_id,
-            error=str(e),
-            duration_ms=round(total_duration, 2),
-            exc_info=True,
-        )
         raise HTTPException(status_code=500, detail=f"设备查询失败: {str(e)}")
 
 
@@ -263,6 +238,10 @@ async def get_metrics_catalog() -> List[MetricInfo]:
     - unit（优先 unit_display 回退 unit）
     - unit_display, value_type, fixed_decimals, valid_min, valid_max
     """
+    logger.info(
+        "[API-请求] [获取指标目录]",
+        extra={"extra_data": {"endpoint": "/metrics"}}
+    )
     try:
         with get_conn(settings) as conn:
             sql = """
@@ -296,7 +275,6 @@ async def get_metrics_catalog() -> List[MetricInfo]:
                 )
             return result
     except Exception as e:
-        logger.exception("获取指标清单失败", error=str(e))
         raise HTTPException(status_code=500, detail=f"获取指标清单失败: {str(e)}")
 
 

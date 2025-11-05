@@ -10,12 +10,15 @@
 """
 
 import time
+import logging
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
+
+_act = logging.getLogger(__name__)
 
 from app.adapters.db import get_pool_stats, is_initialized
 from app.adapters.db.gateway import get_conn
@@ -63,6 +66,8 @@ def system_health_check() -> Dict[str, Any]:
 
     返回系统整体的健康状态和关键指标。
     """
+    _act.info("[API-请求] [系统健康检查]")
+
     health_status = {
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),

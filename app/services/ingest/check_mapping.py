@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 from typing import Any, Dict, List
 
 from app.core.config.loader import Settings
+
+_act = logging.getLogger(__name__)
 
 
 def _validate_schema(data: Dict[str, Any]) -> Dict[str, Any]:
@@ -59,10 +62,38 @@ def check_mapping_paths(settings: Settings, mapping_path: Path) -> Dict[str, Any
     - 统计缺陷（路径类）按站点/设备/指标聚类的计数
     返回报告字典，CLI 负责渲染。
     """
+    _act.info(
+        "[流程-开始] [映射文件检查]",
+        extra={
+            "extra_data": {
+                "mapping_path": str(mapping_path),
+            }
+        },
+    )
+
     data = json.loads(mapping_path.read_text(encoding="utf-8"))
     base_dir = Path(settings.ingest.base_dir)
 
+    _act.info(
+        "[流程-阶段] [基础配置]",
+        extra={
+            "extra_data": {
+                "base_dir": str(base_dir),
+            }
+        },
+    )
+
     schema_report = _validate_schema(data)
+    if schema_report.get("errors"):
+        _act.warning(
+            "[流程-错误] [schema错误]",
+            extra={
+                "extra_data": {
+                    "error_count": len(schema_report.get("errors", [])),
+                    "errors": schema_report.get("errors", []),
+                }
+            },
+        )
 
     found: List[Dict[str, Any]] = []
     group_station: Dict[str, Dict[str, int]] = {}
@@ -178,4 +209,17 @@ def check_mapping_paths(settings: Settings, mapping_path: Path) -> Dict[str, Any
         "group_by_device": _flat_device(),
         "group_by_metric": _flat_metric(),
     }
+
+    _act.info(
+        "[流程-完成] [映射文件检查]",
+        extra={
+            "extra_data": {
+                "total_paths": len(found),
+                "with_data_prefix": sum(1 for x in found if x["has_data_prefix"]),
+                "missing_files": len(found) - sum(1 for x in found if x["exists_under_strict_rule"]),
+                "schema_errors": len(schema_report.get("errors", [])),
+            }
+        },
+    )
+
     return report

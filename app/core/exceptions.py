@@ -15,15 +15,41 @@
 
 from __future__ import annotations
 
-import logging
 import time
+from enum import Enum
 from functools import wraps
 from typing import Any, Callable, Dict, Optional, Type, TypeVar, Union
 
 # 类型变量定义
 F = TypeVar("F", bound=Callable[..., Any])
 
-logger = logging.getLogger(__name__)
+
+class _NoopLogger:
+    def __getattr__(self, name):
+        return lambda *a, **k: None
+
+
+logger = _NoopLogger()
+
+
+class ErrorSeverity(Enum):
+    """错误严重程度分级"""
+
+    LOW = "low"  # 可忽略的错误，不影响主要功能
+    MEDIUM = "medium"  # 需要重试的错误，可能影响性能
+    HIGH = "high"  # 需要立即处理的错误，影响功能
+    CRITICAL = "critical"  # 系统级错误，可能导致服务不可用
+
+
+class RecoveryAction(Enum):
+    """错误恢复动作"""
+
+    RETRY = "retry"  # 重试操作
+    FALLBACK = "fallback"  # 使用备用方案
+    DEGRADE = "degrade"  # 降级服务
+    RESTART = "restart"  # 重启组件
+    MANUAL_INTERVENTION = "manual"  # 需要人工干预
+    IGNORE = "ignore"  # 忽略错误
 
 
 class BaseAppException(Exception):
@@ -42,13 +68,33 @@ class BaseAppException(Exception):
         error_code: Optional[str] = None,
         context: Optional[Dict[str, Any]] = None,
         cause: Optional[Exception] = None,
+        severity: ErrorSeverity = ErrorSeverity.MEDIUM,
+        recovery_action: RecoveryAction = RecoveryAction.RETRY,
+        recovery_suggestion: Optional[str] = None,
     ):
         super().__init__(message)
         self.message = message
         self.error_code = error_code or self.__class__.__name__
         self.context = context or {}
         self.cause = cause
+        self.severity = severity
+        self.recovery_action = recovery_action
+        self.recovery_suggestion = (
+            recovery_suggestion or self._get_default_recovery_suggestion()
+        )
         self.timestamp = time.time()
+
+    def _get_default_recovery_suggestion(self) -> str:
+        """获取默认的恢复建议"""
+        suggestions = {
+            RecoveryAction.RETRY: "请稍后重试操作",
+            RecoveryAction.FALLBACK: "系统将使用备用方案",
+            RecoveryAction.DEGRADE: "系统将降级运行",
+            RecoveryAction.RESTART: "建议重启相关组件",
+            RecoveryAction.MANUAL_INTERVENTION: "需要人工检查和处理",
+            RecoveryAction.IGNORE: "此错误可以忽略",
+        }
+        return suggestions.get(self.recovery_action, "请联系系统管理员")
 
     def to_dict(self) -> Dict[str, Any]:
         """将异常信息转换为字典格式，便于日志记录和API返回"""
@@ -59,6 +105,9 @@ class BaseAppException(Exception):
             "context": self.context,
             "timestamp": self.timestamp,
             "cause": str(self.cause) if self.cause else None,
+            "severity": self.severity.value,
+            "recovery_action": self.recovery_action.value,
+            "recovery_suggestion": self.recovery_suggestion,
         }
 
 
@@ -77,13 +126,136 @@ class DatabaseError(BaseAppException):
 class DatabaseConnectionError(DatabaseError):
     """数据库连接错误"""
 
-    pass
+    def __init__(self, message: str, **kwargs):
+        # 设置默认值，但允许被 kwargs 覆盖
+        defaults = {
+            "severity": ErrorSeverity.HIGH,
+            "recovery_action": RecoveryAction.RETRY,
+            "recovery_suggestion": "检查数据库连接配置和网络状态",
+        }
+        # 合并默认值和传入的参数，传入的参数优先
+        merged_kwargs = {**defaults, **kwargs}
+        super().__init__(message, **merged_kwargs)
 
 
 class DatabaseTimeoutError(DatabaseError):
     """数据库超时错误"""
 
-    pass
+    def __init__(self, message: str, **kwargs):
+        super().__init__(
+            message,
+            severity=ErrorSeverity.MEDIUM,
+            recovery_action=RecoveryAction.RETRY,
+            recovery_suggestion="增加超时时间或优化查询性能",
+            **kwargs,
+        )
+
+
+class DatabaseNetworkError(DatabaseConnectionError):
+    """数据库网络连接错误"""
+
+    def __init__(self, message: str, **kwargs):
+        # 设置默认值，但允许被 kwargs 覆盖
+        defaults = {
+            "recovery_suggestion": "检查网络连接和数据库服务状态",
+        }
+        # 合并默认值和传入的参数，传入的参数优先
+        merged_kwargs = {**defaults, **kwargs}
+        super().__init__(message, **merged_kwargs)
+
+
+class DatabaseAuthenticationError(DatabaseError):
+    """数据库认证错误"""
+
+    def __init__(self, message: str, **kwargs):
+        super().__init__(
+            message,
+            severity=ErrorSeverity.CRITICAL,
+            recovery_action=RecoveryAction.MANUAL_INTERVENTION,
+            recovery_suggestion="检查数据库用户名、密码和权限配置",
+            **kwargs,
+        )
+
+
+class DatabaseResourceExhaustedError(DatabaseError):
+    """数据库资源耗尽错误（连接数、内存等）"""
+
+    def __init__(self, message: str, **kwargs):
+        super().__init__(
+            message,
+            severity=ErrorSeverity.HIGH,
+            recovery_action=RecoveryAction.DEGRADE,
+            recovery_suggestion="减少并发连接数或增加数据库资源",
+            **kwargs,
+        )
+
+
+class DatabaseSchemaError(DatabaseError):
+    """数据库模式错误（表不存在、字段错误等）"""
+
+    def __init__(self, message: str, **kwargs):
+        super().__init__(
+            message,
+            severity=ErrorSeverity.CRITICAL,
+            recovery_action=RecoveryAction.MANUAL_INTERVENTION,
+            recovery_suggestion="检查数据库模式和表结构",
+            **kwargs,
+        )
+
+
+class PoolError(DatabaseError):
+    """连接池错误基类"""
+
+    def __init__(self, message: str, **kwargs):
+        # 设置默认值，但允许被 kwargs 覆盖
+        defaults = {
+            "severity": ErrorSeverity.HIGH,
+            "recovery_action": RecoveryAction.RESTART,
+            "recovery_suggestion": "重启连接池或检查连接池配置",
+        }
+        # 合并默认值和传入的参数，传入的参数优先
+        merged_kwargs = {**defaults, **kwargs}
+        super().__init__(message, **merged_kwargs)
+
+
+class PoolExhaustedError(PoolError):
+    """连接池耗尽错误"""
+
+    def __init__(self, message: str, **kwargs):
+        # 设置默认值，但允许被 kwargs 覆盖
+        defaults = {
+            "recovery_action": RecoveryAction.DEGRADE,
+            "recovery_suggestion": "增加连接池大小或减少并发请求",
+        }
+        # 合并默认值和传入的参数，传入的参数优先
+        merged_kwargs = {**defaults, **kwargs}
+        super().__init__(message, **merged_kwargs)
+
+
+class PoolShutdownError(PoolError):
+    """连接池关闭错误"""
+
+    def __init__(self, message: str, **kwargs):
+        super().__init__(
+            message,
+            severity=ErrorSeverity.CRITICAL,
+            recovery_action=RecoveryAction.RESTART,
+            recovery_suggestion="重新初始化连接池",
+            **kwargs,
+        )
+
+
+class PoolValidationError(PoolError):
+    """连接池验证错误"""
+
+    def __init__(self, message: str, **kwargs):
+        super().__init__(
+            message,
+            severity=ErrorSeverity.MEDIUM,
+            recovery_action=RecoveryAction.RETRY,
+            recovery_suggestion="检查连接健康状态和验证逻辑",
+            **kwargs,
+        )
 
 
 class DataValidationError(BaseAppException):
@@ -98,10 +270,17 @@ class FileProcessingError(BaseAppException):
     pass
 
 
-class ImportError(BaseAppException):
+class DataImportError(BaseAppException):
     """数据导入错误"""
 
-    pass
+    def __init__(self, message: str, **kwargs):
+        super().__init__(
+            message,
+            severity=ErrorSeverity.MEDIUM,
+            recovery_action=RecoveryAction.RETRY,
+            recovery_suggestion="检查数据格式和完整性后重试",
+            **kwargs,
+        )
 
 
 class OptimizationError(BaseAppException):
@@ -120,18 +299,38 @@ class CurveFittingError(BaseAppException):
 RETRYABLE_EXCEPTIONS = (
     DatabaseConnectionError,
     DatabaseTimeoutError,
+    DatabaseNetworkError,
+    DatabaseResourceExhaustedError,
+    PoolExhaustedError,
+    PoolValidationError,
 )
 
 # 不可重试的异常类型（主要是逻辑错误或配置错误）
 NON_RETRYABLE_EXCEPTIONS = (
     ConfigurationError,
     DataValidationError,
+    DatabaseAuthenticationError,
+    DatabaseSchemaError,
+    PoolShutdownError,
+)
+
+# 需要立即处理的异常类型（高优先级）
+HIGH_PRIORITY_EXCEPTIONS = (
+    DatabaseAuthenticationError,
+    DatabaseSchemaError,
+    PoolShutdownError,
+)
+
+# 需要降级处理的异常类型
+DEGRADABLE_EXCEPTIONS = (
+    DatabaseResourceExhaustedError,
+    PoolExhaustedError,
 )
 
 
 def error_handler(
     logger_name: Optional[str] = None,
-    log_level: int = logging.ERROR,
+    log_level: int = 40,
     reraise: bool = True,
     context_fields: Optional[list[str]] = None,
 ) -> Callable[[F], F]:
@@ -158,7 +357,11 @@ def error_handler(
     """
 
     def decorator(func: F) -> F:
-        func_logger = logging.getLogger(logger_name or func.__module__)
+        class _Noop:
+            def __getattr__(self, name):
+                return lambda *a, **k: None
+
+        func_logger = _Noop()
 
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -185,30 +388,13 @@ def error_handler(
             except BaseAppException as e:
                 # 应用程序异常，已经结构化，直接记录
                 context.update(e.context)
-                func_logger.log(
-                    log_level,
-                    f"应用异常: {e.message}",
-                    extra={"event": "app.error", "extra": {**context, **e.to_dict()}},
-                    exc_info=log_level >= logging.ERROR,
-                )
+                pass
                 if reraise:
                     raise
 
             except Exception as e:
                 # 未预期的异常，包装为应用异常
-                func_logger.log(
-                    log_level,
-                    f"未预期异常: {str(e)}",
-                    extra={
-                        "event": "app.unexpected_error",
-                        "extra": {
-                            **context,
-                            "error_type": type(e).__name__,
-                            "error_message": str(e),
-                        },
-                    },
-                    exc_info=True,
-                )
+                pass
                 if reraise:
                     raise BaseAppException(
                         f"函数 {func.__name__} 执行失败: {str(e)}",
@@ -249,7 +435,11 @@ def retry_on_error(
         exceptions = (exceptions,)
 
     def decorator(func: F) -> F:
-        func_logger = logging.getLogger(func.__module__)
+        class _Noop:
+            def __getattr__(self, name):
+                return lambda *a, **k: None
+
+        func_logger = _Noop()
 
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -262,18 +452,6 @@ def retry_on_error(
                     last_exception = e
 
                     if attempt == max_retries:
-                        func_logger.error(
-                            f"函数 {func.__name__} 重试失败，已达最大重试次数",
-                            extra={
-                                "event": "retry.exhausted",
-                                "extra": {
-                                    "function": func.__name__,
-                                    "max_retries": max_retries,
-                                    "final_error": str(e),
-                                    "error_type": type(e).__name__,
-                                },
-                            },
-                        )
                         break
 
                     # 计算延迟时间
@@ -282,36 +460,12 @@ def retry_on_error(
                     if jitter:
                         delay += random.uniform(0, delay * 0.1)  # 添加10%的抖动
 
-                    func_logger.warning(
-                        f"函数 {func.__name__} 执行失败，准备重试",
-                        extra={
-                            "event": "retry.attempt",
-                            "extra": {
-                                "function": func.__name__,
-                                "attempt": attempt + 1,
-                                "max_retries": max_retries,
-                                "delay_seconds": delay,
-                                "error": str(e),
-                                "error_type": type(e).__name__,
-                            },
-                        },
-                    )
+                    pass
 
                     time.sleep(delay)
                 except Exception as e:
                     # 非可重试异常，直接抛出
-                    func_logger.error(
-                        f"函数 {func.__name__} 遇到不可重试异常",
-                        extra={
-                            "event": "retry.non_retryable",
-                            "extra": {
-                                "function": func.__name__,
-                                "error": str(e),
-                                "error_type": type(e).__name__,
-                            },
-                        },
-                        exc_info=True,
-                    )
+                    pass
                     raise
 
             # 重试次数耗尽，抛出最后的异常
@@ -349,16 +503,5 @@ def safe_execute(
         return func(*args, **kwargs)
     except Exception as e:
         if log_errors:
-            logger.warning(
-                f"安全执行函数 {func.__name__} 失败",
-                extra={
-                    "event": "safe_execute.error",
-                    "extra": {
-                        "function": func.__name__,
-                        "error": str(e),
-                        "error_type": type(e).__name__,
-                        "default_return": default_return,
-                    },
-                },
-            )
+            pass
         return default_return

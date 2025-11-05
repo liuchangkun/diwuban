@@ -1,0 +1,65 @@
+{
+  "plan": {
+    "start": "2025-05-31T18:00:00+08:00",
+    "end": "2025-05-31T18:05:00+08:00",
+    "window_hours": 1,
+    "devices": [
+      [
+        1,
+        1
+      ]
+    ],
+    "metrics": null,
+    "concurrency": 1,
+    "filter_running": true,
+    "filter_quality": true,
+    "dry_run": false
+  },
+  "summary": {
+    "devices": 1,
+    "windows": 1,
+    "metrics": "dynamic (from metrics_presence_per_second_device)",
+    "use_presence_table": true,
+    "concurrency": 1,
+    "filter_running": true,
+    "filter_quality": true,
+    "dry_run": false,
+    "window_hours": 1,
+    "duration_sec": 0.02,
+    "success_tasks": 1,
+    "failed_tasks": 0
+  },
+  "per_metric_success_tasks": {},
+  "per_metric_failed_tasks": {},
+  "per_metric_written_points": {},
+  "per_metric_method_hits": {},
+  "failure_reason_counts": {},
+  "per_metric_failure_reasons": {},
+  "performance_summary": {
+    "total_load_time_sec": 0.0,
+    "total_calc_time_sec": 0.0,
+    "total_write_time_sec": 0.0,
+    "per_metric_time_sec": {}
+  },
+  "results": [
+    {
+      "station_id": 1,
+      "device_id": 1,
+      "start": "2025-05-31T18:00:00+08:00",
+      "end": "2025-05-31T18:05:00+08:00",
+      "success": true,
+      "result": {
+        "success": true,
+        "metrics_calculated": [],
+        "metrics_failed": [],
+        "total_points": 0,
+        "valid_points": 0,
+        "written_points": 0,
+        "errors": [],
+        "performance_stats": {},
+        "message": "No metrics to calculate for this device and time window"
+      }
+    }
+  ],
+  "timestamp": "2025-11-03T14:47:19.009572+08:00"
+}

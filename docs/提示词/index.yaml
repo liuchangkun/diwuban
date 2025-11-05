@@ -1,0 +1,75 @@
+personas:
+  - file: 提示词/文档专家.md
+    name: docs-expert
+    title: 文档专家
+    tools: [Context7, Sequential_thinking, TaskManager, Memory]
+    risk_level: low
+  - file: 提示词/前端专家.md
+    name: fe-expert
+    title: 前端专家
+    tools: [Sequential_thinking, Playwright, Memory]
+    risk_level: low
+  - file: 提示词/Python专家.md
+    name: python-pro
+    title: Python专家
+    tools: [Sequential_thinking, Context7, Memory]
+    risk_level: low
+  - file: 提示词/数据处理专家.md
+    name: data-processing-expert
+    title: 数据处理专家
+    tools: [Time, Postgres, Sequential_thinking, Context7, Memory]
+    risk_level: low
+  - file: 提示词/智慧水务专家.md
+    name: smart-water-expert
+    title: 智慧水务专家
+    tools: [Sequential_thinking, Memory, Context7]
+    risk_level: low
+  - file: 提示词/机器学习深度计算专家.md
+    name: ml-dl-expert
+    title: 机器学习深度计算专家
+    tools: [Sequential_thinking, Memory, Context7, Time, Postgres]
+    risk_level: low
+  - file: 提示词/人工智能工程师.md
+    name: ai-engineer
+    title: 人工智能工程师
+    tools: [Sequential_thinking, Memory, Context7]
+    risk_level: low
+  - file: 提示词/DevOps故障排除员.md
+    name: devops-troubleshooter
+    title: DevOps故障排除员
+    tools: [Time, Sequential_thinking, Memory]
+    risk_level: low
+  - file: 提示词/架构师评审.md
+    name: architect-reviewer
+    title: 架构师评审
+    tools: [Sequential_thinking, TaskManager, Memory]
+    risk_level: low
+  - file: 提示词/测试自动化专家.md
+    name: test-automator
+    title: 测试自动化专家
+    tools: [Sequential_thinking, Playwright, Memory]
+    risk_level: low
+  - file: 提示词/性能工程师.md
+    name: performance-engineer
+    title: 性能工程师
+    tools: [Sequential_thinking, Memory]
+    risk_level: low
+  - file: 提示词/API文档工程师.md
+    name: api-documenter
+    title: API文档工程师
+    tools: [Sequential_thinking, Context7, Memory]
+    risk_level: low
+  - file: 提示词/代码审查员.md
+    name: code-reviewer
+    title: 代码审查员
+    tools: [Sequential_thinking, Memory]
+    risk_level: low
+
+appendix:
+  - file: 提示词/提示工程师.md
+    name: prompt-engineer
+    title: 提示工程师（元角色）
+  - file: 提示词/遗留系统现代化专家.md
+    name: legacy-modernizer
+    title: 遗留系统现代化专家（历史）
+

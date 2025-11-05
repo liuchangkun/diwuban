@@ -1,0 +1,1300 @@
+{
+  "apis": [
+    {
+      "key": "/db-health",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "/devices",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "/devices/{device_id}",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "/devices/{device_id}/measurements",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "/devices/{device_id}/raw",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "/health",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "/performance",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "/pool-stats",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "/stations/{station_id}/measurements",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "/stations/{station_id}/raw",
+      "desc": "",
+      "alias": []
+    }
+  ],
+  "tables": [
+    {
+      "key": "monitoring.ab_test_results",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "monitoring.ab_test_runs",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "monitoring.pgss_snapshot",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.completion_audit",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.completion_failures",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.completion_runs",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.completion_steps",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.device_metric_candidates",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.device_rated_params",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.device_running_thresholds",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.dim_devices",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.dim_mapping_items",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.dim_metric_config",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.dim_stations",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.fact_measurements",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.metric_capability_policy",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.metrics_presence_per_second_device",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.metrics_presence_per_second_device_legacy",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202507",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202507_0",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202507_1",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202507_10",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202507_11",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202507_12",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202507_13",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202507_14",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202507_15",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202507_2",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202507_3",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202507_4",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202507_5",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202507_6",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202507_7",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202507_8",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202507_9",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202508",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202508_0",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202508_1",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202508_10",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202508_11",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202508_12",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202508_13",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202508_14",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202508_15",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202508_2",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202508_3",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202508_4",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202508_5",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202508_6",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202508_7",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202508_8",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202508_9",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202509",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202509_0",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202509_1",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202509_10",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202509_11",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202509_12",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202509_13",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202509_14",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202509_15",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202509_2",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202509_3",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202509_4",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202509_5",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202509_6",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202509_7",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202509_8",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202509_9",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202510",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202510_0",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202510_1",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202510_10",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202510_11",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202510_12",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202510_13",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202510_14",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202510_15",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202510_2",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202510_3",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202510_4",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202510_5",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202510_6",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202510_7",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202510_8",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202510_9",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202511",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202511_0",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202511_1",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202511_10",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202511_11",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202511_12",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202511_13",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202511_14",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202511_15",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202511_2",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202511_3",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202511_4",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202511_5",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202511_6",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202511_7",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202511_8",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202511_9",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202512",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202512_0",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202512_1",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202512_10",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202512_11",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202512_12",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202512_13",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202512_14",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202512_15",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202512_2",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202512_3",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202512_4",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202512_5",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202512_6",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202512_7",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202512_8",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202512_9",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202513",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202513_0",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202513_1",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202513_10",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202513_11",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202513_12",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202513_13",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202513_14",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202513_15",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202513_2",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202513_3",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202513_4",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202513_5",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202513_6",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202513_7",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202513_8",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202513_9",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202514",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202514_0",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202514_1",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202514_10",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202514_11",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202514_12",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202514_13",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202514_14",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202514_15",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202514_2",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202514_3",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202514_4",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202514_5",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202514_6",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202514_7",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202514_8",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202514_9",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202515",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202515_0",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202515_1",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202515_10",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202515_11",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202515_12",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202515_13",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202515_14",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202515_15",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202515_2",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202515_3",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202515_4",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202515_5",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202515_6",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202515_7",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202515_8",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202515_9",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202516",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202516_0",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202516_1",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202516_10",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202516_11",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202516_12",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202516_13",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202516_14",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202516_15",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202516_2",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202516_3",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202516_4",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202516_5",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202516_6",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202516_7",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202516_8",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202516_9",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202537",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202537_0",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202537_1",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202537_10",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202537_11",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202537_12",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202537_13",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202537_14",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202537_15",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202537_2",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202537_3",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "public.mpps_w_202537_4",
+      "desc": "",
+      "alias": []
+    }
+  ],
+  "services": [
+    {
+      "key": "truncate_public_schema()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "run_db_ping()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "json_dumps()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "main()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "DeviceRunningJob.resolve_devices()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "DeviceRunningJob.resolve_window()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "DeviceRunningJob.run_for_device()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "DeviceRunningJob.run()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "BackpressureController.decide()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "check_mapping_paths()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "run_check_mapping_command()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "copy_from_mapping()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "create_staging()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "run_merge_fact_command()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "merge_window()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "run_all()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "make_source_hint()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "run_quality_full_pass()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "mark_quality_window()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "export_window_code_distribution()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "export_recent_code_distribution()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "generate_report()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "run_data_report_command()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "run_presence_compute_command()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "iter_day_slices()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "iter_minute_slices()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "detect_full_or_incremental()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "ensure_partitions()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "list_station_devices()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "upsert_window()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "run_presence_compute()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "run_rules_diff_report()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "run_auto_baseline()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "run_auto_baseline_b()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "compute_metric_quality_rules()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "compute_metric_quality_rules_shadow()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "run_running_thresholds()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "run_running_thresholds_b()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "seed_from_existing_data()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "batch_seed_from_existing_data()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "run_all()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "run_refresh_all()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "backup_logs_directory()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "cleanup_old_backups()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "clear_logs_directory()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "clear_database()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "get_system_status()",
+      "desc": "",
+      "alias": []
+    }
+  ],
+  "models": [
+    {
+      "key": "TimeSeriesResponse",
+      "desc": "",
+      "alias": []
+    }
+  ]
+}

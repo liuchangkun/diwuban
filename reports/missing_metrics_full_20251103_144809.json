@@ -1,0 +1,177 @@
+{
+  "plan": {
+    "start": "2025-05-31T18:00:00+00:00",
+    "end": "2025-05-31T18:05:00+00:00",
+    "window_hours": 1,
+    "devices": [
+      [
+        1,
+        1
+      ]
+    ],
+    "metrics": null,
+    "concurrency": 1,
+    "filter_running": true,
+    "filter_quality": true,
+    "dry_run": false
+  },
+  "summary": {
+    "devices": 1,
+    "windows": 1,
+    "metrics": "dynamic (from metrics_presence_per_second_device)",
+    "use_presence_table": true,
+    "concurrency": 1,
+    "filter_running": true,
+    "filter_quality": true,
+    "dry_run": false,
+    "window_hours": 1,
+    "duration_sec": 0.136,
+    "success_tasks": 1,
+    "failed_tasks": 0
+  },
+  "per_metric_success_tasks": {
+    "pump_outlet_pressure": 1
+  },
+  "per_metric_failed_tasks": {
+    "pump_flow_rate": 1,
+    "pump_inlet_pressure": 1,
+    "pump_speed": 1,
+    "pump_cumulative_flow": 1,
+    "pump_head": 1,
+    "pump_efficiency": 1,
+    "pump_torque": 1
+  },
+  "per_metric_written_points": {},
+  "per_metric_method_hits": {},
+  "failure_reason_counts": {
+    "no_method": 6,
+    "other": 1
+  },
+  "per_metric_failure_reasons": {
+    "pump_flow_rate": {
+      "no_method": 1
+    },
+    "pump_inlet_pressure": {
+      "other": 1
+    },
+    "pump_speed": {
+      "no_method": 1
+    },
+    "pump_cumulative_flow": {
+      "no_method": 1
+    },
+    "pump_head": {
+      "no_method": 1
+    },
+    "pump_efficiency": {
+      "no_method": 1
+    },
+    "pump_torque": {
+      "no_method": 1
+    }
+  },
+  "performance_summary": {
+    "total_load_time_sec": 0.0,
+    "total_calc_time_sec": 0.0,
+    "total_write_time_sec": 0.0,
+    "per_metric_time_sec": {
+      "pump_cumulative_flow": 0.0,
+      "pump_efficiency": 0.0,
+      "pump_flow_rate": 0.0,
+      "pump_head": 0.0,
+      "pump_inlet_pressure": 0.005,
+      "pump_outlet_pressure": 0.063,
+      "pump_speed": 0.0,
+      "pump_torque": 0.0
+    }
+  },
+  "results": [
+    {
+      "station_id": 1,
+      "device_id": 1,
+      "start": "2025-05-31T18:00:00+00:00",
+      "end": "2025-05-31T18:05:00+00:00",
+      "success": true,
+      "result": {
+        "success": true,
+        "metrics_calculated": [
+          "pump_outlet_pressure"
+        ],
+        "metrics_failed": [
+          "pump_flow_rate",
+          "pump_inlet_pressure",
+          "pump_speed",
+          "pump_cumulative_flow",
+          "pump_head",
+          "pump_efficiency",
+          "pump_torque"
+        ],
+        "total_points": 300,
+        "valid_points": 300,
+        "written_points": 300,
+        "errors": [
+          "pump_flow_rate: 没有可用的计算方法",
+          "pump_inlet_pressure: 计算失败 - pump_inlet_pressure_method_b 缺少必需的物理常数参数: 'P_atm'",
+          "pump_speed: 没有可用的计算方法",
+          "pump_cumulative_flow: 没有可用的计算方法",
+          "pump_head: 没有可用的计算方法",
+          "pump_efficiency: 没有可用的计算方法",
+          "pump_torque: 没有可用的计算方法"
+        ],
+        "performance_stats": {
+          "total_time": 0.11529731750488281,
+          "load_data_time": 0.024426937103271484,
+          "calculation_time": 0.08811569213867188,
+          "write_time": 0.06077766418457031,
+          "metric_times": {
+            "pump_flow_rate": 0,
+            "pump_inlet_pressure": 0.004956960678100586,
+            "pump_outlet_pressure": 0.06345462799072266,
+            "pump_speed": 0,
+            "pump_cumulative_flow": 0,
+            "pump_head": 0,
+            "pump_efficiency": 0,
+            "pump_torque": 0
+          },
+          "throughput": 2601.968601631127
+        },
+        "calculation_order": [
+          "pump_flow_rate",
+          "pump_inlet_pressure",
+          "pump_outlet_pressure",
+          "pump_speed",
+          "pump_cumulative_flow",
+          "pump_head",
+          "pump_efficiency",
+          "pump_torque"
+        ],
+        "circular_groups": {},
+        "stats": {
+          "|1|1|pump_inlet_pressure|2025-05-31T18:00:00+00:00|2025-05-31T18:05:00+00:00": {
+            "total_points": 300,
+            "valid_points": 0,
+            "written_points": 0,
+            "calc_duration_ms": 0,
+            "validate_duration_ms": 0,
+            "write_duration_ms": 0,
+            "method_id": "pump_inlet_pressure_method_b",
+            "path_type": "acyclic",
+            "finished": false
+          },
+          "|1|1|pump_outlet_pressure|2025-05-31T18:00:00+00:00|2025-05-31T18:05:00+00:00": {
+            "total_points": 300,
+            "valid_points": 300,
+            "written_points": 300,
+            "calc_duration_ms": 63,
+            "validate_duration_ms": 0,
+            "write_duration_ms": 60,
+            "method_id": "pump_outlet_pressure_method_b",
+            "path_type": "acyclic",
+            "finished": true
+          }
+        }
+      }
+    }
+  ],
+  "timestamp": "2025-11-03T14:48:09.633798+08:00"
+}

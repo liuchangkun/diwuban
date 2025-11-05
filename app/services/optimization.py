@@ -9,7 +9,6 @@
 
 from __future__ import annotations
 
-import logging
 import time
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -27,7 +26,10 @@ from app.models import (
 )
 from app.adapters.db.gateway import get_conn
 
-logger = logging.getLogger(__name__)
+
+import logging
+
+_act = logging.getLogger(__name__)
 
 
 class OptimizationService:
@@ -48,10 +50,31 @@ class OptimizationService:
         """
         start_time = time.time()
 
+        _act.info(
+            "[流程-开始] [泵组优化]",
+            extra={
+                "extra_data": {
+                    "station_id": request.station_id,
+                    "target": request.target.value,
+                    "constraints": request.constraints,
+                }
+            },
+        )
+
         try:
             # 1. 获取泵站设备信息
+            _act.info("[流程-阶段] [获取设备信息]")
             devices = await self._get_station_devices(request.station_id)
+            _act.info(
+                "[流程-阶段] [设备信息已获取]",
+                extra={"extra_data": {"device_count": len(devices)}},
+            )
+
             if not devices:
+                _act.warning(
+                    "[流程-跳过] [设备信息为空]",
+                    extra={"extra_data": {"station_id": request.station_id}},
+                )
                 return OptimizationResult(
                     success=False,
                     error_message=f"未找到泵站 {request.station_id} 的设备信息",
@@ -98,23 +121,26 @@ class OptimizationService:
                 ],
             )
 
-            logger.info(
-                "优化计算完成",
+            _act.info(
+                "[流程-完成] [泵组优化]",
                 extra={
-                    "event": "optimization.completed",
-                    "extra": {
+                    "extra_data": {
                         "station_id": request.station_id,
-                        "target": request.target,
-                        "improvement": float(analysis.get("improvement_percentage", 0)),
+                        "improvement_percentage": analysis.get("improvement_percentage"),
+                        "annual_savings": analysis.get("annual_savings"),
                         "duration_ms": (time.time() - start_time) * 1000,
-                    },
+                    }
                 },
             )
 
             return result
 
         except Exception as e:
-            logger.error(f"优化计算失败: {e}")
+            _act.error(
+                "[流程-错误] [泵组优化失败]",
+                extra={"extra_data": {"station_id": request.station_id, "error": str(e)}},
+                exc_info=True,
+            )
             raise OptimizationError(f"优化计算失败: {e}") from e
 
     async def _get_station_devices(self, station_id: str) -> List[Device]:

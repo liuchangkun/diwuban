@@ -15,17 +15,20 @@ apscheduler>=3.10.0
 # 数据处理
 pandas>=2.0.0
 numpy>=1.24.0
+scipy>=1.10.0
+
+# 系统监控
+psutil>=5.9.0
 
 # 配置管理
 pyyaml>=6.0
 pydantic>=2.0.0
 pydantic-settings>=2.0.0
 
-# 日志
-structlog>=23.0.0
+# 日志（已移除）
 
-# 缓存 (可选)
-redis>=4.5.0
+# 缓存（内存缓存，无需Redis）
+cachetools>=5.3.0
 
 # 时间处理
 python-dateutil>=2.8.0

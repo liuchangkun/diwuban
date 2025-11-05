@@ -1,0 +1,2 @@
+query_name,window,planning_ms,execution_ms,rows,buffers_hit,buffers_read,cmd,cwd,exit_code,ts
+

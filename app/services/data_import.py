@@ -11,7 +11,6 @@
 from __future__ import annotations
 
 import csv
-import logging
 import time
 from datetime import datetime
 from pathlib import Path
@@ -22,16 +21,18 @@ from app.adapters.db.gateway import (
     create_staging_if_not_exists,
     get_conn,
 )
-from app.core.config.loader import Settings
+from app.core.config.loader_new import Settings
 from app.core.exceptions import (
+    DataImportError,
     DataValidationError,
     FileProcessingError,
-    ImportError,
     error_handler,
 )
 from app.core.types import RejectRow, ValidRow
 
-logger = logging.getLogger(__name__)
+import logging
+
+_act = logging.getLogger(__name__)
 
 
 class DataImportService:
@@ -79,47 +80,93 @@ class DataImportService:
         """
         start_time = time.time()
 
+        _act.info(
+            "[流程-开始] [CSV数据导入]",
+            extra={
+                "extra_data": {
+                    "file_path": str(file_path),
+                    "station_id": station_id,
+                    "source_hint": source_hint,
+                }
+            },
+        )
+
         if not file_path.exists():
+            _act.error(
+                "[流程-错误] [文件不存在]",
+                extra={"extra_data": {"file_path": str(file_path)}},
+            )
             raise FileProcessingError(f"文件不存在: {file_path}")
 
         try:
             # 1. 创建 staging 表
+            _act.info("[数据库-执行] [创建Staging表]")
             with get_conn(self.settings) as conn:
                 create_staging_if_not_exists(conn)
 
             # 2. 解析 CSV 文件
+            _act.info("[流程-阶段] [CSV文件解析开始]")
             valid_rows, rejected_rows = await self._parse_csv_file(
                 file_path, station_id, source_hint
             )
+            _act.info(
+                "[流程-阶段] [CSV文件解析完成]",
+                extra={
+                    "extra_data": {
+                        "valid_rows": len(valid_rows),
+                        "rejected_rows": len(rejected_rows),
+                        "total_rows": len(valid_rows) + len(rejected_rows),
+                    }
+                },
+            )
 
             # 3. 导入数据到 staging 表
+            _act.info("[流程-阶段] [数据导入Staging表开始]")
             import_stats = await self._import_to_staging(valid_rows, rejected_rows)
 
             # 4. 执行数据合并（可选）
             # merge_stats = await self._merge_to_fact_table(station_id)
 
+            duration_ms = (time.time() - start_time) * 1000
             result = {
                 "success": True,
                 "file_path": str(file_path),
                 "station_id": station_id,
-                "processing_time_ms": (time.time() - start_time) * 1000,
+                "processing_time_ms": duration_ms,
                 "total_rows_processed": len(valid_rows) + len(rejected_rows),
                 "valid_rows": len(valid_rows),
                 "rejected_rows": len(rejected_rows),
                 "import_stats": import_stats,
-                # "merge_stats": merge_stats
             }
 
-            logger.info(
-                f"CSV 导入完成: {file_path.name}",
-                extra={"event": "data_import.csv_completed", "extra": result},
+            _act.info(
+                "[流程-完成] [CSV数据导入]",
+                extra={
+                    "extra_data": {
+                        "file_path": str(file_path),
+                        "station_id": station_id,
+                        "total_rows": len(valid_rows) + len(rejected_rows),
+                        "valid_rows": len(valid_rows),
+                        "rejected_rows": len(rejected_rows),
+                        "duration_ms": duration_ms,
+                    }
+                },
             )
 
             return result
 
         except Exception as e:
-            logger.error(f"CSV 导入失败: {e}")
-            raise ImportError(f"CSV 导入失败: {e}") from e
+            _act.error(
+                "[流程-错误] [CSV数据导入失败]",
+                extra={
+                    "extra_data": {
+                        "file_path": str(file_path),
+                        "station_id": station_id,
+                        "error": str(e),
+                    }
+                },
+            )
+            raise DataImportError(f"CSV 导入失败: {e}") from e
 
     async def _parse_csv_file(
         self, file_path: Path, station_id: str, source_hint: Optional[str]
@@ -155,12 +202,6 @@ class DataImportService:
                     except Exception as e:
                         # 记录拒绝的行
                         reject_row = RejectRow(
-                            station_name=station_id,
-                            device_name=row.get("device_name", ""),
-                            metric_key="unknown",
-                            TagName=row.get("TagName", ""),
-                            DataTime=row.get("DataTime", ""),
-                            DataValue=row.get("DataValue", ""),
                             source_hint=source_hint or file_path.name,
                             error_msg=str(e),
                         )
@@ -168,7 +209,7 @@ class DataImportService:
 
                         # 如果错误过多，停止处理
                         if len(rejected_rows) > self.max_errors:
-                            raise ImportError(
+                            raise DataImportError(
                                 f"错误行数超过限制 {self.max_errors}，停止处理"
                             )
 
@@ -224,13 +265,53 @@ class DataImportService:
             except ValueError as e:
                 raise DataValidationError(f"时间格式错误: {e}")
 
-            # 数值验证
+            # 数值/布尔验证（布尔将规范化为 0/1）
+            normalized_value = data_value
             try:
                 numeric_value = float(data_value)
-                if not (-999999 <= numeric_value <= 999999):  # 合理范围检查
-                    raise ValueError("数值超出合理范围")
-            except ValueError as e:
-                raise DataValidationError(f"数值格式错误: {e}")
+            except ValueError:
+                v = (data_value or "").strip().lower()
+                truthy = {
+                    "1",
+                    "true",
+                    "t",
+                    "yes",
+                    "y",
+                    "on",
+                    "enabled",
+                    "running",
+                    "run",
+                    "开",
+                    "开启",
+                    "运行",
+                    "是",
+                }
+                falsy = {
+                    "0",
+                    "false",
+                    "f",
+                    "no",
+                    "n",
+                    "off",
+                    "disabled",
+                    "stopped",
+                    "stop",
+                    "关",
+                    "关闭",
+                    "停止",
+                    "否",
+                }
+                if v in truthy:
+                    numeric_value = 1.0
+                    normalized_value = "1"
+                elif v in falsy:
+                    numeric_value = 0.0
+                    normalized_value = "0"
+                else:
+                    raise DataValidationError("数值格式错误: 无法解析为数字或布尔值")
+            # 合理范围检查
+            if not (-999999 <= numeric_value <= 999999):
+                raise DataValidationError("数值超出合理范围")
 
             # 构建有效行
             valid_row = ValidRow(
@@ -239,7 +320,7 @@ class DataImportService:
                 metric_key=self._map_tag_to_metric(tag_name),
                 TagName=tag_name,
                 DataTime=data_time,
-                DataValue=data_value,
+                DataValue=normalized_value,
                 source_hint=source_hint or "csv_import",
             )
 
@@ -320,7 +401,7 @@ class DataImportService:
                     staging_sql += " AND loaded_at >= %s"
                     params.append(start_date)
                 if end_date:
-                    staging_sql += " AND loaded_at <= %s"
+                    staging_sql += " AND loaded_at < %s"
                     params.append(end_date)
 
                 cur.execute(staging_sql, params)
@@ -335,7 +416,7 @@ class DataImportService:
                 """
 
                 if start_date and end_date:
-                    reject_sql += " AND rejected_at BETWEEN %s AND %s"
+                    reject_sql += " AND rejected_at >= %s AND rejected_at < %s"
                     cur.execute(reject_sql, [station_id, start_date, end_date])
                 else:
                     cur.execute(reject_sql, [station_id])
@@ -373,10 +454,6 @@ class DataImportService:
                 deleted_rejects = cur.rowcount
 
                 conn.commit()
-
-                logger.info(
-                    f"清理完成: staging={deleted_staging}, rejects={deleted_rejects}"
-                )
 
                 return {
                     "deleted_staging_rows": deleted_staging,

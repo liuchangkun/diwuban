@@ -1,0 +1,1259 @@
+{
+  "_说明": "项目领域术语/词典覆盖（自动初稿+可人工维护）。匹配成功时将覆盖自动推断的‘作用/功能说明’。",
+  "_匹配键": "支持 equals/prefix/contains/regex；表可选 schema 过滤；API 可选 method 过滤（GET/POST...）",
+  "tables": [
+    {
+      "equals": "fact_measurements",
+      "summary": "事实明细表：时间序列度量主数据（按站/设备/指标/时刻）"
+    },
+    {
+      "equals": "dim_stations",
+      "summary": "泵站维表：站点元数据（名称、时区、属性）"
+    },
+    {
+      "equals": "dim_devices",
+      "summary": "设备维表：设备元数据（站点关联、类型、名称等）"
+    },
+    {
+      "equals": "dim_metric_config",
+      "summary": "指标配置维表：指标键、单位、展示、取值范围"
+    },
+    {
+      "equals": "dim_mapping_items",
+      "summary": "导入映射快照：源到内部维度映射记录（一致性校验）"
+    },
+    {
+      "equals": "staging_raw",
+      "summary": "装载中间表：导入阶段原始数据（UNLOGGED，清洗/合并前）"
+    },
+    {
+      "equals": "staging_rejects",
+      "summary": "装载中间表：导入阶段拒绝/错误记录（UNLOGGED）"
+    },
+    {
+      "equals": "metric_capability_policy",
+      "summary": "指标可采能力策略：记录各指标可采性与是否需要计算"
+    },
+    {
+      "equals": "device_running_thresholds",
+      "summary": "设备运行判定阈值集中配置（电流/功率/频率）"
+    },
+    {
+      "prefix": "completion_",
+      "summary": "补全/追踪审计相关：运行、步骤、失败、变更等记录"
+    },
+    {
+      "prefix": "metrics_presence",
+      "summary": "指标在场性/可用性统计（按设备/时间片统计可用指标）"
+    },
+    {
+      "prefix": "dim_",
+      "summary": "维度表：实体/枚举/元数据，供关联使用"
+    },
+    {
+      "prefix": "fact_",
+      "summary": "事实表：面向查询与统计的明细数据"
+    },
+    {
+      "prefix": "staging_",
+      "summary": "装载中间表：导入/清洗过程的过渡数据"
+    },
+    {
+      "prefix": "mv_",
+      "summary": "物化视图：预计算结果，加速读取"
+    },
+    {
+      "prefix": "mpps_w_",
+      "summary": "presence 按周期分片宽表（分区/分表，秒级聚合）"
+    }
+  ],
+  "columns": {
+    "station_id": "站点外键",
+    "device_id": "设备外键",
+    "metric_id": "指标外键",
+    "ts_raw": "原始时间戳（timestamptz，建议UTC）",
+    "ts_second": "秒级时间戳（timestamptz）",
+    "ts_bucket": "桶/分箱时间戳（按粒度聚合）",
+    "inserted_at": "插入时间（timestamptz）",
+    "created_at": "创建时间（timestamptz）",
+    "updated_at": "更新时间（timestamptz）",
+    "source_hint": "数据来源线索（如文件路径/批次/版本）",
+    "metrics_data": "近原始度量数据（JSON/JSONB）",
+    "value": "数值（numeric/float）",
+    "value_numeric": "数值（numeric）",
+    "start_ts": "窗口起始时间（timestamptz）",
+    "end_ts": "窗口结束时间（timestamptz）",
+    "run_id": "运行ID（批次/任务标识）",
+    "id": "主键ID",
+    "gap_id": "缺口段ID/关联ID",
+    "unit": "单位",
+    "unit_display": "单位显示",
+    "mapping_hash": "映射快照哈希（一致性）",
+    "station_name": "站点名称（源）",
+    "device_name": "设备名称（源）",
+    "available_metrics": "可用指标列表（ARRAY）",
+    "need_compute_metrics": "需要计算得到的指标列表（ARRAY）"
+  },
+  "apis": [
+    {
+      "method": "GET",
+      "equals": "/db-health",
+      "summary": "系统/数据库健康检查"
+    },
+    {
+      "method": "GET",
+      "equals": "/health",
+      "summary": "系统/数据库健康检查"
+    },
+    {
+      "method": "GET",
+      "equals": "/devices",
+      "summary": "查询设备与基础元数据（分页/筛选）"
+    },
+    {
+      "method": "GET",
+      "equals": "/devices/{device_id}",
+      "summary": "查询设备详情"
+    },
+    {
+      "method": "GET",
+      "regex": "/devices/.*/measurements$",
+      "summary": "设备时间窗度量查询（筛选指标/粒度/分页）"
+    },
+    {
+      "method": "GET",
+      "regex": "/devices/.*/raw$",
+      "summary": "设备近原始数据（wide/long）"
+    },
+    {
+      "method": "GET",
+      "regex": "/stations/.*/measurements$",
+      "summary": "按站点查询时间窗度量（可筛选设备/指标）"
+    },
+    {
+      "method": "GET",
+      "regex": "/stations/.*/raw$",
+      "summary": "站点近原始数据（wide/long）"
+    },
+    {
+      "method": "GET",
+      "equals": "/performance",
+      "summary": "系统性能指标"
+    },
+    {
+      "method": "GET",
+      "equals": "/pool-stats",
+      "summary": "连接池统计"
+    }
+  ],
+  "services": [
+    {
+      "path_contains": "services/admin/clear_db",
+      "summary": "数据库清空/维护工具（高风险操作）"
+    },
+    {
+      "path_contains": "services/system/cleanup",
+      "summary": "系统清理：日志与数据库清理辅助"
+    },
+    {
+      "path_contains": "services/run_all/orchestrator",
+      "summary": "端到端流程编排与调度"
+    },
+    {
+      "path_contains": "services/device_running_job",
+      "summary": "设备运行/停机区段计算与落库"
+    },
+    {
+      "path_contains": "services/ingest/create_staging",
+      "summary": "创建/刷新装载中间表（幂等）"
+    },
+    {
+      "path_contains": "services/ingest/copy",
+      "summary": "从映射并行导入 CSV 到 staging"
+    },
+    {
+      "path_contains": "services/ingest/merge",
+      "summary": "窗口内去重/对齐并合并入事实表"
+    },
+    {
+      "path_contains": "services/reporting/code_dist",
+      "summary": "质量码分布报表导出（JSON/CSV）"
+    },
+    {
+      "path_contains": "services/reporting/data_quality",
+      "summary": "数据质量报表生成"
+    },
+    {
+      "path_contains": "services/reporting/presence",
+      "summary": "presence 计算/写入（分片+并发）"
+    },
+    {
+      "path_contains": "services/rules/auto_baseline",
+      "summary": "自动基线刷新（库端过程/影子方案）"
+    },
+    {
+      "path_contains": "services/rules/metric_quality_rules",
+      "summary": "质量规则生成/影子生成"
+    },
+    {
+      "path_contains": "services/rules/running_thresholds",
+      "summary": "设备运行阈值刷新/影子计算"
+    }
+  ],
+  "names": {
+    "record_timestamp": "记录时间戳（统一UTC）",
+    "ts": "时间戳/时间字段",
+    "value": "数值/指标值",
+    "residual": "残差/偏差（质量/模型评估相关）",
+    "quality_code": "质量码/命中码",
+    "unit": "单位",
+    "unit_display": "单位显示"
+  },
+  "_候选合并提示": "候选仅供审阅；确认后再合并进 tables/apis 等正式段落。",
+  "tables_candidates": [
+    {
+      "equals": "monitoring.ab_test_results",
+      "summary": ""
+    },
+    {
+      "equals": "monitoring.ab_test_runs",
+      "summary": ""
+    },
+    {
+      "equals": "monitoring.pgss_snapshot",
+      "summary": ""
+    },
+    {
+      "equals": "public.completion_audit",
+      "summary": ""
+    },
+    {
+      "equals": "public.completion_failures",
+      "summary": ""
+    },
+    {
+      "equals": "public.completion_runs",
+      "summary": ""
+    },
+    {
+      "equals": "public.completion_steps",
+      "summary": ""
+    },
+    {
+      "equals": "public.device_metric_candidates",
+      "summary": ""
+    },
+    {
+      "equals": "public.device_rated_params",
+      "summary": ""
+    },
+    {
+      "equals": "public.device_running_thresholds",
+      "summary": ""
+    },
+    {
+      "equals": "public.dim_devices",
+      "summary": ""
+    },
+    {
+      "equals": "public.dim_mapping_items",
+      "summary": ""
+    },
+    {
+      "equals": "public.dim_metric_config",
+      "summary": ""
+    },
+    {
+      "equals": "public.dim_stations",
+      "summary": ""
+    },
+    {
+      "equals": "public.fact_measurements",
+      "summary": ""
+    },
+    {
+      "equals": "public.metric_capability_policy",
+      "summary": ""
+    },
+    {
+      "equals": "public.metrics_presence_per_second_device",
+      "summary": ""
+    },
+    {
+      "equals": "public.metrics_presence_per_second_device_legacy",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202507",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202507_0",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202507_1",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202507_10",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202507_11",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202507_12",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202507_13",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202507_14",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202507_15",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202507_2",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202507_3",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202507_4",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202507_5",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202507_6",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202507_7",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202507_8",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202507_9",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202508",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202508_0",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202508_1",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202508_10",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202508_11",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202508_12",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202508_13",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202508_14",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202508_15",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202508_2",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202508_3",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202508_4",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202508_5",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202508_6",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202508_7",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202508_8",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202508_9",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202509",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202509_0",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202509_1",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202509_10",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202509_11",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202509_12",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202509_13",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202509_14",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202509_15",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202509_2",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202509_3",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202509_4",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202509_5",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202509_6",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202509_7",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202509_8",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202509_9",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202510",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202510_0",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202510_1",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202510_10",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202510_11",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202510_12",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202510_13",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202510_14",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202510_15",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202510_2",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202510_3",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202510_4",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202510_5",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202510_6",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202510_7",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202510_8",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202510_9",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202511",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202511_0",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202511_1",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202511_10",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202511_11",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202511_12",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202511_13",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202511_14",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202511_15",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202511_2",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202511_3",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202511_4",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202511_5",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202511_6",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202511_7",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202511_8",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202511_9",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202512",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202512_0",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202512_1",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202512_10",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202512_11",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202512_12",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202512_13",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202512_14",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202512_15",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202512_2",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202512_3",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202512_4",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202512_5",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202512_6",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202512_7",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202512_8",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202512_9",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202513",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202513_0",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202513_1",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202513_10",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202513_11",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202513_12",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202513_13",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202513_14",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202513_15",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202513_2",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202513_3",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202513_4",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202513_5",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202513_6",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202513_7",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202513_8",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202513_9",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202514",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202514_0",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202514_1",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202514_10",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202514_11",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202514_12",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202514_13",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202514_14",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202514_15",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202514_2",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202514_3",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202514_4",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202514_5",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202514_6",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202514_7",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202514_8",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202514_9",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202515",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202515_0",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202515_1",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202515_10",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202515_11",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202515_12",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202515_13",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202515_14",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202515_15",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202515_2",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202515_3",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202515_4",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202515_5",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202515_6",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202515_7",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202515_8",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202515_9",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202516",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202516_0",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202516_1",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202516_10",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202516_11",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202516_12",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202516_13",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202516_14",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202516_15",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202516_2",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202516_3",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202516_4",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202516_5",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202516_6",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202516_7",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202516_8",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202516_9",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202537",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202537_0",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202537_1",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202537_10",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202537_11",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202537_12",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202537_13",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202537_14",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202537_15",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202537_2",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202537_3",
+      "summary": ""
+    },
+    {
+      "equals": "public.mpps_w_202537_4",
+      "summary": ""
+    }
+  ],
+  "services_candidates": [
+    {
+      "key": "truncate_public_schema()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "run_db_ping()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "json_dumps()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "main()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "DeviceRunningJob.resolve_devices()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "DeviceRunningJob.resolve_window()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "DeviceRunningJob.run_for_device()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "DeviceRunningJob.run()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "BackpressureController.decide()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "check_mapping_paths()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "run_check_mapping_command()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "copy_from_mapping()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "create_staging()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "run_merge_fact_command()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "merge_window()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "run_all()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "make_source_hint()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "run_quality_full_pass()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "mark_quality_window()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "export_window_code_distribution()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "export_recent_code_distribution()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "generate_report()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "run_data_report_command()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "run_presence_compute_command()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "iter_day_slices()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "iter_minute_slices()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "detect_full_or_incremental()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "ensure_partitions()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "list_station_devices()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "upsert_window()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "run_presence_compute()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "run_rules_diff_report()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "run_auto_baseline()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "run_auto_baseline_b()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "compute_metric_quality_rules()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "compute_metric_quality_rules_shadow()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "run_running_thresholds()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "run_running_thresholds_b()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "seed_from_existing_data()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "batch_seed_from_existing_data()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "run_all()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "run_refresh_all()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "backup_logs_directory()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "cleanup_old_backups()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "clear_logs_directory()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "clear_database()",
+      "desc": "",
+      "alias": []
+    },
+    {
+      "key": "get_system_status()",
+      "desc": "",
+      "alias": []
+    }
+  ],
+  "models_candidates": [
+    {
+      "key": "TimeSeriesResponse",
+      "desc": "",
+      "alias": []
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+[
+  {"type":"rule","key":"lang","value":"中文优先","priority":10,"source":"user","expires_at":null},
+  {"type":"style","key":"explain","value":"总是说明为什么/发现/依据/要做什么","priority":9,"source":"user","expires_at":null},
+  {"type":"constraint","key":"do_not_install_deps_without_permission","value":true,"priority":10,"source":"policy","expires_at":null},
+  {"type":"preference","key":"code_block_wrapper","value":"<augment_code_snippet> + 四反引号 + language","priority":8,"source":"repo_docs","expires_at":null},
+  {"type":"preference","key":"anchor_reference_usage","value":"优先使用锚点引用片段（api.* / db.* / svc.*），避免整页加载","priority":9,"source":"policy","expires_at":null},
+  {"type":"preference","key":"avoid_whole_page","value":"检索与引用时只取必要片段，不整页塞入上下文","priority":9,"source":"policy","expires_at":null},
+  {"type":"preference","key":"reply_style","value":"使用小节标题+要点，必要时提供<augment_code_snippet>片段","priority":7,"source":"repo_docs","expires_at":null},
+  {"type":"term","key":"station_id","value":"站点外键","priority":7,"source":"domain","expires_at":null}
+]
+

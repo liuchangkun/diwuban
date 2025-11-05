@@ -30,7 +30,6 @@
 
 from __future__ import annotations
 
-import logging
 from contextlib import contextmanager
 from typing import Iterator, Optional
 
@@ -39,7 +38,17 @@ import psycopg
 from app.core.config.loader_new import Settings
 from app.core.exceptions import DatabaseError, error_handler
 
-logger = logging.getLogger(__name__)
+import logging
+
+_act = logging.getLogger(__name__)
+
+
+class _NoopLogger:
+    def __getattr__(self, name):
+        return lambda *a, **k: None
+
+
+logger = _NoopLogger()
 
 # 连接池状态标记
 _pool_initialized = False
@@ -59,8 +68,11 @@ def init_database(settings: Settings) -> None:
     global _pool_initialized
 
     if _pool_initialized:
-        logger.warning("数据库连接池已经初始化，跳过重复初始化")
+        _act.info("[流程-跳过] [数据库已初始化]")
+        pass
         return
+
+    _act.info("[流程-开始] [数据库初始化]")
 
     try:
         from app.adapters.db.pool import initialize_pool
@@ -77,32 +89,12 @@ def init_database(settings: Settings) -> None:
                     raise DatabaseError("连接池验证失败：无法执行测试查询")
 
         _pool_initialized = True
-
-        logger.info(
-            "数据库连接池初始化成功",
-            extra={
-                "event": "db.init.success",
-                "extra": {
-                    "min_size": settings.db.pool.min_size,
-                    "max_size": settings.db.pool.max_size,
-                    "host": settings.db.host,
-                    "database": settings.db.name,
-                },
-            },
-        )
+        _act.info("[流程-完成] [数据库初始化成功]")
 
     except Exception as e:
-        logger.error(
-            f"数据库连接池初始化失败: {e}",
-            extra={
-                "event": "db.init.failed",
-                "extra": {
-                    "error": str(e),
-                    "host": settings.db.host,
-                    "database": settings.db.name,
-                },
-            },
-            exc_info=True,
+        _act.error(
+            "[流程-错误] [数据库初始化失败]",
+            extra={"extra_data": {"error": str(e)}},
         )
         raise DatabaseError(f"数据库初始化失败: {e}") from e
 
@@ -114,7 +106,7 @@ def cleanup_database() -> None:
     global _pool_initialized
 
     if not _pool_initialized:
-        logger.debug("数据库连接池未初始化，无需清理")
+        pass
         return
 
     try:
@@ -123,13 +115,8 @@ def cleanup_database() -> None:
         close_pool()
         _pool_initialized = False
 
-        logger.info("数据库连接池已清理", extra={"event": "db.cleanup.success"})
-
-    except Exception as e:
-        logger.error(
-            f"数据库清理失败: {e}",
-            extra={"event": "db.cleanup.failed", "extra": {"error": str(e)}},
-        )
+    except Exception:
+        pass
 
 
 def is_initialized() -> bool:
@@ -172,13 +159,7 @@ def get_connection(timeout: Optional[float] = None) -> Iterator[psycopg.Connecti
             yield conn
 
     except Exception as e:
-        logger.error(
-            f"获取数据库连接失败: {e}",
-            extra={
-                "event": "db.connection.get_failed",
-                "extra": {"error": str(e), "timeout": timeout},
-            },
-        )
+        pass
         raise DatabaseError(f"获取数据库连接失败: {e}") from e
 
 
@@ -197,7 +178,7 @@ def get_pool_stats() -> dict:
 
         return get_pool_stats()
     except Exception as e:
-        logger.warning(f"获取连接池统计信息失败: {e}")
+        pass
         return {"error": str(e)}
 
 
@@ -232,8 +213,7 @@ try:
         "count_tz_fallback",
     ]
 
-except ImportError as e:
-    logger.warning(f"导入数据库网关模块失败: {e}")
+except ImportError:
 
     # 最小导出
     __all__ = [

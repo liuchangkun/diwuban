@@ -89,5 +89,7 @@
     "enableInEditor": true,
     "showInStatusBar": true
   },
-  "workbench.settings.editor": "json"
+  "workbench.settings.editor": "json",
+  "chatgpt.openOnStartup": true,
+  "chatgpt.commentCodeLensEnabled": true
 }

@@ -15,15 +15,22 @@ from __future__ import annotations
 
 
 import json
-import logging
 import math
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 from app.adapters.db.gateway import get_conn
-from app.core.config.loader import Settings
+from app.core.config.loader_new import Settings
+from app.core.time_utils import format_for_display
 
+import logging
+
+_act = logging.getLogger(__name__)
+
+
+# 统一对外时间格式：使用 app.core.time_utils.format_for_display
+# 已删除重复的 _fmt_local 函数，直接使用统一的时间格式化函数
 
 def generate_report(
     settings: Settings,
@@ -52,10 +59,21 @@ def generate_report(
     - generate_report(cfg, start, end, run_dir=Path('logs/runs/2025.../..'))
     - 返回对象可写入 reports/data_quality_report.json（本函数已在有 run_dir 时自动输出）
     """
+    _act.info(
+        "[流程-开始] [数据质量报表生成]",
+        extra={
+            "extra_data": {
+                "start_utc": format_for_display(start_utc, settings),
+                "end_utc": format_for_display(end_utc, settings),
+                "group_by": group_by,
+            }
+        },
+    )
+
     out: Dict[str, Any] = {
         "window": {
-            "start": start_utc.isoformat(),
-            "end": end_utc.isoformat(),
+            "start": format_for_display(start_utc, settings),
+            "end": format_for_display(end_utc, settings),
         },
         "params": {
             "expected_interval_seconds": expected_interval_seconds,
@@ -109,8 +127,8 @@ def generate_report(
             out["coverage_top"] = [
                 {
                     grp_key: r[0],
-                    "ts_min": str(r[1]),
-                    "ts_max": str(r[2]),
+                    "ts_min": format_for_display(r[1], settings),
+                    "ts_max": format_for_display(r[2], settings),
                     "rows": int(r[3]),
                 }
                 for r in cur.fetchall()
@@ -139,7 +157,7 @@ def generate_report(
                 (start_utc, end_utc, top_k, start_utc, end_utc),
             )
             out["histogram_hourly"] = [
-                {grp_key: r[0], "bucket": str(r[1]), "rows": int(r[2])}
+                {grp_key: r[0], "bucket": format_for_display(r[1], settings), "rows": int(r[2])}
                 for r in cur.fetchall()
             ]
 
@@ -224,8 +242,8 @@ def generate_report(
             out["gaps_top"] = [
                 {
                     grp_key: r[0],
-                    "gap_start": str(r[1]),
-                    "gap_end": str(r[2]),
+                    "gap_start": format_for_display(r[1], settings),
+                    "gap_end": format_for_display(r[2], settings),
                     "gap_seconds": int(r[3]),
                 }
                 for r in cur.fetchall()
@@ -383,16 +401,7 @@ def generate_report(
                 "parse_errors": 0,
                 "missing": True,
             }
-            try:
-                logging.getLogger("root").warning(
-                    "perf.ndjson missing",
-                    extra={
-                        "event": "data_report.perf.missing",
-                        "extra": {"run_dir": str(run_dir)},
-                    },
-                )
-            except Exception:
-                pass
+            pass
 
     # 输出
     if run_dir:
@@ -417,20 +426,5 @@ def generate_report(
             json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8"
         )
         # 生成成功事件
-        try:
-            logging.getLogger("root").info(
-                "data quality report generated",
-                extra={
-                    "event": "data_report.generated",
-                    "extra": {
-                        "run_id": run_id,
-                        "window_start": out["window"]["start"],
-                        "window_end": out["window"]["end"],
-                        "report_path": str(out_path),
-                        "groups_count": len(out.get("coverage_top", [])),
-                    },
-                },
-            )
-        except Exception:
-            pass
+        pass
     return out

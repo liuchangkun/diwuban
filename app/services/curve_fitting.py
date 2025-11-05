@@ -23,7 +23,6 @@
 
 from __future__ import annotations
 
-import logging
 import time
 from datetime import datetime
 from decimal import Decimal
@@ -32,16 +31,17 @@ from typing import Any, Dict, List, Tuple
 try:
     import numpy as np
     from scipy import optimize, stats
-    from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-    from sklearn.preprocessing import PolynomialFeatures
     from sklearn.linear_model import LinearRegression
+    from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
     from sklearn.pipeline import Pipeline
+    from sklearn.preprocessing import PolynomialFeatures
 except ImportError:
     # 如果没有安装科学计算库，提供备用实现
     np = None
     optimize = None
     stats = None
 
+from app.adapters.db.gateway import get_conn
 from app.core.config.loader import Settings
 from app.core.exceptions import (
     CurveFittingError,
@@ -57,9 +57,11 @@ from app.models import (
     FittingMethod,
     PumpOperationPoint,
 )
-from app.adapters.db.gateway import get_conn
 
-logger = logging.getLogger(__name__)
+
+import logging
+
+_act = logging.getLogger(__name__)
 
 
 class CurveFittingService:
@@ -80,7 +82,7 @@ class CurveFittingService:
 
         # 检查科学计算库可用性
         if np is None:
-            logger.warning("科学计算库不可用，将使用简化的拟合算法")
+            pass
 
     @error_handler(context_fields=["device_id", "curve_type"])
     async def fit_curve(self, request: CurveFittingRequest) -> CurveFittingResult:
@@ -95,10 +97,38 @@ class CurveFittingService:
         """
         start_time = time.time()
 
+        _act.info(
+            "[流程-开始] [曲线拟合]",
+            extra={
+                "extra_data": {
+                    "device_id": request.device_id,
+                    "curve_type": request.curve_type.value,
+                    "method": request.method.value,
+                    "start_time": request.start_time.isoformat() if request.start_time else None,
+                    "end_time": request.end_time.isoformat() if request.end_time else None,
+                }
+            },
+        )
+
         try:
             # 1. 数据获取和预处理
+            _act.info("[流程-阶段] [运行数据获取]")
             raw_data = await self._fetch_operation_data(request)
+            _act.info(
+                "[流程-阶段] [运行数据已获取]",
+                extra={"extra_data": {"total_points": len(raw_data)}},
+            )
+
             if len(raw_data) < self.min_data_points:
+                _act.warning(
+                    "[流程-跳过] [数据点不足]",
+                    extra={
+                        "extra_data": {
+                            "total_points": len(raw_data),
+                            "min_required": self.min_data_points,
+                        }
+                    },
+                )
                 return CurveFittingResult(
                     success=False,
                     total_points=len(raw_data),
@@ -109,9 +139,28 @@ class CurveFittingService:
                 )
 
             # 2. 数据清洗和过滤
+            _act.info("[流程-阶段] [数据清洗开始]")
             cleaned_data, outliers_count = self._preprocess_data(raw_data, request)
+            _act.info(
+                "[流程-阶段] [数据清洗完成]",
+                extra={
+                    "extra_data": {
+                        "cleaned_points": len(cleaned_data),
+                        "outliers_removed": outliers_count,
+                    }
+                },
+            )
 
             if len(cleaned_data) < request.min_data_points:
+                _act.warning(
+                    "[流程-跳过] [清洗后数据不足]",
+                    extra={
+                        "extra_data": {
+                            "cleaned_points": len(cleaned_data),
+                            "min_required": request.min_data_points,
+                        }
+                    },
+                )
                 return CurveFittingResult(
                     success=False,
                     total_points=len(raw_data),
@@ -122,6 +171,16 @@ class CurveFittingService:
                 )
 
             # 3. 执行拟合
+            _act.info(
+                "[流程-阶段] [曲线拟合计算开始]",
+                extra={
+                    "extra_data": {
+                        "method": request.method.value,
+                        "curve_type": request.curve_type.value,
+                        "data_points": len(cleaned_data),
+                    }
+                },
+            )
             if np is not None:
                 # 使用完整的科学计算库
                 equation, r_squared, quality_metrics = await self._fit_with_scipy(
@@ -132,9 +191,29 @@ class CurveFittingService:
                 equation, r_squared, quality_metrics = await self._fit_simplified(
                     cleaned_data, request
                 )
+            _act.info(
+                "[流程-阶段] [曲线拟合计算完成]",
+                extra={
+                    "extra_data": {
+                        "r_squared": float(r_squared),
+                        "rmse": float(quality_metrics.get("rmse", 0)),
+                        "mae": float(quality_metrics.get("mae", 0)),
+                    }
+                },
+            )
 
             # 4. 质量检查
+            _act.info("[流程-阶段] [拟合质量检查]")
             if r_squared < request.min_r_squared:
+                _act.warning(
+                    "[流程-跳过] [拟合质量不达标]",
+                    extra={
+                        "extra_data": {
+                            "r_squared": float(r_squared),
+                            "min_required": request.min_r_squared,
+                        }
+                    },
+                )
                 return CurveFittingResult(
                     success=False,
                     r_squared=Decimal(str(r_squared)),
@@ -146,8 +225,13 @@ class CurveFittingService:
                 )
 
             # 5. 创建曲线对象
+            _act.info("[流程-阶段] [曲线记录创建]")
             curve = await self._create_curve_record(
                 request, equation, r_squared, len(cleaned_data)
+            )
+            _act.info(
+                "[流程-阶段] [曲线记录已创建]",
+                extra={"extra_data": {"curve_id": curve.curve_id}},
             )
 
             # 6. 生成结果
@@ -164,33 +248,27 @@ class CurveFittingService:
                 algorithm_version="1.0.0",
             )
 
-            logger.info(
-                "曲线拟合完成",
+            _act.info(
+                "[流程-完成] [曲线拟合]",
                 extra={
-                    "event": "curve_fitting.completed",
-                    "extra": {
+                    "extra_data": {
                         "device_id": request.device_id,
-                        "curve_type": request.curve_type,
                         "r_squared": float(r_squared),
-                        "data_points": len(cleaned_data),
+                        "total_points": len(raw_data),
+                        "used_points": len(cleaned_data),
+                        "outliers_removed": outliers_count,
                         "duration_ms": result.fitting_duration_ms,
-                    },
+                    }
                 },
             )
 
             return result
 
         except Exception as e:
-            logger.error(
-                f"曲线拟合失败: {e}",
-                extra={
-                    "event": "curve_fitting.failed",
-                    "extra": {
-                        "device_id": request.device_id,
-                        "curve_type": request.curve_type,
-                        "error": str(e),
-                    },
-                },
+            _act.error(
+                "[流程-错误] [曲线拟合失败]",
+                extra={"extra_data": {"device_id": request.device_id, "error": str(e)}},
+                exc_info=True,
             )
             raise CurveFittingError(f"曲线拟合失败: {e}") from e
 
@@ -202,6 +280,17 @@ class CurveFittingService:
 
         从数据库中获取指定时间范围内的泵运行数据。
         """
+        _act.info(
+            "[数据库-查询] [运行数据查询开始]",
+            extra={
+                "extra_data": {
+                    "device_id": request.device_id,
+                    "start_time": request.start_time.isoformat() if request.start_time else None,
+                    "end_time": request.end_time.isoformat() if request.end_time else None,
+                }
+            },
+        )
+
         # 构建查询SQL
         sql = """
         SELECT
@@ -212,7 +301,7 @@ class CurveFittingService:
             frequency
         FROM operation_data
         WHERE device_id = %s
-            AND timestamp BETWEEN %s AND %s
+            AND timestamp >= %s AND timestamp < %s
             AND flow_rate IS NOT NULL
             AND power IS NOT NULL
             AND status = 1  -- 正常运行状态
@@ -250,6 +339,10 @@ class CurveFittingService:
 
                     data_points.append(point)
 
+        _act.info(
+            "[数据库-查询] [运行数据查询完成]",
+            extra={"extra_data": {"total_points": len(data_points)}},
+        )
         return data_points
 
     def _preprocess_data(
@@ -260,10 +353,16 @@ class CurveFittingService:
 
         包括异常值检测、数据过滤和质量检查。
         """
+        _act.info(
+            "[流程-阶段] [数据预处理开始]",
+            extra={"extra_data": {"raw_points": len(raw_data)}},
+        )
+
         cleaned_data = []
         outliers_removed = 0
 
         if request.remove_outliers and np is not None:
+            _act.info("[流程-阶段] [异常值检测-Z-score方法]")
             # 使用科学计算库进行异常值检测
             flow_rates = [float(point.flow_rate) for point in raw_data]
             powers = [float(point.power) for point in raw_data]
@@ -288,10 +387,23 @@ class CurveFittingService:
                     cleaned_data.append(point)
         else:
             # 简化的数据过滤
+            _act.info("[流程-阶段] [数据过滤-简化方法]")
             for point in raw_data:
                 if self._is_valid_operating_point(point, request):
                     cleaned_data.append(point)
 
+        _act.info(
+            "[流程-阶段] [数据预处理完成]",
+            extra={
+                "extra_data": {
+                    "cleaned_points": len(cleaned_data),
+                    "outliers_removed": outliers_removed,
+                    "filter_rate": f"{(1 - len(cleaned_data) / len(raw_data)) * 100:.2f}%"
+                    if raw_data
+                    else "0%",
+                }
+            },
+        )
         return cleaned_data, outliers_removed
 
     def _is_valid_operating_point(
@@ -319,13 +431,19 @@ class CurveFittingService:
         """
         使用 SciPy 进行高精度拟合
         """
+        _act.info(
+            "[流程-阶段] [SciPy拟合-变量提取]",
+            extra={"extra_data": {"curve_type": request.curve_type.value}},
+        )
         # 提取拟合变量
         x_data, y_data = self._extract_fitting_variables(data, request.curve_type)
 
         if request.fitting_method == FittingMethod.POLYNOMIAL:
+            _act.info("[流程-阶段] [多项式拟合方法]")
             return self._fit_polynomial_scipy(x_data, y_data, request)
         else:
             # 默认使用多项式拟合
+            _act.info("[流程-阶段] [默认多项式拟合]")
             return self._fit_polynomial_scipy(x_data, y_data, request)
 
     def _fit_polynomial_scipy(
@@ -335,6 +453,10 @@ class CurveFittingService:
         使用 SciPy 进行多项式拟合
         """
         degree = request.polynomial_degree or 2
+        _act.info(
+            "[流程-阶段] [多项式拟合-sklearn]",
+            extra={"extra_data": {"degree": degree, "data_points": len(x_data)}},
+        )
 
         # 使用 sklearn 进行多项式拟合
         poly_features = PolynomialFeatures(degree=degree)
@@ -368,6 +490,17 @@ class CurveFittingService:
 
         quality_metrics = {"rmse": rmse, "mae": mae}
 
+        _act.info(
+            "[流程-阶段] [多项式拟合完成]",
+            extra={
+                "extra_data": {
+                    "degree": degree,
+                    "r_squared": float(r_squared),
+                    "rmse": float(rmse),
+                    "mae": float(mae),
+                }
+            },
+        )
         return equation, r_squared, quality_metrics
 
     async def _fit_simplified(
@@ -376,6 +509,11 @@ class CurveFittingService:
         """
         简化的拟合算法（不依赖科学计算库）
         """
+        _act.info(
+            "[流程-阶段] [简化拟合算法]",
+            extra={"extra_data": {"curve_type": request.curve_type.value}},
+        )
+
         # 提取数据
         x_values = []
         y_values = []
@@ -422,6 +560,16 @@ class CurveFittingService:
 
         quality_metrics = {"rmse": rmse, "mae": mae}
 
+        _act.info(
+            "[流程-阶段] [简化拟合完成]",
+            extra={
+                "extra_data": {
+                    "r_squared": float(r_squared),
+                    "rmse": float(rmse),
+                    "mae": float(mae),
+                }
+            },
+        )
         return equation, r_squared, quality_metrics
 
     def _extract_fitting_variables(
@@ -524,6 +672,11 @@ class CurveFittingService:
         """
         获取设备所属的泵站ID
         """
+        _act.info(
+            "[数据库-查询] [设备泵站ID查询]",
+            extra={"extra_data": {"device_id": device_id}},
+        )
+
         sql = "SELECT station_id FROM device WHERE device_id = %s"
 
         with get_conn(self.settings) as conn:
@@ -532,7 +685,16 @@ class CurveFittingService:
                 result = cur.fetchone()
 
                 if result:
+                    _act.info(
+                        "[数据库-查询] [设备泵站ID已找到]",
+                        extra={"extra_data": {"station_id": result[0]}},
+                    )
                     return result[0]
                 else:
                     # 如果没有找到设备，返回默认值或抛出异常
-                    return device_id.split("_")[0]  # 假设设备ID格式为 STATION_DEVICE
+                    fallback_id = device_id.split("_")[0]  # 假设设备ID格式为 STATION_DEVICE
+                    _act.warning(
+                        "[数据库-查询] [设备未找到-使用回退值]",
+                        extra={"extra_data": {"device_id": device_id, "fallback_id": fallback_id}},
+                    )
+                    return fallback_id

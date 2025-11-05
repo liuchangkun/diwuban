@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from app.core.config.loader import Settings
+from app.core.config.loader_new import Settings
 
 
 @dataclass
