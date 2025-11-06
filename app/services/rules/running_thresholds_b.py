@@ -192,78 +192,32 @@ def run_running_thresholds_b(
                 )
                 return result
 
-            # 先检查 mv_device_running_1s 表是否有数据
-            cur.execute("SELECT COUNT(*) FROM public.mv_device_running_1s WHERE running = 1")
-            running_count = cur.fetchone()[0]
-
-            if running_count > 0:
-                # 有稳态数据，使用 mv_device_running_1s 表进行过滤
-                _act.info(
-                    "[数据库-查询] [功率因数数据加载] 使用 mv_device_running_1s 表进行稳态过滤",
-                    extra={
-                        "extra_data": {
-                            "pf_id": pf_id,
-                            "steady_state_source": "mv_device_running_1s",
-                            "running_count": running_count,
-                        }
-                    },
-                )
-                cur.execute(
-                    """
-                    SELECT f.device_id, f.value::float8 AS pf
-                    FROM public.fact_measurements f
-                    WHERE f.metric_id = %(pf_id)s
-                      AND f.ts_bucket >= %(start)s AND f.ts_bucket < %(end)s
-                      AND (%(station_id)s::bigint IS NULL OR f.station_id=%(station_id)s::bigint)
-                      AND (%(device_id)s::bigint IS NULL OR f.device_id=%(device_id)s::bigint)
-                      AND COALESCE(f.quality_status,0)=0 AND f.value IS NOT NULL
-                      AND EXISTS (
-                        SELECT 1 FROM public.mv_device_running_1s r
-                        WHERE r.station_id=f.station_id
-                          AND r.device_id=f.device_id
-                          AND r.ts_bucket=f.ts_bucket
-                          AND r.running = 1
-                      )
-                    """,
-                    {
-                        "pf_id": pf_id,
-                        "start": s_dt,
-                        "end": e_dt,
-                        "station_id": station_id,
-                        "device_id": device_id,
-                    },
-                )
-            else:
-                # mv_device_running_1s 表为空，回退到不过滤稳态的策略
-                _act.warning(
-                    "[数据库-查询] [功率因数数据加载] mv_device_running_1s 表为空，回退到不过滤稳态",
-                    extra={
-                        "extra_data": {
-                            "pf_id": pf_id,
-                            "steady_state_source": "none",
-                            "fallback": True,
-                        }
-                    },
-                )
-                cur.execute(
-                    """
-                    SELECT f.device_id, f.value::float8 AS pf
-                    FROM public.fact_measurements f
-                    WHERE f.metric_id = %(pf_id)s
-                      AND f.ts_bucket >= %(start)s AND f.ts_bucket < %(end)s
-                      AND (%(station_id)s::bigint IS NULL OR f.station_id=%(station_id)s::bigint)
-                      AND (%(device_id)s::bigint IS NULL OR f.device_id=%(device_id)s::bigint)
-                      AND COALESCE(f.quality_status,0)=0 AND f.value IS NOT NULL
-                    """,
-                    {
-                        "pf_id": pf_id,
-                        "start": s_dt,
-                        "end": e_dt,
-                        "station_id": station_id,
-                        "device_id": device_id,
-                    },
-                )
-
+            # 加载功率因数数据（仅稳态：running=1）
+            cur.execute(
+                """
+                SELECT f.device_id, f.value::float8 AS pf
+                FROM public.fact_measurements f
+                WHERE f.metric_id = %(pf_id)s
+                  AND f.ts_bucket >= %(start)s AND f.ts_bucket < %(end)s
+                  AND (%(station_id)s::bigint IS NULL OR f.station_id=%(station_id)s::bigint)
+                  AND (%(device_id)s::bigint IS NULL OR f.device_id=%(device_id)s::bigint)
+                  AND COALESCE(f.quality_status,0)=0 AND f.value IS NOT NULL
+                  AND EXISTS (
+                    SELECT 1 FROM public.mv_device_running_1s r
+                    WHERE r.station_id=f.station_id
+                      AND r.device_id=f.device_id
+                      AND r.ts_bucket=f.ts_bucket
+                      AND r.running = 1
+                  )
+                """,
+                {
+                    "pf_id": pf_id,
+                    "start": s_dt,
+                    "end": e_dt,
+                    "station_id": station_id,
+                    "device_id": device_id,
+                },
+            )
             rows = cur.fetchall() or []
             _act.info(
                 "[数据库-查询] [数据加载完成]",

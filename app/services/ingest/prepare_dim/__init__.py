@@ -567,15 +567,20 @@ def _clear_rule_tables(cur) -> int:
 
 def _generate_rule_tables(settings) -> Dict[str, Any]:
     """
-    生成规则表
+    生成规则表（三阶段执行）
 
-    调用以下6个规则生成函数：
-    1. run_auto_baseline_b()（影子baseline）
-    2. run_auto_baseline()（生产baseline）
-    3. run_running_thresholds_b()（影子运行阈值）
-    4. run_running_thresholds()（生产运行阈值）
-    5. compute_metric_quality_rules_shadow()（影子质量规则）
-    6. compute_metric_quality_rules()（生产质量规则）
+    阶段A（不依赖 mv_device_running_1s）：
+        1. run_running_thresholds()（生产运行阈值，使用存储过程）
+
+    阶段B（调用 device_running）：
+        2. device_running_job.run()（填充 mv_device_running_1s 表）
+
+    阶段C（依赖 mv_device_running_1s）：
+        3. run_auto_baseline_b()（影子baseline）
+        4. run_auto_baseline()（生产baseline）
+        5. run_running_thresholds_b()（影子运行阈值）
+        6. compute_metric_quality_rules_shadow()（影子质量规则）
+        7. compute_metric_quality_rules()（生产质量规则）
 
     返回：生成摘要
     """
@@ -589,33 +594,42 @@ def _generate_rule_tables(settings) -> Dict[str, Any]:
     import yaml
     from pathlib import Path
 
-    # 读取配置：是否跳过影子规则生成
+    # 读取配置
     skip_shadow_rules = False  # 默认值
+    cfg_device_running = True  # 默认值
+    device_running_cfg = None  # 默认值
+
     try:
         config_path = Path("configs/merge.yaml")
         if config_path.exists():
             config_data = yaml.safe_load(config_path.read_text(encoding="utf-8"))
-            skip_shadow_rules = bool(
-                (config_data.get("run_all", {}) or {}).get("skip_shadow_rules", False)
-            )
+            run_all_cfg = config_data.get("run_all", {}) or {}
+            skip_shadow_rules = bool(run_all_cfg.get("skip_shadow_rules", False))
+            cfg_device_running = bool(run_all_cfg.get("device_running", True))
+            device_running_cfg = run_all_cfg.get("device_running_cfg")
+
             _act.info(
-                f"[规则生成] 配置读取：skip_shadow_rules={skip_shadow_rules}",
+                f"[规则生成] 配置读取：skip_shadow_rules={skip_shadow_rules}, device_running={cfg_device_running}",
                 extra={
                     "extra_data": {
                         "event": "config.loaded",
                         "skip_shadow_rules": skip_shadow_rules,
+                        "device_running": cfg_device_running,
                         "config_path": str(config_path)
                     }
                 }
             )
     except Exception as e:
         _act.warning(
-            f"[规则生成] 配置读取失败，使用默认值 skip_shadow_rules=False: {e}",
+            f"[规则生成] 配置读取失败，使用默认值: {e}",
             extra={
                 "extra_data": {
                     "event": "config.load_error",
                     "error": str(e),
-                    "default_value": False
+                    "defaults": {
+                        "skip_shadow_rules": False,
+                        "device_running": True
+                    }
                 }
             }
         )
@@ -627,6 +641,7 @@ def _generate_rule_tables(settings) -> Dict[str, Any]:
         "running_thresholds_shadow": 0,
         "running_thresholds_prod": 0,
         "quality_rules_prod": 0,
+        "device_running": None,  # 新增：device_running 执行结果
     }
 
     # 计算时间窗口（从 fact_measurements 表查询实际数据范围）
@@ -673,47 +688,208 @@ def _generate_rule_tables(settings) -> Dict[str, Any]:
     win_start = _iso_utc(start_time)
     win_end = _iso_utc(end_time)
 
-    # 1. 影子baseline
+    # ========================================================================
+    # 阶段A：生成 device_running_thresholds 表（不依赖 mv_device_running_1s）
+    # ========================================================================
+    _act.info(
+        "[规则生成] ========== 阶段A：生成运行阈值（不依赖 mv_device_running_1s） ==========",
+        extra={"extra_data": {"event": "phase_a.start"}}
+    )
+
     import threading
+
+    # A1. 生产运行阈值（使用存储过程，不依赖 mv_device_running_1s）
+    t0_a1 = time.perf_counter()
+    try:
+        _act.info(
+            "[规则生成] A1/7 开始：run_running_thresholds（生产运行阈值）",
+            extra={
+                "extra_data": {
+                    "event": "rule_generation.start",
+                    "function": "run_running_thresholds",
+                    "type": "production",
+                    "phase": "A",
+                    "sequence": "A1/7",
+                    "params": {
+                        "start": win_start,
+                        "end": win_end,
+                        "station_id": None,
+                        "device_id": None,
+                        "ensure_rows": True,
+                        "method": "robust"
+                    }
+                }
+            }
+        )
+        res = run_running_thresholds(
+            settings,
+            start=win_start,
+            end=win_end,
+            station_id=None,
+            device_id=None,
+            ensure_rows=True,
+            method="robust",
+        )
+        count_a1 = res.get("inserted", 0) if isinstance(res, dict) else 0
+        duration_ms_a1 = int((time.perf_counter() - t0_a1) * 1000)
+        result["running_thresholds_prod"] = {"count": count_a1, "duration_ms": duration_ms_a1}
+        _act.info(
+            f"[规则生成] A1/7 完成：run_running_thresholds (耗时: {duration_ms_a1}ms, 插入: {count_a1}条)",
+            extra={
+                "extra_data": {
+                    "event": "rule_generation.done",
+                    "function": "run_running_thresholds",
+                    "phase": "A",
+                    "sequence": "A1/7",
+                    "duration_ms": duration_ms_a1,
+                    "result": {"inserted": count_a1}
+                }
+            }
+        )
+    except Exception as e:
+        duration_ms_a1 = int((time.perf_counter() - t0_a1) * 1000)
+        result["running_thresholds_prod"] = {"count": 0, "duration_ms": duration_ms_a1, "error": str(e)}
+        _act.error(
+            f"[规则生成] A1/7 失败：run_running_thresholds (耗时: {duration_ms_a1}ms, 错误: {e})",
+            extra={
+                "extra_data": {
+                    "event": "rule_generation.error",
+                    "function": "run_running_thresholds",
+                    "phase": "A",
+                    "sequence": "A1/7",
+                    "duration_ms": duration_ms_a1,
+                    "error": str(e)
+                }
+            }
+        )
+        raise  # 阶段A失败，中断流程
+
+    # ========================================================================
+    # 阶段B：调用 device_running 填充 mv_device_running_1s 表
+    # ========================================================================
+    _act.info(
+        "[规则生成] ========== 阶段B：调用 device_running 填充 mv_device_running_1s ==========",
+        extra={"extra_data": {"event": "phase_b.start", "device_running_enabled": cfg_device_running}}
+    )
+
+    if cfg_device_running:
+        t0_b = time.perf_counter()
+        try:
+            from app.services.device_running_job import DeviceRunningJob, JobConfig
+
+            _act.info(
+                "[规则生成] B/7 开始：device_running（填充 mv_device_running_1s）",
+                extra={
+                    "extra_data": {
+                        "event": "device_running.start",
+                        "phase": "B",
+                        "sequence": "B/7",
+                        "time_window": {
+                            "start": start_time.isoformat(),
+                            "end": end_time.isoformat()
+                        }
+                    }
+                }
+            )
+
+            # 从配置构造作业配置
+            _dr = device_running_cfg or {}
+            _job_cfg = JobConfig(
+                slice_granularity=str(_dr.get("slice", "week")),
+                max_device_concurrency=int(_dr.get("max_device_concurrency", 2)),
+                update_only_when_changed=bool(_dr.get("update_only_when_changed", True)),
+                force_recompute=bool(_dr.get("force_recompute", False)),
+            )
+            job = DeviceRunningJob(settings, _job_cfg)
+
+            # 执行 device_running
+            job.run(start_ts=start_time, end_ts=end_time)
+
+            duration_ms_b = int((time.perf_counter() - t0_b) * 1000)
+            result["device_running"] = {"success": True, "duration_ms": duration_ms_b}
+            _act.info(
+                f"[规则生成] B/7 完成：device_running (耗时: {duration_ms_b}ms)",
+                extra={
+                    "extra_data": {
+                        "event": "device_running.done",
+                        "phase": "B",
+                        "sequence": "B/7",
+                        "duration_ms": duration_ms_b
+                    }
+                }
+            )
+        except Exception as e:
+            duration_ms_b = int((time.perf_counter() - t0_b) * 1000)
+            result["device_running"] = {"success": False, "duration_ms": duration_ms_b, "error": str(e)}
+            _act.error(
+                f"[规则生成] B/7 失败：device_running (耗时: {duration_ms_b}ms, 错误: {e})",
+                extra={
+                    "extra_data": {
+                        "event": "device_running.error",
+                        "phase": "B",
+                        "sequence": "B/7",
+                        "duration_ms": duration_ms_b,
+                        "error": str(e)
+                    }
+                }
+            )
+            raise  # 阶段B失败，中断流程
+    else:
+        _act.warning(
+            "[规则生成] B/7 跳过：device_running（配置已禁用）",
+            extra={
+                "extra_data": {
+                    "event": "device_running.skipped",
+                    "phase": "B",
+                    "sequence": "B/7",
+                    "reason": "device_running=false in config"
+                }
+            }
+        )
+        result["device_running"] = {"success": False, "skipped": True, "reason": "disabled_in_config"}
+
+    # ========================================================================
+    # 阶段C：生成其他规则表（依赖 mv_device_running_1s）
+    # ========================================================================
+    _act.info(
+        "[规则生成] ========== 阶段C：生成其他规则表（依赖 mv_device_running_1s） ==========",
+        extra={"extra_data": {"event": "phase_c.start"}}
+    )
+
+    # C1. 影子baseline
     if skip_shadow_rules:
         _act.info(
-            "[规则生成] 1/6 跳过：run_auto_baseline_b (原因: skip_shadow_rules=true)",
+            "[规则生成] C1/7 跳过：run_auto_baseline_b (原因: skip_shadow_rules=true)",
             extra={
                 "extra_data": {
                     "event": "rule_generation.skipped",
                     "function": "run_auto_baseline_b",
                     "type": "shadow",
-                    "sequence": "1/6",
+                    "phase": "C",
+                    "sequence": "C1/7",
                     "reason": "skip_shadow_rules=true"
                 }
             }
         )
-        result["baseline_shadow"] = 0
+        result["baseline_shadow"] = {"count": 0, "duration_ms": 0, "skipped": True}
     else:
-        t0_1 = time.perf_counter()
+        t0_c1 = time.perf_counter()
         try:
             _act.info(
-                "[规则生成] 1/6 开始：run_auto_baseline_b",
+                "[规则生成] C1/7 开始：run_auto_baseline_b",
                 extra={
                     "extra_data": {
                         "event": "rule_generation.start",
                         "function": "run_auto_baseline_b",
                         "type": "shadow",
-                        "sequence": "1/6",
+                        "phase": "C",
+                        "sequence": "C1/7",
                         "params": {
                             "lookback_days": 30,
                             "station_id": None,
                             "device_id": None,
                             "method": "stl_residual",
                             "version": "vB_shadow"
-                        },
-                        "window": {
-                            "start": win_start,
-                            "end": win_end
-                        },
-                        "thread": {
-                            "id": threading.get_ident(),
-                            "name": threading.current_thread().name
                         }
                     }
                 }
@@ -726,35 +902,34 @@ def _generate_rule_tables(settings) -> Dict[str, Any]:
                 method="stl_residual",
                 version="vB_shadow",
             )
-            count_1 = res.get("inserted", 0)
-            duration_ms_1 = int((time.perf_counter() - t0_1) * 1000)
-            result["baseline_shadow"] = {"count": count_1, "duration_ms": duration_ms_1}
+            count_c1 = res.get("inserted", 0)
+            duration_ms_c1 = int((time.perf_counter() - t0_c1) * 1000)
+            result["baseline_shadow"] = {"count": count_c1, "duration_ms": duration_ms_c1}
             _act.info(
-                f"[规则生成] 1/6 完成：run_auto_baseline_b (耗时: {duration_ms_1}ms, 插入: {count_1}条)",
+                f"[规则生成] C1/7 完成：run_auto_baseline_b (耗时: {duration_ms_c1}ms, 插入: {count_c1}条)",
                 extra={
                     "extra_data": {
                         "event": "rule_generation.done",
                         "function": "run_auto_baseline_b",
-                        "type": "shadow",
-                        "sequence": "1/6",
-                        "duration_ms": duration_ms_1,
-                        "result": {
-                            "inserted": count_1
-                        }
+                        "phase": "C",
+                        "sequence": "C1/7",
+                        "duration_ms": duration_ms_c1,
+                        "result": {"inserted": count_c1}
                     }
                 }
             )
         except Exception as e:
-            duration_ms_1 = int((time.perf_counter() - t0_1) * 1000)
-            result["baseline_shadow"] = {"count": 0, "duration_ms": duration_ms_1, "error": str(e)}
+            duration_ms_c1 = int((time.perf_counter() - t0_c1) * 1000)
+            result["baseline_shadow"] = {"count": 0, "duration_ms": duration_ms_c1, "error": str(e)}
             _act.warning(
-                f"[规则生成] 1/6 失败：run_auto_baseline_b (耗时: {duration_ms_1}ms, 错误: {e})",
+                f"[规则生成] C1/7 失败：run_auto_baseline_b (耗时: {duration_ms_c1}ms, 错误: {e})",
                 extra={
                     "extra_data": {
                         "event": "rule_generation.error",
                         "function": "run_auto_baseline_b",
-                        "sequence": "1/6",
-                        "duration_ms": duration_ms_1,
+                        "phase": "C",
+                        "sequence": "C1/7",
+                        "duration_ms": duration_ms_c1,
                         "error": str(e)
                     }
                 }
