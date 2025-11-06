@@ -935,29 +935,22 @@ def _generate_rule_tables(settings) -> Dict[str, Any]:
                 }
             )
 
-    # 2. 生产baseline
-    t0_2 = time.perf_counter()
+    # C2. 生产baseline
+    t0_c2 = time.perf_counter()
     try:
         _act.info(
-            "[规则生成] 2/6 开始：run_auto_baseline",
+            "[规则生成] C2/7 开始：run_auto_baseline",
             extra={
                 "extra_data": {
                     "event": "rule_generation.start",
                     "function": "run_auto_baseline",
                     "type": "production",
-                    "sequence": "2/6",
+                    "phase": "C",
+                    "sequence": "C2/7",
                     "params": {
                         "lookback_days": 30,
                         "station_id": None,
                         "device_id": None
-                    },
-                    "window": {
-                        "start": win_start,
-                        "end": win_end
-                    },
-                    "thread": {
-                        "id": threading.get_ident(),
-                        "name": threading.current_thread().name
                     }
                 }
             }
@@ -968,80 +961,73 @@ def _generate_rule_tables(settings) -> Dict[str, Any]:
             station_id=None,
             device_id=None,
         )
-        count_2 = res.get("affected", 0) or 0
-        duration_ms_2 = int((time.perf_counter() - t0_2) * 1000)
-        result["baseline_prod"] = {"count": count_2, "duration_ms": duration_ms_2}
+        count_c2 = res.get("affected", 0) or 0
+        duration_ms_c2 = int((time.perf_counter() - t0_c2) * 1000)
+        result["baseline_prod"] = {"count": count_c2, "duration_ms": duration_ms_c2}
         _act.info(
-            f"[规则生成] 2/6 完成：run_auto_baseline (耗时: {duration_ms_2}ms, 插入: {count_2}条)",
+            f"[规则生成] C2/7 完成：run_auto_baseline (耗时: {duration_ms_c2}ms, 插入: {count_c2}条)",
             extra={
                 "extra_data": {
                     "event": "rule_generation.done",
                     "function": "run_auto_baseline",
-                    "type": "production",
-                    "sequence": "2/6",
-                    "duration_ms": duration_ms_2,
-                    "result": {
-                        "inserted": count_2
-                    }
+                    "phase": "C",
+                    "sequence": "C2/7",
+                    "duration_ms": duration_ms_c2,
+                    "result": {"inserted": count_c2}
                 }
             }
         )
     except Exception as e:
-        duration_ms_2 = int((time.perf_counter() - t0_2) * 1000)
-        result["baseline_prod"] = {"count": 0, "duration_ms": duration_ms_2, "error": str(e)}
+        duration_ms_c2 = int((time.perf_counter() - t0_c2) * 1000)
+        result["baseline_prod"] = {"count": 0, "duration_ms": duration_ms_c2, "error": str(e)}
         _act.warning(
-            f"[规则生成] 2/6 失败：run_auto_baseline (耗时: {duration_ms_2}ms, 错误: {e})",
+            f"[规则生成] C2/7 失败：run_auto_baseline (耗时: {duration_ms_c2}ms, 错误: {e})",
             extra={
                 "extra_data": {
                     "event": "rule_generation.error",
                     "function": "run_auto_baseline",
-                    "sequence": "2/6",
-                    "duration_ms": duration_ms_2,
+                    "phase": "C",
+                    "sequence": "C2/7",
+                    "duration_ms": duration_ms_c2,
                     "error": str(e)
                 }
             }
         )
 
-    # 3. 影子运行阈值
+    # C3. 影子运行阈值
     if skip_shadow_rules:
         _act.info(
-            "[规则生成] 3/6 跳过：run_running_thresholds_b (原因: skip_shadow_rules=true)",
+            "[规则生成] C3/7 跳过：run_running_thresholds_b (原因: skip_shadow_rules=true)",
             extra={
                 "extra_data": {
                     "event": "rule_generation.skipped",
                     "function": "run_running_thresholds_b",
                     "type": "shadow",
-                    "sequence": "3/6",
+                    "phase": "C",
+                    "sequence": "C3/7",
                     "reason": "skip_shadow_rules=true"
                 }
             }
         )
-        result["running_thresholds_shadow"] = {"count": 0, "duration_ms": 0}
+        result["running_thresholds_shadow"] = {"count": 0, "duration_ms": 0, "skipped": True}
     else:
-        t0_3 = time.perf_counter()
+        t0_c3 = time.perf_counter()
         try:
             _act.info(
-                "[规则生成] 3/6 开始：run_running_thresholds_b",
+                "[规则生成] C3/7 开始：run_running_thresholds_b",
                 extra={
                     "extra_data": {
                         "event": "rule_generation.start",
                         "function": "run_running_thresholds_b",
                         "type": "shadow",
-                        "sequence": "3/6",
+                        "phase": "C",
+                        "sequence": "C3/7",
                         "params": {
                             "start": win_start,
                             "end": win_end,
                             "station_id": None,
                             "device_id": None,
                             "method": "gmm"
-                        },
-                        "window": {
-                            "start": win_start,
-                            "end": win_end
-                        },
-                        "thread": {
-                            "id": threading.get_ident(),
-                            "name": threading.current_thread().name
                         }
                     }
                 }
@@ -1054,152 +1040,72 @@ def _generate_rule_tables(settings) -> Dict[str, Any]:
                 device_id=None,
                 method="gmm",
             )
-            count_3 = res.get("inserted", 0) if isinstance(res, dict) else 0
-            duration_ms_3 = int((time.perf_counter() - t0_3) * 1000)
-            result["running_thresholds_shadow"] = {"count": count_3, "duration_ms": duration_ms_3}
+            count_c3 = res.get("inserted", 0) if isinstance(res, dict) else 0
+            duration_ms_c3 = int((time.perf_counter() - t0_c3) * 1000)
+            result["running_thresholds_shadow"] = {"count": count_c3, "duration_ms": duration_ms_c3}
             _act.info(
-                f"[规则生成] 3/6 完成：run_running_thresholds_b (耗时: {duration_ms_3}ms, 插入: {count_3}条)",
+                f"[规则生成] C3/7 完成：run_running_thresholds_b (耗时: {duration_ms_c3}ms, 插入: {count_c3}条)",
                 extra={
                     "extra_data": {
                         "event": "rule_generation.done",
                         "function": "run_running_thresholds_b",
-                        "type": "shadow",
-                        "sequence": "3/6",
-                        "duration_ms": duration_ms_3,
-                        "result": {
-                            "inserted": count_3
-                        }
+                        "phase": "C",
+                        "sequence": "C3/7",
+                        "duration_ms": duration_ms_c3,
+                        "result": {"inserted": count_c3}
                     }
                 }
             )
         except Exception as e:
-            duration_ms_3 = int((time.perf_counter() - t0_3) * 1000)
-            result["running_thresholds_shadow"] = {"count": 0, "duration_ms": duration_ms_3, "error": str(e)}
+            duration_ms_c3 = int((time.perf_counter() - t0_c3) * 1000)
+            result["running_thresholds_shadow"] = {"count": 0, "duration_ms": duration_ms_c3, "error": str(e)}
             _act.warning(
-                f"[规则生成] 3/6 失败：run_running_thresholds_b (耗时: {duration_ms_3}ms, 错误: {e})",
+                f"[规则生成] C3/7 失败：run_running_thresholds_b (耗时: {duration_ms_c3}ms, 错误: {e})",
                 extra={
                     "extra_data": {
                         "event": "rule_generation.error",
                         "function": "run_running_thresholds_b",
-                        "sequence": "3/6",
-                        "duration_ms": duration_ms_3,
+                        "phase": "C",
+                        "sequence": "C3/7",
+                        "duration_ms": duration_ms_c3,
                         "error": str(e)
                     }
                 }
             )
 
-    # 4. 生产运行阈值
-    t0_4 = time.perf_counter()
-    try:
-        _act.info(
-            "[规则生成] 4/6 开始：run_running_thresholds",
-            extra={
-                "extra_data": {
-                    "event": "rule_generation.start",
-                    "function": "run_running_thresholds",
-                    "type": "production",
-                    "sequence": "4/6",
-                    "params": {
-                        "start": win_start,
-                        "end": win_end,
-                        "station_id": None,
-                        "device_id": None,
-                        "ensure_rows": True,
-                        "method": "robust"
-                    },
-                    "window": {
-                        "start": win_start,
-                        "end": win_end
-                    },
-                    "thread": {
-                        "id": threading.get_ident(),
-                        "name": threading.current_thread().name
-                    }
-                }
-            }
-        )
-        res = run_running_thresholds(
-            settings,
-            start=win_start,
-            end=win_end,
-            station_id=None,
-            device_id=None,
-            ensure_rows=True,
-            method="robust",
-        )
-        count_4 = res.get("inserted", 0) if isinstance(res, dict) else 0
-        duration_ms_4 = int((time.perf_counter() - t0_4) * 1000)
-        result["running_thresholds_prod"] = {"count": count_4, "duration_ms": duration_ms_4}
-        _act.info(
-            f"[规则生成] 4/6 完成：run_running_thresholds (耗时: {duration_ms_4}ms, 插入: {count_4}条)",
-            extra={
-                "extra_data": {
-                    "event": "rule_generation.done",
-                    "function": "run_running_thresholds",
-                    "type": "production",
-                    "sequence": "4/6",
-                    "duration_ms": duration_ms_4,
-                    "result": {
-                        "inserted": count_4
-                    }
-                }
-            }
-        )
-    except Exception as e:
-        duration_ms_4 = int((time.perf_counter() - t0_4) * 1000)
-        result["running_thresholds_prod"] = {"count": 0, "duration_ms": duration_ms_4, "error": str(e)}
-        _act.warning(
-            f"[规则生成] 4/6 失败：run_running_thresholds (耗时: {duration_ms_4}ms, 错误: {e})",
-            extra={
-                "extra_data": {
-                    "event": "rule_generation.error",
-                    "function": "run_running_thresholds",
-                    "sequence": "4/6",
-                    "duration_ms": duration_ms_4,
-                    "error": str(e)
-                }
-            }
-        )
-
-    # 5. 影子质量规则
+    # C4. 影子质量规则
     if skip_shadow_rules:
         _act.info(
-            "[规则生成] 5/6 跳过：compute_metric_quality_rules_shadow (原因: skip_shadow_rules=true)",
+            "[规则生成] C4/7 跳过：compute_metric_quality_rules_shadow (原因: skip_shadow_rules=true)",
             extra={
                 "extra_data": {
                     "event": "rule_generation.skipped",
                     "function": "compute_metric_quality_rules_shadow",
                     "type": "shadow",
-                    "sequence": "5/6",
+                    "phase": "C",
+                    "sequence": "C4/7",
                     "reason": "skip_shadow_rules=true"
                 }
             }
         )
-        result["quality_rules_shadow"] = {"count": 0, "duration_ms": 0}
+        result["quality_rules_shadow"] = {"count": 0, "duration_ms": 0, "skipped": True}
     else:
-        t0_5 = time.perf_counter()
+        t0_c4 = time.perf_counter()
         try:
             _act.info(
-                "[规则生成] 5/6 开始：compute_metric_quality_rules_shadow",
+                "[规则生成] C4/7 开始：compute_metric_quality_rules_shadow",
                 extra={
                     "extra_data": {
                         "event": "rule_generation.start",
                         "function": "compute_metric_quality_rules_shadow",
                         "type": "shadow",
-                        "sequence": "5/6",
+                        "phase": "C",
+                        "sequence": "C4/7",
                         "params": {
                             "station_id": None,
                             "device_id": None,
                             "method": "stl_residual",
                             "version": "vB_shadow"
-                        },
-                        "window": {
-                            "start": win_start,
-                            "end": win_end
-                        },
-                        "thread": {
-                            "id": threading.get_ident(),
-                            "name": threading.current_thread().name
                         }
                     }
                 }
@@ -1211,62 +1117,54 @@ def _generate_rule_tables(settings) -> Dict[str, Any]:
                 method="stl_residual",
                 version="vB_shadow",
             )
-            count_5 = res.get("inserted", 0)
-            duration_ms_5 = int((time.perf_counter() - t0_5) * 1000)
-            result["quality_rules_shadow"] = {"count": count_5, "duration_ms": duration_ms_5}
+            count_c4 = res.get("inserted", 0)
+            duration_ms_c4 = int((time.perf_counter() - t0_c4) * 1000)
+            result["quality_rules_shadow"] = {"count": count_c4, "duration_ms": duration_ms_c4}
             _act.info(
-                f"[规则生成] 5/6 完成：compute_metric_quality_rules_shadow (耗时: {duration_ms_5}ms, 插入: {count_5}条)",
+                f"[规则生成] C4/7 完成：compute_metric_quality_rules_shadow (耗时: {duration_ms_c4}ms, 插入: {count_c4}条)",
                 extra={
                     "extra_data": {
                         "event": "rule_generation.done",
                         "function": "compute_metric_quality_rules_shadow",
-                        "type": "shadow",
-                        "sequence": "5/6",
-                        "duration_ms": duration_ms_5,
-                        "result": {
-                            "inserted": count_5
-                        }
+                        "phase": "C",
+                        "sequence": "C4/7",
+                        "duration_ms": duration_ms_c4,
+                        "result": {"inserted": count_c4}
                     }
                 }
             )
         except Exception as e:
-            duration_ms_5 = int((time.perf_counter() - t0_5) * 1000)
-            result["quality_rules_shadow"] = {"count": 0, "duration_ms": duration_ms_5, "error": str(e)}
+            duration_ms_c4 = int((time.perf_counter() - t0_c4) * 1000)
+            result["quality_rules_shadow"] = {"count": 0, "duration_ms": duration_ms_c4, "error": str(e)}
             _act.warning(
-                f"[规则生成] 5/6 失败：compute_metric_quality_rules_shadow (耗时: {duration_ms_5}ms, 错误: {e})",
+                f"[规则生成] C4/7 失败：compute_metric_quality_rules_shadow (耗时: {duration_ms_c4}ms, 错误: {e})",
                 extra={
                     "extra_data": {
                         "event": "rule_generation.error",
                         "function": "compute_metric_quality_rules_shadow",
-                        "sequence": "5/6",
-                        "duration_ms": duration_ms_5,
+                        "phase": "C",
+                        "sequence": "C4/7",
+                        "duration_ms": duration_ms_c4,
                         "error": str(e)
                     }
                 }
             )
 
-    # 6. 生产质量规则
-    t0_6 = time.perf_counter()
+    # C5. 生产质量规则
+    t0_c5 = time.perf_counter()
     try:
         _act.info(
-            "[规则生成] 6/6 开始：compute_metric_quality_rules",
+            "[规则生成] C5/7 开始：compute_metric_quality_rules",
             extra={
                 "extra_data": {
                     "event": "rule_generation.start",
                     "function": "compute_metric_quality_rules",
                     "type": "production",
-                    "sequence": "6/6",
+                    "phase": "C",
+                    "sequence": "C5/7",
                     "params": {
                         "station_id": None,
                         "device_id": None
-                    },
-                    "window": {
-                        "start": win_start,
-                        "end": win_end
-                    },
-                    "thread": {
-                        "id": threading.get_ident(),
-                        "name": threading.current_thread().name
                     }
                 }
             }
@@ -1276,35 +1174,34 @@ def _generate_rule_tables(settings) -> Dict[str, Any]:
             station_id=None,
             device_id=None,
         )
-        count_6 = res.get("inserted", 0)
-        duration_ms_6 = int((time.perf_counter() - t0_6) * 1000)
-        result["quality_rules_prod"] = {"count": count_6, "duration_ms": duration_ms_6}
+        count_c5 = res.get("inserted", 0)
+        duration_ms_c5 = int((time.perf_counter() - t0_c5) * 1000)
+        result["quality_rules_prod"] = {"count": count_c5, "duration_ms": duration_ms_c5}
         _act.info(
-            f"[规则生成] 6/6 完成：compute_metric_quality_rules (耗时: {duration_ms_6}ms, 插入: {count_6}条)",
+            f"[规则生成] C5/7 完成：compute_metric_quality_rules (耗时: {duration_ms_c5}ms, 插入: {count_c5}条)",
             extra={
                 "extra_data": {
                     "event": "rule_generation.done",
                     "function": "compute_metric_quality_rules",
-                    "type": "production",
-                    "sequence": "6/6",
-                    "duration_ms": duration_ms_6,
-                    "result": {
-                        "inserted": count_6
-                    }
+                    "phase": "C",
+                    "sequence": "C5/7",
+                    "duration_ms": duration_ms_c5,
+                    "result": {"inserted": count_c5}
                 }
             }
         )
     except Exception as e:
-        duration_ms_6 = int((time.perf_counter() - t0_6) * 1000)
-        result["quality_rules_prod"] = {"count": 0, "duration_ms": duration_ms_6, "error": str(e)}
+        duration_ms_c5 = int((time.perf_counter() - t0_c5) * 1000)
+        result["quality_rules_prod"] = {"count": 0, "duration_ms": duration_ms_c5, "error": str(e)}
         _act.warning(
-            f"[规则生成] 6/6 失败：compute_metric_quality_rules (耗时: {duration_ms_6}ms, 错误: {e})",
+            f"[规则生成] C5/7 失败：compute_metric_quality_rules (耗时: {duration_ms_c5}ms, 错误: {e})",
             extra={
                 "extra_data": {
                     "event": "rule_generation.error",
                     "function": "compute_metric_quality_rules",
-                    "sequence": "6/6",
-                    "duration_ms": duration_ms_6,
+                    "phase": "C",
+                    "sequence": "C5/7",
+                    "duration_ms": duration_ms_c5,
                     "error": str(e)
                 }
             }

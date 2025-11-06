@@ -355,83 +355,9 @@ def run_all(
         except Exception:
             pass
 
-    # 4.5) 可选：设备运行状态计算（在 merge-fact 之后、缺失指标计算之前执行）
+    # 注意：device_running 阶段已整合到 prepare_dim_stage2 中（阶段B）
+    # 不再需要独立的 device_running 阶段，避免重复执行
     device_running_summary: Dict[str, Any] | None = None
-    if cfg_device_running:
-        t0_stage = time.perf_counter()
-        try:
-            import logging as _logging
-            _logging.getLogger("activity").info(
-                "[进度] device_running 开始",
-                extra={
-                    "extra_data": {
-                        "event": "device_running.start",
-                        "window": {"start": ws_local, "end": we_local},
-                        "device_id": device_id,
-                        "config": device_running_cfg,
-                    }
-                }
-            )
-        except Exception:
-            pass
-
-        try:
-            from app.services.device_running_job import DeviceRunningJob, JobConfig
-
-            # 从配置构造作业配置
-            _dr = device_running_cfg or {}
-            _job_cfg = JobConfig(
-                slice_granularity=str(_dr.get("slice", "week")),
-                max_device_concurrency=int(_dr.get("max_device_concurrency", 2)),
-                update_only_when_changed=bool(_dr.get("update_only_when_changed", True)),
-                force_recompute=bool(_dr.get("force_recompute", False)),
-                audit_granularity=str(_dr.get("audit_granularity", "day")),
-            )
-
-            job = DeviceRunningJob(settings, _job_cfg)
-            _ws_dt = datetime.fromisoformat(ws.replace("Z", "+00:00"))
-            _we_dt = datetime.fromisoformat(we.replace("Z", "+00:00"))
-            if device_id:
-                job.run(device_ids=[int(device_id)], start_ts=_ws_dt, end_ts=_we_dt)
-            else:
-                job.run(start_ts=_ws_dt, end_ts=_we_dt)
-            duration_s = time.perf_counter() - t0_stage
-            timing_stats["device_running"] = {"duration_s": duration_s}
-            device_running_summary = {"status": "ok", "window": {"start": ws_local, "end": we_local}, "config": _job_cfg.__dict__}
-
-            try:
-                import logging as _logging
-                _logging.getLogger("activity").info(
-                    f"[进度] device_running 完成 (耗时: {duration_s:.2f}秒)",
-                    extra={
-                        "extra_data": {
-                            "event": "device_running.done",
-                            "duration_s": duration_s,
-                            "summary": device_running_summary,
-                        }
-                    }
-                )
-            except Exception:
-                pass
-        except Exception as ex:
-            duration_s = time.perf_counter() - t0_stage
-            timing_stats["device_running"] = {"duration_s": duration_s, "error": str(ex)}
-            device_running_summary = {"status": "error", "message": str(ex), "window": {"start": ws_local, "end": we_local}}
-
-            try:
-                import logging as _logging
-                _logging.getLogger("activity").error(
-                    f"[进度] device_running 失败 (耗时: {duration_s:.2f}秒): {ex}",
-                    extra={
-                        "extra_data": {
-                            "event": "device_running.error",
-                            "duration_s": duration_s,
-                            "error": str(ex),
-                        }
-                    }
-                )
-            except Exception:
-                pass
 
     # 5) 可选后续：quality_mark（质量标注）
     quality_mark_summary: Dict[str, Any] | None = None
