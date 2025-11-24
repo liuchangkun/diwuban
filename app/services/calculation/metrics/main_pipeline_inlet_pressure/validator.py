@@ -49,20 +49,20 @@ class Validator:
         if data.empty:
             self.logger.info(
                 "[结果验证] 输入数据为空，跳过验证",
-                extra={'extra_data': {'trace_id': self.trace_id}}
+                extra={'extra_data': {'追踪ID': self.trace_id}}
             )
             return data
         
         if 'main_pipeline_inlet_pressure' not in data.columns:
             self.logger.warning(
                 "[结果验证] 缺少main_pipeline_inlet_pressure列，跳过验证",
-                extra={'extra_data': {'trace_id': self.trace_id}}
+                extra={'extra_data': {'追踪ID': self.trace_id}}
             )
             return data
         
         self.logger.info(
             f"[结果验证] 开始验证: 数据量={len(data)}",
-            extra={'extra_data': {'trace_id': self.trace_id}}
+            extra={'extra_data': {'追踪ID': self.trace_id}}
         )
         
         result = data.copy()
@@ -76,7 +76,7 @@ class Validator:
             self.logger.error(
                 "[参数错误] 缺少必需参数 'min_pressure'",
                 extra={'extra_data': {
-                    'trace_id': self.trace_id,
+                    '追踪ID': self.trace_id,
                     'missing_param': 'min_pressure',
                     'fix': '请在 calculation_parameters 表中添加该参数'
                 }}
@@ -86,7 +86,7 @@ class Validator:
             self.logger.error(
                 "[参数错误] 缺少必需参数 'max_pressure'",
                 extra={'extra_data': {
-                    'trace_id': self.trace_id,
+                    '追踪ID': self.trace_id,
                     'missing_param': 'max_pressure',
                     'fix': '请在 calculation_parameters 表中添加该参数'
                 }}
@@ -110,7 +110,7 @@ class Validator:
                 self.logger.warning(
                     "[参数警告] 缺少物理常数参数，跳过物理约束检查",
                     extra={'extra_data': {
-                        'trace_id': self.trace_id,
+                        '追踪ID': self.trace_id,
                         'P_atm': P_atm,
                         'rho': rho,
                         'g': g
@@ -120,7 +120,7 @@ class Validator:
             elif max_deviation is None:
                 self.logger.warning(
                     "[参数警告] 缺少 max_deviation 参数，跳过物理约束检查",
-                    extra={'extra_data': {'trace_id': self.trace_id}}
+                    extra={'extra_data': {'追踪ID': self.trace_id}}
                 )
                 result['valid_physics'] = True
             else:
@@ -137,7 +137,7 @@ class Validator:
         if max_change_rate is None:
             self.logger.warning(
                 "[参数警告] 缺少 max_change_rate 参数，跳过异常值检查",
-                extra={'extra_data': {'trace_id': self.trace_id}}
+                extra={'extra_data': {'追踪ID': self.trace_id}}
             )
             result['valid_outlier'] = True
         else:
@@ -169,7 +169,7 @@ class Validator:
         self.logger.info(
             f"[结果验证] 验证完成: 总数={total}, 有效={valid_count}, 无效={invalid_count}",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
+                '追踪ID': self.trace_id,
                 'valid_ratio': f"{valid_count/total*100:.1f}%" if total > 0 else "0%"
             }}
         )

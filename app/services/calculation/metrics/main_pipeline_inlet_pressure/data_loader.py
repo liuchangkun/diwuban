@@ -64,9 +64,9 @@ class DataLoader:
         self.logger.info(
             "[数据加载] 开始加载数据",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'station_id': station_id,
-                'device_id': device_id,
+                '追踪ID': self.trace_id,
+                '泵站ID': station_id,
+                '设备ID': device_id,
                 'start_time': str(start_time),
                 'end_time': str(end_time)
             }}
@@ -85,7 +85,7 @@ class DataLoader:
                 if not row:
                     self.logger.warning(
                         f"[数据加载] 设备不存在: device_id={device_id}",
-                        extra={'extra_data': {'trace_id': self.trace_id}}
+                        extra={'extra_data': {'追踪ID': self.trace_id}}
                     )
                     return pd.DataFrame(columns=['ts_bucket', 'device_id', 'pool_liquid_level', 'running'])
                 
@@ -93,7 +93,7 @@ class DataLoader:
                 if device_type != 'main_pipeline':
                     self.logger.warning(
                         f"[数据加载] 设备类型不匹配: device_id={device_id}, type={device_type}, 期望type='main_pipeline'",
-                        extra={'extra_data': {'trace_id': self.trace_id}}
+                        extra={'extra_data': {'追踪ID': self.trace_id}}
                     )
                     return pd.DataFrame(columns=['ts_bucket', 'device_id', 'pool_liquid_level', 'running'])
         
@@ -141,7 +141,7 @@ class DataLoader:
         # 记录SQL
         log_sql(
             sql,
-            params={'device_id': device_id, 'station_id': station_id, 'start_time': start_time, 'end_time': end_time},
+            params={'设备ID': device_id, '泵站ID': station_id, 'start_time': start_time, 'end_time': end_time},
             duration_ms=query_duration_ms,
             rows=len(df)
         )
@@ -149,9 +149,9 @@ class DataLoader:
         self.logger.info(
             "[数据加载] 加载完成",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'loaded_rows': len(df),
-                'duration_ms': query_duration_ms
+                '追踪ID': self.trace_id,
+                '加载行数': len(df),
+                '耗时（毫秒）': query_duration_ms
             }}
         )
         

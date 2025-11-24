@@ -108,7 +108,7 @@ def get_conn(settings: Settings) -> Iterator[psycopg.Connection]:
 
             _log_pool(
                 "POOL_FALLBACK",
-                {"reason": "import_error", "error": str(e)},
+                {'原因': "import_error", "error": str(e)},
                 _logging.WARNING,
             )
         except Exception:
@@ -135,7 +135,7 @@ def get_conn(settings: Settings) -> Iterator[psycopg.Connection]:
             from app.core.logging.setup import log_db_pool as _log_pool
 
             _detail = {
-                "reason": "pool_path_failed",
+                '原因': "pool_path_failed",
                 "error": str(e),
                 "stats": stats,
             }
@@ -644,9 +644,9 @@ def run_merge_window(
         "[数据库-执行] [合并窗口开始]",
         extra={
             "extra_data": {
-                "start_utc": str(start_utc),
-                "end_utc": str(end_utc),
-                "device_id": device_id,
+                '开始时间（UTC）': str(start_utc),
+                '结束时间（UTC）': str(end_utc),
+                '设备ID': device_id,
             }
         },
     )
@@ -666,7 +666,7 @@ def run_merge_window(
         "start": start_utc,
         "end": end_utc,
         "default_tz": default_station_tz,
-        "device_id": device_id,
+        '设备ID': device_id,
     }
 
     # Query to get deduplicated data
@@ -829,7 +829,7 @@ FROM dedup;
                     "rows_merged": rows_merged,
                     "rows_deduped": rows_deduped,
                     "dedup_ratio": f"{dedup_ratio:.2%}",
-                    "duration_ms": int(cost_ms),
+                    '耗时（毫秒）': int(cost_ms),
                 }
             },
         )
@@ -889,8 +889,8 @@ def get_station_devices_metrics_by_time_range(
     # 统一参数
     params = {
         "station_ids": [int(station_id)],
-        "start_ts": s_ts,
-        "end_ts": e_ts,
+        '开始时间戳': s_ts,
+        '结束时间戳': e_ts,
         "device_ids": device_ids,
         "metric_ids": metric_ids,
     }
@@ -928,8 +928,8 @@ def get_station_devices_metrics_by_time_range(
                 "station_ids": params.get("station_ids"),
                 "device_ids": params.get("device_ids"),
                 "metric_ids": params.get("metric_ids"),
-                "start_ts": params.get("start_ts"),
-                "end_ts": params.get("end_ts"),
+                '开始时间戳': params.get("start_ts"),
+                '结束时间戳': params.get("end_ts"),
             },
             duration_ms=_cost_ms,
             rows=len(rows),
@@ -951,8 +951,8 @@ def get_station_devices_metrics_by_time_range(
     for r in rows:
         # (station_id, device_id, metric_id, ts, cnt, avg_value, min_value, max_value, sum_value)
         item = {
-            "station_id": r[0],
-            "device_id": r[1],
+            '泵站ID': r[0],
+            '设备ID': r[1],
             "metric_id": r[2],
             "ts": _to_primitive(r[3]),
             "cnt": int(r[4]) if r[4] is not None else None,
@@ -1016,8 +1016,8 @@ def get_device_metrics_by_time_range(
 
     params = {
         "station_ids": [station_id],
-        "start_ts": s_ts,
-        "end_ts": e_ts,
+        '开始时间戳': s_ts,
+        '结束时间戳': e_ts,
         "device_ids": [int(device_id)],
         "metric_ids": metric_ids,
     }
@@ -1051,8 +1051,8 @@ def get_device_metrics_by_time_range(
                 "station_ids": params.get("station_ids"),
                 "device_ids": params.get("device_ids"),
                 "metric_ids": params.get("metric_ids"),
-                "start_ts": params.get("start_ts"),
-                "end_ts": params.get("end_ts"),
+                '开始时间戳': params.get("start_ts"),
+                '结束时间戳': params.get("end_ts"),
             },
             duration_ms=_cost_ms2,
             rows=len(rows),
@@ -1072,8 +1072,8 @@ def get_device_metrics_by_time_range(
     result: list[dict] = []
     for r in rows:
         item = {
-            "station_id": r[0],
-            "device_id": r[1],
+            '泵站ID': r[0],
+            '设备ID': r[1],
             "metric_id": r[2],
             "ts": _to_primitive(r[3]),
             "cnt": int(r[4]) if r[4] is not None else None,

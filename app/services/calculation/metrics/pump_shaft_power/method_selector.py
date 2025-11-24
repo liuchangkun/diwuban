@@ -64,8 +64,8 @@ class MethodSelector:
         self.logger.info(
             "[方法选择] 开始选择方法",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'available_columns': list(data.columns)
+                '追踪ID': self.trace_id,
+                '可用列': list(data.columns)
             }}
         )
         
@@ -87,8 +87,8 @@ class MethodSelector:
         self.logger.info(
             "[方法选择] 方法选择完成",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'selected_method': method_id,
+                '追踪ID': self.trace_id,
+                '选择的方法': method_id,
                 'method_name': '电机效率法'
             }}
         )

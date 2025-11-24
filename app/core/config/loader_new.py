@@ -4,7 +4,7 @@
 本模块负责应用程序的配置管理，提供统一的配置加载和验证机制。
 
 核心功能：
-- Settings：应用全局配置（db/ingest/merge/web/system）
+- Settings：应用全局配置（db/ingest/merge/system）
 - load_settings：按目录优先级与 YAML 合并规则加载配置
 - load_settings_with_sources：提供配置来源追踪的加载函数
 - 配置验证：确保配置的正确性和完整性
@@ -19,9 +19,7 @@
 
 配置文件结构：
 - configs/database.yaml：数据库连接和池配置
-
 - configs/ingest.yaml：数据导入和处理配置
-- configs/web.yaml：Web服务配置
 - configs/system.yaml：系统通用配置
 """
 
@@ -55,13 +53,6 @@ from .system import (
     SystemTimezoneSettings,
 )
 from .validation import ConfigValidator
-from .web import (
-    WebApiSettings,
-    WebAppSettings,
-    WebPerformanceSettings,
-    WebServerSettings,
-    WebSettings,
-)
 
 # 进程内缓存：避免重复加载配置；按规范化目录键控
 _SETTINGS_CACHE: dict[str, "Settings"] = {}
@@ -80,9 +71,8 @@ class Settings:
     - db: 数据库连接和池配置
     - ingest: 数据导入和处理配置
     - merge: 数据合并和对齐配置
-
-    - web: Web服务配置
     - system: 系统通用配置
+    - error_handling: 错误处理配置
 
     使用示例：
         settings = load_settings(Path("configs"))
@@ -91,9 +81,6 @@ class Settings:
         db_host = settings.db.host
         pool_size = settings.db.pool.max_size
 
-        # 访问Web服务配置
-        port = settings.web.server.port
-
         # 访问系统配置
         timezone = settings.system.timezone.default
     """
@@ -101,8 +88,6 @@ class Settings:
     db: DbSettings = DbSettings()
     ingest: IngestSettings = IngestSettings()
     merge: MergeSettings = MergeSettings()
-
-    web: WebSettings = WebSettings()
     system: SystemSettings = SystemSettings()
     error_handling: ErrorHandlingConfig = ErrorHandlingConfig()
 
@@ -120,7 +105,7 @@ def load_settings(config_dir: Path) -> Settings:
     加载配置（解决硬编码问题，支持配置外置化）。
 
     - 目录优先级：传入 config_dir → ./configs → ./config
-    - 支持文件：database.yaml、ingest.yaml、merge.yaml、web.yaml、system.yaml、error_handling.yaml
+    - 支持文件：database.yaml、ingest.yaml、merge.yaml、system.yaml、error_handling.yaml
     - 合并策略：ingest 支持 CLI/ENV > YAML > 默认；db/logging 仅 YAML > 默认
     - 硬编码消除：所有默认值均从 system.yaml 读取
 
@@ -137,7 +122,6 @@ def load_settings(config_dir: Path) -> Settings:
         "database": cdir / "database.yaml",
         "ingest": cdir / "ingest.yaml",
         "merge": cdir / "merge.yaml",
-        "web": cdir / "web.yaml",
         "system": cdir / "system.yaml",
         "error_handling": cdir / "error_handling.yaml",
     }
@@ -180,9 +164,6 @@ def load_settings(config_dir: Path) -> Settings:
     # 构建数据库配置（仅从 YAML 加载）
     db_settings = _build_database_settings(data.get("database", {}))
 
-    # 构建 Web 配置
-    web_settings = _build_web_settings(data.get("web", {}))
-
     # 构建导入配置（支持 ENV 覆盖，使用系统默认值）
     ingest_settings = _build_ingest_settings(
         data.get("ingest", {}), data_dir, default_timezone, default_encoding
@@ -201,7 +182,6 @@ def load_settings(config_dir: Path) -> Settings:
         db=db_settings,
         ingest=ingest_settings,
         merge=merge_settings,
-        web=web_settings,
         system=system_settings,
         error_handling=error_handling_settings,
     )
@@ -301,43 +281,6 @@ def _build_database_settings(db_config: Dict[str, Any]) -> DbSettings:
             backoff_multiplier=float(retry_config.get("backoff_multiplier", 2.0)),
         ),
         staging_unlogged=bool(db_config.get("staging_unlogged", False)),
-    )
-
-
-def _build_web_settings(web_config: Dict[str, Any]) -> WebSettings:
-    """构建 Web 服务配置"""
-    server_config = web_config.get("server", {})
-    api_config = web_config.get("api", {})
-    app_config = web_config.get("app", {})
-    performance_config = web_config.get("performance", {})
-
-    return WebSettings(
-        server=WebServerSettings(
-            host=str(server_config.get("host", "127.0.0.1")),
-            port=int(server_config.get("port", 8000)),
-            reload=bool(server_config.get("reload", True)),
-            workers=int(server_config.get("workers", 1)),
-        ),
-        api=WebApiSettings(
-            title=str(api_config.get("title", "Pump Station Optimization API")),
-            description=str(api_config.get("description", "泵站运行数据优化系统 API")),
-            version=str(api_config.get("version", "1.0.0")),
-            docs_url=str(api_config.get("docs_url", "/docs")),
-            redoc_url=str(api_config.get("redoc_url", "/redoc")),
-            # 新增：从配置读取最小默认时间窗（分钟），默认 60
-            minimal_window_minutes=int(api_config.get("minimal_window_minutes", 60)),
-        ),
-        app=WebAppSettings(
-            debug=bool(app_config.get("debug", False)),
-            log_requests=bool(app_config.get("log_requests", True)),
-            cors_enabled=bool(app_config.get("cors_enabled", False)),
-            cors_origins=list(app_config.get("cors_origins", [])),
-        ),
-        performance=WebPerformanceSettings(
-            request_timeout=int(performance_config.get("request_timeout", 30)),
-            max_request_size=int(performance_config.get("max_request_size", 16777216)),
-            keepalive_timeout=int(performance_config.get("keepalive_timeout", 65)),
-        ),
     )
 
 
@@ -504,7 +447,7 @@ def _build_config_sources(config_dir: Path) -> Dict[str, Any]:
 
     # 加载YAML数据用于来源追踪
     yaml_data = {}
-    for config_name in ["database", "logging", "ingest", "merge", "web", "system"]:
+    for config_name in ["database", "logging", "ingest", "merge", "system"]:
         config_path = cdir / f"{config_name}.yaml"
         if config_path.exists():
             try:
@@ -537,25 +480,6 @@ def _build_config_sources(config_dir: Path) -> Dict[str, Any]:
             ),
             "retry.max_retries": _get_yaml_field_source(
                 yaml_data.get("database", {}), "retry.max_retries"
-            ),
-        },
-        "web": {
-            "server.host": _get_yaml_field_source(
-                yaml_data.get("web", {}), "server.host"
-            ),
-            "server.port": _get_yaml_field_source(
-                yaml_data.get("web", {}), "server.port"
-            ),
-            "server.reload": _get_yaml_field_source(
-                yaml_data.get("web", {}), "server.reload"
-            ),
-            "api.title": _get_yaml_field_source(yaml_data.get("web", {}), "api.title"),
-            "api.version": _get_yaml_field_source(
-                yaml_data.get("web", {}), "api.version"
-            ),
-            "app.debug": _get_yaml_field_source(yaml_data.get("web", {}), "app.debug"),
-            "performance.request_timeout": _get_yaml_field_source(
-                yaml_data.get("web", {}), "performance.request_timeout"
             ),
         },
         "system": {

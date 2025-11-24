@@ -103,7 +103,7 @@ class LoggingCursor:
                         args = {k: params.get(k) for k in keys if k in params}
                     _act.info(
                         "[数据库-执行] 数据库函数调用",
-                        extra={"extra_data": {"function": name, "args": args, "duration_ms": cost_ms}},
+                        extra={"extra_data": {'函数': name, "args": args, '耗时（毫秒）': cost_ms}},
                     )
                 elif kind == "view":
                     filters = None
@@ -113,7 +113,7 @@ class LoggingCursor:
                         filters = {k: params.get(k) for k in keys if k in params}
                     _act.info(
                         "[数据库-查询] 视图查询",
-                        extra={"extra_data": {"view": name, "filters": filters, "duration_ms": cost_ms}},
+                        extra={"extra_data": {"view": name, "filters": filters, '耗时（毫秒）': cost_ms}},
                     )
             except Exception:
                 # 日志失败不影响主流程

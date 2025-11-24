@@ -66,9 +66,9 @@ class DataLoader:
         self.logger.info(
             "[数据加载] 开始加载数据",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'station_id': station_id,
-                'device_id': device_id,
+                '追踪ID': self.trace_id,
+                '泵站ID': station_id,
+                '设备ID': device_id,
                 'start_time': str(start_time),
                 'end_time': str(end_time)
             }}
@@ -89,8 +89,8 @@ class DataLoader:
                     self.logger.warning(
                         "[数据加载] 设备不存在",
                         extra={'extra_data': {
-                            'trace_id': self.trace_id,
-                            'device_id': device_id
+                            '追踪ID': self.trace_id,
+                            '设备ID': device_id
                         }}
                     )
                     return pd.DataFrame()
@@ -101,11 +101,11 @@ class DataLoader:
                     self.logger.info(
                         "[数据加载] 跳过非泵设备（pump_inlet_pressure只计算type='pump'的设备）",
                         extra={'extra_data': {
-                            'trace_id': self.trace_id,
-                            'device_id': device_id,
-                            'device_name': device_name,
-                            'device_type': device_type,
-                            'reason': 'pump_inlet_pressure只计算type=pump的设备'
+                            '追踪ID': self.trace_id,
+                            '设备ID': device_id,
+                            '设备名称': device_name,
+                            '设备类型': device_type,
+                            '原因': 'pump_inlet_pressure只计算type=pump的设备'
                         }}
                     )
                     return pd.DataFrame()
@@ -151,8 +151,8 @@ class DataLoader:
         with get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(sql, {
-                    'station_id': station_id,
-                    'device_id': device_id,
+                    '泵站ID': station_id,
+                    '设备ID': device_id,
                     'start_time': start_time,
                     'end_time': end_time
                 })
@@ -170,7 +170,7 @@ class DataLoader:
 
         log_sql(
             sql,
-            params={'station_id': station_id, 'device_id': device_id, 'start_time': start_time, 'end_time': end_time},
+            params={'泵站ID': station_id, '设备ID': device_id, 'start_time': start_time, 'end_time': end_time},
             duration_ms=duration_ms,
             rows=len(df_raw)
         )
@@ -178,11 +178,11 @@ class DataLoader:
         self.logger.info(
             "[数据加载] SQL查询完成",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'station_id': station_id,
-                'device_id': device_id,
+                '追踪ID': self.trace_id,
+                '泵站ID': station_id,
+                '设备ID': device_id,
                 'raw_rows': len(df_raw),
-                'duration_ms': duration_ms
+                '耗时（毫秒）': duration_ms
             }}
         )
 
@@ -190,9 +190,9 @@ class DataLoader:
             self.logger.warning(
                 "[数据加载] 无数据",
                 extra={'extra_data': {
-                    'trace_id': self.trace_id,
-                    'station_id': station_id,
-                    'device_id': device_id
+                    '追踪ID': self.trace_id,
+                    '泵站ID': station_id,
+                    '设备ID': device_id
                 }}
             )
             return pd.DataFrame()
@@ -261,15 +261,15 @@ class DataLoader:
         self.logger.info(
             "[数据加载] 数据透视完成",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'device_id': device_id,
+                '追踪ID': self.trace_id,
+                '设备ID': device_id,
                 'pump_flow_rate_rows': len(df_pump),
                 'pool_liquid_level_rows': len(df_pool),
                 'pool_device_ids': pool_device_ids,
-                'final_rows': len(df_final),
+                '最终行数': len(df_final),
                 'pool_missing_count': pool_missing_count,
                 'pool_coverage_pct': f"{pool_coverage:.2f}",
-                'time_span_hours': f"{(df_final['ts_bucket'].max() - df_final['ts_bucket'].min()).total_seconds() / 3600:.2f}" if not df_final.empty else 0,
+                '时间跨度（小时）': f"{(df_final['ts_bucket'].max() - df_final['ts_bucket'].min()).total_seconds() / 3600:.2f}" if not df_final.empty else 0,
                 **sample_data
             }}
         )
@@ -279,8 +279,8 @@ class DataLoader:
             self.logger.warning(
                 "[数据加载] pool_liquid_level 数据缺失严重",
                 extra={'extra_data': {
-                    'trace_id': self.trace_id,
-                    'device_id': device_id,
+                    '追踪ID': self.trace_id,
+                    '设备ID': device_id,
                     'pool_coverage_pct': f"{pool_coverage:.2f}",
                     'pool_device_ids': pool_device_ids,
                     'suggestion': '检查设备8（水池液位传感器）的数据是否正常'

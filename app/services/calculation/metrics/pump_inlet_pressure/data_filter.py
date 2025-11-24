@@ -40,11 +40,30 @@ class DataFilter:
         self.logger = logging.getLogger(__name__)
         self.trace_id = trace_id
 
-        # 异常值阈值（从数据库加载，不使用硬编码）
+        # 异常值阈值（必须从数据库加载，不允许硬编码默认值）
         if max_liquid_level is None:
             # 从数据库加载默认参数
             params = self._load_default_parameters()
-            self.max_liquid_level = params.get('max_liquid_level', 10.0)
+            self.max_liquid_level = params.get('max_liquid_level')
+
+            # 验证必需参数
+            if self.max_liquid_level is None:
+                self.logger.error(
+                    "[DataFilter] 缺少必需参数 'max_liquid_level'",
+                    extra={'extra_data': {
+                        '追踪ID': self.trace_id,
+                        '错误': '必须在 calculation_parameters 表中配置该参数',
+                        '指标键': 'pump_inlet_pressure',
+                        '方法ID': 'pump_inlet_pressure_method_b',
+                        'param_name': 'max_liquid_level'
+                    }}
+                )
+                raise ValueError(
+                    "缺少必需参数 'max_liquid_level'. "
+                    "请在 calculation_parameters 表中添加该参数: "
+                    "metric_key='pump_inlet_pressure', method_id='pump_inlet_pressure_method_b', "
+                    "param_name='max_liquid_level'"
+                )
         else:
             self.max_liquid_level = max_liquid_level
 
@@ -77,9 +96,18 @@ class DataFilter:
 
                 cursor.close()
         except Exception as e:
-            self.logger.warning(
-                f"[DataFilter] 从数据库加载参数失败，使用默认值: {e}",
-                extra={'extra_data': {'trace_id': self.trace_id}}
+            self.logger.error(
+                f"[DataFilter] 从数据库加载参数失败: {e}",
+                extra={'extra_data': {
+                    '追踪ID': self.trace_id,
+                    '错误': '数据库连接或查询失败',
+                    '异常': str(e)
+                }}
+            )
+            # 不再使用默认值，而是抛出异常
+            raise ValueError(
+                f"从数据库加载参数失败: {e}. "
+                "请检查数据库连接和 calculation_parameters 表配置"
             )
 
         return params
@@ -101,7 +129,7 @@ class DataFilter:
         if data.empty:
             self.logger.warning(
                 "[数据过滤] 输入数据为空",
-                extra={'extra_data': {'trace_id': self.trace_id}}
+                extra={'extra_data': {'追踪ID': self.trace_id}}
             )
             return data
 
@@ -110,8 +138,8 @@ class DataFilter:
         self.logger.info(
             "[数据过滤] 开始过滤数据",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'original_rows': original_count
+                '追踪ID': self.trace_id,
+                '原始行数': original_count
             }}
         )
 
@@ -136,13 +164,13 @@ class DataFilter:
         self.logger.info(
             "[数据过滤] 过滤完成",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'original_rows': original_count,
-                'removed_nan': nan_count,
-                'removed_negative': negative_count,
-                'removed_outlier': outlier_count,
-                'final_rows': final_count,
-                'filter_ratio': f"{(original_count - final_count) / original_count * 100:.2f}%" if original_count > 0 else "0%"
+                '追踪ID': self.trace_id,
+                '原始行数': original_count,
+                '移除NaN数量': nan_count,
+                '移除负值数量': negative_count,
+                '移除异常值数量': outlier_count,
+                '最终行数': final_count,
+                '过滤比例': f"{(original_count - final_count) / original_count * 100:.2f}%" if original_count > 0 else "0%"
             }}
         )
 

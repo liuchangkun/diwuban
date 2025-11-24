@@ -419,18 +419,22 @@ def _clear_non_backup_tables(cur) -> int:
     6. dim_stations（站点维度表，根节点）
     7. dim_mapping_items（映射表，叶子节点）
 
-    不清空的15个备份表（2025-11-11更新）：
-    - A类手动配置表（6个）：dim_device_capabilities（永久保留，不再清空 - 2025-11-11）,
+    不清空的12个备份表（2025-11-24更新）：
+    - A类手动配置表（4个）：dim_device_capabilities（永久保留，不再清空 - 2025-11-11）,
       pump_characteristic_curves, calculation_validation_config,
-      metric_capability_policy, metric_anomaly_strategy（永久保留）,
+      metric_anomaly_strategy（永久保留）,
       optimization_history（永久保留）
-    - B类配置表（5个）：device_rated_params（永久保留）,
-      calculation_method_registry, metric_calculation_order,
+    - B类配置表（3个）：device_rated_params（永久保留）,
       calculation_parameters, global_default_rated_params
     - C类维度表（1个）：dim_metric_config
     - D类元数据表（2个）：dim_metric_metadata（永久保留）,
       dim_device_param_metadata
     - E类规则表（1个）：device_running_thresholds
+
+    已删除的表（2025-11-24）：
+    - calculation_method_registry（旧版本计算系统）
+    - metric_calculation_order（旧版本计算系统）
+    - metric_capability_policy（旧版本计算系统）
       （device_running_thresholds_shadow 已删除 - 2025-11-11）
 
     注意：
@@ -449,13 +453,13 @@ def _clear_non_backup_tables(cur) -> int:
         # "dim_metric_metadata_override",  # 已删除：2025-01-07 架构重构
         "pump_characteristic_curves",
         "calculation_validation_config",
-        "metric_capability_policy",
+        # "metric_capability_policy",  # 已删除：2025-11-24 旧版本计算系统清理
         "metric_anomaly_strategy",  # 永久配置表，不再清空（2025-11-11）
         "optimization_history",  # 永久配置表，不再清空（2025-11-11）
         # B类：配置表
         "device_rated_params",  # 永久配置表，不再清空（2025-11-11）
-        "calculation_method_registry",
-        "metric_calculation_order",
+        # "calculation_method_registry",  # 已删除：2025-11-24 旧版本计算系统清理
+        # "metric_calculation_order",  # 已删除：2025-11-24 旧版本计算系统清理
         "calculation_parameters",  # 恢复：需要备份（2025-11-11）
         "global_default_rated_params",  # 新增：全局默认额定参数（2025-11-11）
         # C类：维度表
@@ -590,16 +594,22 @@ def _clear_non_backup_tables(cur) -> int:
     # _act.info(f"[清空表] optimization_history: {deleted} 行（备份表，稍后恢复）")
 
     # 第3层：dim_devices（依赖 dim_stations）
-    cur.execute("DELETE FROM dim_devices")
-    deleted = cur.rowcount
-    total_deleted += deleted
-    _act.info(f"[清空表] dim_devices: {deleted} 行")
+    # 修改：不再清空 dim_devices 表，因为：
+    # 1. UPSERT 逻辑已经是幂等的，可以直接更新现有记录
+    # 2. calculation_parameters 表的 device_id 外键使用 ON DELETE RESTRICT，
+    #    防止删除被引用的设备记录，保护参数数据完整性
+    # 3. 如果需要删除孤儿设备，应该在配置文件中移除，然后手动清理
+    # cur.execute("DELETE FROM dim_devices")
+    # deleted = cur.rowcount
+    # total_deleted += deleted
+    _act.info(f"[清空表] dim_devices: 跳过（使用 UPSERT 逻辑更新，保护 calculation_parameters 外键引用）")
 
     # 第4层：dim_stations（根节点）
-    cur.execute("DELETE FROM dim_stations")
-    deleted = cur.rowcount
-    total_deleted += deleted
-    _act.info(f"[清空表] dim_stations: {deleted} 行")
+    # 修改：不再清空 dim_stations 表，原因同上
+    # cur.execute("DELETE FROM dim_stations")
+    # deleted = cur.rowcount
+    # total_deleted += deleted
+    _act.info(f"[清空表] dim_stations: 跳过（使用 UPSERT 逻辑更新，保护 calculation_parameters 外键引用）")
 
     # 第5层：dim_mapping_items（叶子节点）
     cur.execute("DELETE FROM dim_mapping_items")
@@ -1234,18 +1244,18 @@ def prepare_dim(settings: Settings, mapping_path: Path, stage: int | None = None
 
                     # 定义需要备份的16个表
                     tables_to_backup = [
-                        # A类：手动配置表（7个）
+                        # A类：手动配置表（5个）
                         "dim_device_capabilities",
                         # "dim_metric_metadata_override",  # 已删除：2025-01-07 架构重构
                         "pump_characteristic_curves",
                         "calculation_validation_config",
-                        "metric_capability_policy",
+                        # "metric_capability_policy",  # 已删除：2025-11-24 旧版本计算系统清理
                         "metric_anomaly_strategy",  # 新增：异常判定策略表
                         "optimization_history",  # 新增：优化历史表（包含RLS状态）
-                        # B类：配置表（5个）
+                        # B类：配置表（3个）
                         "device_rated_params",
-                        "calculation_method_registry",
-                        "metric_calculation_order",
+                        # "calculation_method_registry",  # 已删除：2025-11-24 旧版本计算系统清理
+                        # "metric_calculation_order",  # 已删除：2025-11-24 旧版本计算系统清理
                         "calculation_parameters",  # 恢复：需要备份（2025-11-11）
                         "global_default_rated_params",  # 新增：全局默认额定参数（2025-11-11）
                         # C类：维度表（1个）
@@ -1447,8 +1457,6 @@ def prepare_dim(settings: Settings, mapping_path: Path, stage: int | None = None
 
                     # 检查配置表是否为空
                     tables_to_check = [
-                        "calculation_method_registry",
-                        "metric_calculation_order",
                         "device_rated_params",
                         "dim_device_capabilities"
                     ]
@@ -1483,7 +1491,7 @@ def prepare_dim(settings: Settings, mapping_path: Path, stage: int | None = None
 
                     # 注：不再恢复手动配置表（2025-11-11）
                     # 原因：这些表已改为永久配置表，不再清空，因此不需要恢复
-                    # 删除的表：pump_characteristic_curves, calculation_validation_config, metric_capability_policy
+                    # 已删除的表（2025-11-24）：calculation_method_registry, metric_calculation_order, metric_capability_policy
 
                     conn.commit()
                     _act.info("[prepare-dim] 阶段1完成")

@@ -37,7 +37,7 @@ except ImportError:
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from app.core.config.loader import load_settings  # noqa: E402
+from app.core.config.loader_new import load_settings  # noqa: E402
 
 # 初始化本地时区，兼容两种实现
 try:

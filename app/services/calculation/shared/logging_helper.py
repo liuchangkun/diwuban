@@ -66,13 +66,13 @@ class CalculationLogger:
             f"[{stage}] {message}",
             extra={
                 'extra_data': {
-                    'task_id': self.task_id,
-                    'trace_id': self.trace_id,
+                    '任务ID': self.task_id,
+                    '追踪ID': self.trace_id,
                     'span_id': span_id,
-                    'metric_key': self.metric_key,
-                    'station_id': station_id,
-                    'device_id': device_id,
-                    'stage': stage,
+                    '指标键': self.metric_key,
+                    '泵站ID': station_id,
+                    '设备ID': device_id,
+                    '阶段': stage,
                     **(extra_data or {})
                 }
             }

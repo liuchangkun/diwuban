@@ -75,9 +75,9 @@ class PumpSpeedPipeline:
         self.logger.info(
             f"[Pipeline-Stage1-开始] DataLoader",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id,
-                'metric_key': 'pump_speed',
+                '任务ID': task_id,
+                '设备ID': device_id,
+                '指标键': 'pump_speed',
                 'time_range': time_range_str
             }}
         )
@@ -93,10 +93,10 @@ class PumpSpeedPipeline:
         self.logger.info(
             f"[Pipeline-Stage1-完成] DataLoader",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id,
-                'loaded_rows': len(raw_data),
-                'duration_ms': round(stage1_duration * 1000, 2)
+                '任务ID': task_id,
+                '设备ID': device_id,
+                '加载行数': len(raw_data),
+                '耗时（毫秒）': round(stage1_duration * 1000, 2)
             }}
         )
 
@@ -105,37 +105,58 @@ class PumpSpeedPipeline:
             self.logger.info(
                 f"[Pipeline-跳过] 无数据可计算（设备类型不匹配或无原始数据）",
                 extra={'extra_data': {
-                    'task_id': task_id,
-                    'device_id': device_id,
-                    'metric_key': 'pump_speed',
-                    'reason': '设备类型不匹配或无原始数据'
+                    '任务ID': task_id,
+                    '设备ID': device_id,
+                    '指标键': 'pump_speed',
+                    '原因': '设备类型不匹配或无原始数据'
                 }}
             )
             return {
                 'success': True,
-                'device_id': device_id,
-                'metric_key': 'pump_speed',
+                '设备ID': device_id,
+                '指标键': 'pump_speed',
                 'results_count': 0,
                 'skipped': True,
-                'reason': '设备类型不匹配或无原始数据'
+                '原因': '设备类型不匹配或无原始数据'
             }
 
         # Stage 2: DataFilter
         self.logger.info(
             f"[Pipeline-Stage2-开始] DataFilter",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id,
+                '任务ID': task_id,
+                '设备ID': device_id,
                 'input_rows': len(raw_data)
             }}
         )
         stage2_start = time.time()
 
-        # 从params获取过滤参数
+        # 从params获取过滤参数（不允许硬编码默认值）
         filter_params = {
-            'min_freq': params.get('min_freq', 0.0),
-            'max_freq': params.get('max_freq', 60.0)
+            'min_freq': params.get('min_freq'),
+            'max_freq': params.get('max_freq')
         }
+
+        # 验证必需参数
+        missing_params = []
+        if filter_params['min_freq'] is None:
+            missing_params.append('min_freq')
+        if filter_params['max_freq'] is None:
+            missing_params.append('max_freq')
+
+        if missing_params:
+            self.logger.error(
+                f"[Pipeline] pump_speed缺少过滤参数",
+                extra={'extra_data': {
+                    '任务ID': task_id,
+                    '缺失参数': missing_params,
+                    '错误': '必须在calculation_parameters表中配置这些参数'
+                }}
+            )
+            raise ValueError(
+                f"pump_speed缺少过滤参数: {', '.join(missing_params)}. "
+                f"必须在calculation_parameters表中配置: metric_key='pump_speed', method_id='data_filter'"
+            )
 
         filter_obj = DataFilter(params=filter_params, trace_id=task_id)
         filtered_data = filter_obj.filter_data(raw_data)
@@ -144,10 +165,10 @@ class PumpSpeedPipeline:
         self.logger.info(
             f"[Pipeline-Stage2-完成] DataFilter",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id,
-                'filtered_rows': len(filtered_data),
-                'duration_ms': round(stage2_duration * 1000, 2)
+                '任务ID': task_id,
+                '设备ID': device_id,
+                '过滤后行数': len(filtered_data),
+                '耗时（毫秒）': round(stage2_duration * 1000, 2)
             }}
         )
 
@@ -156,26 +177,26 @@ class PumpSpeedPipeline:
             self.logger.info(
                 f"[Pipeline-跳过] 过滤后无数据",
                 extra={'extra_data': {
-                    'task_id': task_id,
-                    'device_id': device_id,
-                    'metric_key': 'pump_speed'
+                    '任务ID': task_id,
+                    '设备ID': device_id,
+                    '指标键': 'pump_speed'
                 }}
             )
             return {
                 'success': True,
-                'device_id': device_id,
-                'metric_key': 'pump_speed',
+                '设备ID': device_id,
+                '指标键': 'pump_speed',
                 'results_count': 0,
                 'skipped': True,
-                'reason': '过滤后无数据'
+                '原因': '过滤后无数据'
             }
 
         # Stage 3: MethodSelector
         self.logger.info(
             f"[Pipeline-Stage3-开始] MethodSelector",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id
+                '任务ID': task_id,
+                '设备ID': device_id
             }}
         )
         stage3_start = time.time()
@@ -187,15 +208,15 @@ class PumpSpeedPipeline:
             self.logger.error(
                 f"[Pipeline-Stage3-失败] MethodSelector: {str(e)}",
                 extra={'extra_data': {
-                    'task_id': task_id,
-                    'device_id': device_id,
+                    '任务ID': task_id,
+                    '设备ID': device_id,
                     'error': str(e)
                 }}
             )
             return {
                 'success': False,
-                'device_id': device_id,
-                'metric_key': 'pump_speed',
+                '设备ID': device_id,
+                '指标键': 'pump_speed',
                 'results_count': 0,
                 'error': str(e)
             }
@@ -204,10 +225,10 @@ class PumpSpeedPipeline:
         self.logger.info(
             f"[Pipeline-Stage3-完成] MethodSelector",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id,
-                'selected_method': method_id,
-                'duration_ms': round(stage3_duration * 1000, 2)
+                '任务ID': task_id,
+                '设备ID': device_id,
+                '选择的方法': method_id,
+                '耗时（毫秒）': round(stage3_duration * 1000, 2)
             }}
         )
 
@@ -215,9 +236,9 @@ class PumpSpeedPipeline:
         self.logger.info(
             f"[Pipeline-Stage4-开始] Calculator",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id,
-                'method_id': method_id
+                '任务ID': task_id,
+                '设备ID': device_id,
+                '方法ID': method_id
             }}
         )
         stage4_start = time.time()
@@ -229,10 +250,10 @@ class PumpSpeedPipeline:
         self.logger.info(
             f"[Pipeline-Stage4-完成] Calculator",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id,
-                'result_rows': len(calc_results),
-                'duration_ms': round(stage4_duration * 1000, 2)
+                '任务ID': task_id,
+                '设备ID': device_id,
+                '结果行数': len(calc_results),
+                '耗时（毫秒）': round(stage4_duration * 1000, 2)
             }}
         )
 
@@ -240,17 +261,38 @@ class PumpSpeedPipeline:
         self.logger.info(
             f"[Pipeline-Stage5-开始] Validator",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id
+                '任务ID': task_id,
+                '设备ID': device_id
             }}
         )
         stage5_start = time.time()
 
-        # 获取验证参数
+        # 获取验证参数（不允许硬编码默认值）
         validation_params = {
-            'min_speed': params.get('min_speed', 0.0),
-            'max_speed': params.get('max_speed', 2000.0)
+            'min_speed': params.get('min_speed'),
+            'max_speed': params.get('max_speed')
         }
+
+        # 验证必需参数
+        missing_params = []
+        if validation_params['min_speed'] is None:
+            missing_params.append('min_speed')
+        if validation_params['max_speed'] is None:
+            missing_params.append('max_speed')
+
+        if missing_params:
+            self.logger.error(
+                f"[Pipeline] pump_speed缺少验证参数",
+                extra={'extra_data': {
+                    '任务ID': task_id,
+                    '缺失参数': missing_params,
+                    '错误': '必须在calculation_parameters表中配置这些参数'
+                }}
+            )
+            raise ValueError(
+                f"pump_speed缺少验证参数: {', '.join(missing_params)}. "
+                f"必须在calculation_parameters表中配置: metric_key='pump_speed', method_id='validator'"
+            )
 
         validator = Validator(params=validation_params)
         validation_result = validator.validate(calc_results, filtered_data)
@@ -259,12 +301,12 @@ class PumpSpeedPipeline:
         self.logger.info(
             f"[Pipeline-Stage5-完成] Validator",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id,
+                '任务ID': task_id,
+                '设备ID': device_id,
                 'valid_count': validation_result['valid_count'],
                 'invalid_count': validation_result['invalid_count'],
-                'quality_code': validation_result['quality_code'],
-                'duration_ms': round(stage5_duration * 1000, 2)
+                '质量代码': validation_result['quality_code'],
+                '耗时（毫秒）': round(stage5_duration * 1000, 2)
             }}
         )
 
@@ -272,8 +314,8 @@ class PumpSpeedPipeline:
         self.logger.info(
             f"[Pipeline-Stage6-开始] DataWriter",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id
+                '任务ID': task_id,
+                '设备ID': device_id
             }}
         )
         stage6_start = time.time()
@@ -305,10 +347,10 @@ class PumpSpeedPipeline:
             self.logger.info(
                 f"[Pipeline-Stage6-完成] DataWriter",
                 extra={'extra_data': {
-                    'task_id': task_id,
-                    'device_id': device_id,
+                    '任务ID': task_id,
+                    '设备ID': device_id,
                     'written_count': written_count,
-                    'duration_ms': round(stage6_duration * 1000, 2)
+                    '耗时（毫秒）': round(stage6_duration * 1000, 2)
                 }}
             )
         else:
@@ -316,18 +358,18 @@ class PumpSpeedPipeline:
             self.logger.info(
                 f"[Pipeline-Stage6-跳过] DataWriter（无有效数据）",
                 extra={'extra_data': {
-                    'task_id': task_id,
-                    'device_id': device_id
+                    '任务ID': task_id,
+                    '设备ID': device_id
                 }}
             )
 
         # 返回结果
         return {
             'success': True,
-            'device_id': device_id,
-            'metric_key': 'pump_speed',
+            '设备ID': device_id,
+            '指标键': 'pump_speed',
             'results_count': written_count,
-            'method_id': method_id,
-            'quality_code': validation_result['quality_code']
+            '方法ID': method_id,
+            '质量代码': validation_result['quality_code']
         }
 

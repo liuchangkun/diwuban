@@ -63,9 +63,9 @@ class MainPipelineInletPressurePipeline:
         self.logger.info(
             f"[Pipeline] 开始执行: metric={self.metric_key}, device={device_id}",
             extra={'extra_data': {
-                'trace_id': trace_id,
-                'station_id': station_id,
-                'device_id': device_id,
+                '追踪ID': trace_id,
+                '泵站ID': station_id,
+                '设备ID': device_id,
                 'start_time': str(start_time),
                 'end_time': str(end_time)
             }}
@@ -93,7 +93,7 @@ class MainPipelineInletPressurePipeline:
             if data.empty:
                 self.logger.warning(
                     "[Pipeline] 无数据，跳过计算",
-                    extra={'extra_data': {'trace_id': trace_id}}
+                    extra={'extra_data': {'追踪ID': trace_id}}
                 )
                 return {'written_count': 0}
             
@@ -104,7 +104,7 @@ class MainPipelineInletPressurePipeline:
             if filtered_data.empty:
                 self.logger.warning(
                     "[Pipeline] 过滤后无数据，跳过计算",
-                    extra={'extra_data': {'trace_id': trace_id}}
+                    extra={'extra_data': {'追踪ID': trace_id}}
                 )
                 return {'written_count': 0}
             
@@ -115,7 +115,7 @@ class MainPipelineInletPressurePipeline:
             if method_result is None:
                 self.logger.warning(
                     "[Pipeline] 无可用方法，跳过计算",
-                    extra={'extra_data': {'trace_id': trace_id}}
+                    extra={'extra_data': {'追踪ID': trace_id}}
                 )
                 return {'written_count': 0}
             
@@ -153,7 +153,7 @@ class MainPipelineInletPressurePipeline:
 
             self.logger.info(
                 f"[Pipeline] 执行完成: 写入{written_count}条记录",
-                extra={'extra_data': {'trace_id': trace_id}}
+                extra={'extra_data': {'追踪ID': trace_id}}
             )
             
             return {'written_count': written_count}
@@ -161,7 +161,7 @@ class MainPipelineInletPressurePipeline:
         except Exception as e:
             self.logger.error(
                 f"[Pipeline] 执行失败: {str(e)}",
-                extra={'extra_data': {'trace_id': trace_id}},
+                extra={'extra_data': {'追踪ID': trace_id}},
                 exc_info=True
             )
             return {'written_count': 0, 'error': str(e)}

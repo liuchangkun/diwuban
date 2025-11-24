@@ -66,21 +66,21 @@ class PumpEfficiencyPipeline:
 
         if data.empty:
             self.logger.info("[流水线] 数据为空，跳过计算", extra={'extra_data': {'设备ID': device_id, '指标键': 'pump_efficiency'}})
-            return {'written_count': 0, 'task_id': task_id}
+            return {'written_count': 0, '任务ID': task_id}
 
         # 阶段2：数据过滤
         filtered_data = self.data_filter.filter(data)
 
         if filtered_data.empty:
             self.logger.info("[流水线] 过滤后数据为空，跳过计算", extra={'extra_data': {'设备ID': device_id, '指标键': 'pump_efficiency'}})
-            return {'written_count': 0, 'task_id': task_id}
+            return {'written_count': 0, '任务ID': task_id}
 
         # 阶段3：方法选择
         selected_method = self.method_selector.select(filtered_data)
 
         if selected_method is None:
             self.logger.error("[流水线] 方法选择失败", extra={'extra_data': {'设备ID': device_id, '指标键': 'pump_efficiency'}})
-            return {'written_count': 0, 'task_id': task_id}
+            return {'written_count': 0, '任务ID': task_id}
 
         # 阶段4：计算执行
         calculator = Calculator(shared_services)
@@ -88,7 +88,7 @@ class PumpEfficiencyPipeline:
 
         if result is None or result.empty:
             self.logger.error("[流水线] 计算失败", extra={'extra_data': {'设备ID': device_id, '指标键': 'pump_efficiency', '方法ID': selected_method}})
-            return {'written_count': 0, 'task_id': task_id}
+            return {'written_count': 0, '任务ID': task_id}
 
         # 阶段5：结果验证
         validator = Validator(shared_services)
@@ -115,7 +115,7 @@ class PumpEfficiencyPipeline:
 
         if not write_records:
             self.logger.warning("[流水线] 没有有效数据可写入", extra={'extra_data': {'设备ID': device_id, '指标键': 'pump_efficiency', '方法ID': selected_method}})
-            return {'written_count': 0, 'task_id': task_id}
+            return {'written_count': 0, '任务ID': task_id}
 
         # 使用 SharedServices 的 data_writer 写入数据
         written_count = shared_services.data_writer.write(write_records, station_id=station_id)
@@ -135,8 +135,8 @@ class PumpEfficiencyPipeline:
 
         return {
             'written_count': written_count,
-            'task_id': task_id,
-            'method': selected_method,
+            '任务ID': task_id,
+            '方法': selected_method,
             'total_count': len(result),
             'valid_count': int(is_valid.sum())
         }

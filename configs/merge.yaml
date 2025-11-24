@@ -5,23 +5,12 @@ run_all:
   anomaly_diagnosis:
     level: off  # 临时禁用诊断模式以提升性能
   # 缺失指标计算配置：用于 orchestrator 的缺失指标批量计算（enable_calculation=true 时生效）
+  # 说明：
+  #   - 计算指标由 Scheduler.METRIC_ORDER 定义，无需在配置文件中指定
+  #   - 自适应分片由 Scheduler 内部管理，无需配置
+  #   - 计算结果总是写入数据库（fact_measurements），无需开关控制
   calculation_cfg:
-    auto_parallel: true  # 是否自动选择串/并行
-    max_workers: 4       # 并行工作线程上限
-    metrics:
-      # 计算指标清单：留空表示计算所有 Scheduler.METRIC_ORDER 中的指标
-      # 当前计划启用的指标（来自 Scheduler.METRIC_ORDER）：9 项
-      - pump_flow_rate        # 泵流量；用途：估算各泵瞬时流量；依赖：main_pipeline_flow_rate / pump_active_power / pump_frequency 等；方法：A~F
-      - pump_inlet_pressure   # 泵进口压力；用途：计算泵扬程的关键依赖；依赖：pool_liquid_level / main_pipeline_inlet_pressure；方法：A/B（必须在 pump_head 之前计算）
-      - pump_head             # 泵扬程；用途：衡量泵进出口压力差形成的水头；依赖：pump_outlet_pressure / pump_inlet_pressure / pool_liquid_level；方法：MAIN/HEAD_COEF_V1
-      - pump_outlet_pressure  # 泵出口压力；用途：设备出口侧压力；依赖：传感器/泵扬程与进口压/站出口压；方法：A~D
-      - pump_efficiency       # 泵效率；用途：运行能效评估；依赖：pump_flow_rate / pump_head / pump_active_power；方法：EFF_SIMPLE_V1
-      - pump_speed            # 泵转速；用途：工况分析与扭矩计算；依赖：pump_frequency；方法：A/B/C
-      - pump_torque           # 泵扭矩；用途：轴功率与机械负载评估；依赖：pump_flow_rate / pump_head / pump_speed 或 pump_active_power / pump_frequency；方法：A/B
-      - main_pipeline_inlet_pressure   # 总管进口压力；用途：站内供水边界条件；依赖：pool_liquid_level / main_pipeline_flow_rate 等；方法：PIN_COEF_V1 等
-      - main_pipeline_outlet_pressure  # 总管出口压力；用途：站外供水边界条件；依赖：各泵出口压力或推算；方法：A~C
-      - pump_cumulative_flow  # 泵累计流量；用途：能量与水量核算；依赖：pump_flow_rate 或 main_pipeline_*；方法：A/B
-    write_to_db: true    # 结果写入 fact_measurements（quality_status=1）
+    max_workers: 4  # 并行工作线程上限（控制 ThreadPoolExecutor 的线程数）
   create_staging: true   # 创建并清空 staging 结构
   device_running: true   # 计算设备运行状态（mv_device_running_1s）
   device_running_cfg:

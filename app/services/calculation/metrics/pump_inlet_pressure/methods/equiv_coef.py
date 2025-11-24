@@ -36,13 +36,21 @@ def calculate_equiv_coef(data: pd.DataFrame, params: Dict[str, Any]) -> pd.DataF
     Returns:
         计算结果（包含 pump_inlet_pressure 列）
     """
-    # 获取参数（带默认值）
-    P_atm = params.get('P_atm', 0.101325)  # 大气压 (MPa)
-    rho = params.get('rho', 1000.0)  # 水密度 (kg/m³)
-    g = params.get('g', 9.80665)  # 重力加速度 (m/s²)
-    K_eq = params.get('K_eq', 10.0)  # 等效损失系数
+    # 获取参数
+    P_atm = params.get('P_atm', 0.101325)  # 大气压 (MPa) - 物理常数，可保留默认值
+    rho = params.get('rho', 1000.0)  # 水密度 (kg/m³) - 物理常数，可保留默认值
+    g = params.get('g', 9.80665)  # 重力加速度 (m/s²) - 物理常数，可保留默认值
+    K_eq = params.get('K_eq')  # 等效损失系数 - 必需参数，不允许默认值
     L_offset = params.get('L_offset')  # 水池底部到泵入口的垂直距离 (m)，水池在泵上方为正值
     pipe_diameter = params.get('pipe_diameter')  # 进水管道直径 (m)
+
+    # 验证必需参数
+    if K_eq is None:
+        raise ValueError(
+            "缺少必需参数 'K_eq' (等效损失系数). "
+            "请在 calculation_parameters 表中添加该参数: "
+            "metric_key='pump_inlet_pressure', method_id='equiv_coef'"
+        )
 
     # 验证必需参数
     if L_offset is None:

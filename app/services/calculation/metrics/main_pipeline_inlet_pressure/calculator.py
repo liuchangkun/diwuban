@@ -49,13 +49,13 @@ class Calculator:
         if data.empty:
             self.logger.warning(
                 "[计算执行] 输入数据为空，跳过计算",
-                extra={'extra_data': {'trace_id': self.trace_id}}
+                extra={'extra_data': {'追踪ID': self.trace_id}}
             )
             return data
         
         self.logger.info(
             f"[计算执行] 开始计算: method={method_id}, 数据量={len(data)}",
-            extra={'extra_data': {'trace_id': self.trace_id}}
+            extra={'extra_data': {'追踪ID': self.trace_id}}
         )
         
         # 根据method_id分发到具体方法
@@ -70,7 +70,7 @@ class Calculator:
         
         self.logger.info(
             f"[计算执行] 计算完成: 结果数量={len(result)}",
-            extra={'extra_data': {'trace_id': self.trace_id}}
+            extra={'extra_data': {'追踪ID': self.trace_id}}
         )
         
         return result

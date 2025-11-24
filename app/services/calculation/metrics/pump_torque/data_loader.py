@@ -67,9 +67,9 @@ class DataLoader:
         self.logger.info(
             "[数据加载] 开始加载数据",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'station_id': station_id,
-                'device_id': device_id,
+                '追踪ID': self.trace_id,
+                '泵站ID': station_id,
+                '设备ID': device_id,
                 'start_time': str(start_time),
                 'end_time': str(end_time)
             }}
@@ -90,8 +90,8 @@ class DataLoader:
                     self.logger.warning(
                         "[数据加载] 设备不存在",
                         extra={'extra_data': {
-                            'trace_id': self.trace_id,
-                            'device_id': device_id
+                            '追踪ID': self.trace_id,
+                            '设备ID': device_id
                         }}
                     )
                     return pd.DataFrame()
@@ -102,11 +102,11 @@ class DataLoader:
                     self.logger.info(
                         "[数据加载] 跳过非泵设备（pump_torque只计算type='pump'的设备）",
                         extra={'extra_data': {
-                            'trace_id': self.trace_id,
-                            'device_id': device_id,
-                            'device_name': device_name,
-                            'device_type': device_type,
-                            'reason': 'pump_torque只计算type=pump的设备'
+                            '追踪ID': self.trace_id,
+                            '设备ID': device_id,
+                            '设备名称': device_name,
+                            '设备类型': device_type,
+                            '原因': 'pump_torque只计算type=pump的设备'
                         }}
                     )
                     return pd.DataFrame()
@@ -138,8 +138,8 @@ class DataLoader:
         """
 
         params = {
-            'station_id': station_id,
-            'device_id': device_id,
+            '泵站ID': station_id,
+            '设备ID': device_id,
             'start_time': start_time,
             'end_time': end_time
         }
@@ -162,9 +162,9 @@ class DataLoader:
             self.logger.info(
                 "[数据加载] 无数据",
                 extra={'extra_data': {
-                    'trace_id': self.trace_id,
-                    'device_id': device_id,
-                    'query_duration_ms': round(query_duration * 1000, 2)
+                    '追踪ID': self.trace_id,
+                    '设备ID': device_id,
+                    '查询耗时（毫秒）': round(query_duration * 1000, 2)
                 }}
             )
             return pd.DataFrame()
@@ -188,12 +188,12 @@ class DataLoader:
         self.logger.info(
             "[数据加载] 数据加载完成",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'device_id': device_id,
-                'loaded_rows': len(pivot_data),
-                'query_duration_ms': round(query_duration * 1000, 2),
-                'has_pump_active_power': 'pump_active_power' in pivot_data.columns,
-                'has_pump_speed': 'pump_speed' in pivot_data.columns,
+                '追踪ID': self.trace_id,
+                '设备ID': device_id,
+                '加载行数': len(pivot_data),
+                '查询耗时（毫秒）': round(query_duration * 1000, 2),
+                '有泵有功功率数据': 'pump_active_power' in pivot_data.columns,
+                '有泵转速数据': 'pump_speed' in pivot_data.columns,
                 'has_pump_flow_rate': 'pump_flow_rate' in pivot_data.columns,
                 'has_pump_head': 'pump_head' in pivot_data.columns
             }}

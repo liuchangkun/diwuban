@@ -53,9 +53,9 @@ class Calculator:
         self.logger.info(
             "[计算执行] 开始计算",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'method_id': method_id,
-                'data_rows': len(data)
+                '追踪ID': self.trace_id,
+                '方法ID': method_id,
+                '数据行数': len(data)
             }}
         )
 
@@ -72,7 +72,7 @@ class Calculator:
         else:
             self.logger.error(
                 f"[计算执行] 无效的方法ID: {method_id}",
-                extra={'extra_data': {'trace_id': self.trace_id}}
+                extra={'extra_data': {'追踪ID': self.trace_id}}
             )
             raise ValueError(f"无效的方法ID: {method_id}")
 
@@ -84,13 +84,13 @@ class Calculator:
         self.logger.info(
             "[计算执行] 计算完成",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'method_id': method_id,
-                'result_rows': len(result),
-                'calc_duration_ms': round(calc_duration * 1000, 2),
-                'avg_torque': round(result['pump_torque'].mean(), 2) if len(result) > 0 else 0,
-                'min_torque': round(result['pump_torque'].min(), 2) if len(result) > 0 else 0,
-                'max_torque': round(result['pump_torque'].max(), 2) if len(result) > 0 else 0
+                '追踪ID': self.trace_id,
+                '方法ID': method_id,
+                '结果行数': len(result),
+                '计算耗时（毫秒）': round(calc_duration * 1000, 2),
+                '平均扭矩': round(result['pump_torque'].mean(), 2) if len(result) > 0 else 0,
+                '最小扭矩': round(result['pump_torque'].min(), 2) if len(result) > 0 else 0,
+                '最大扭矩': round(result['pump_torque'].max(), 2) if len(result) > 0 else 0
             }}
         )
 

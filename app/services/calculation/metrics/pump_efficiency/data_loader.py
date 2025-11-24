@@ -93,7 +93,7 @@ class DataLoader:
                 sql,
                 conn,
                 params={
-                    'device_id': device_id,
+                    '设备ID': device_id,
                     'start_time': start_time,
                     'end_time': end_time
                 }

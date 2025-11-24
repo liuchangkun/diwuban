@@ -36,8 +36,8 @@ class DataLoader:
         self.logger.info(
             "[数据加载] 开始加载数据",
             extra={'extra_data': {
-                'station_id': station_id,
-                'device_id': device_id,
+                '泵站ID': station_id,
+                '设备ID': device_id,
                 'start_time': start_time.isoformat(),
                 'end_time': end_time.isoformat()
             }}
@@ -52,7 +52,7 @@ class DataLoader:
                 if not result:
                     self.logger.warning(
                         "[数据加载] 设备不存在",
-                        extra={'extra_data': {'device_id': device_id}}
+                        extra={'extra_data': {'设备ID': device_id}}
                     )
                     return pd.DataFrame()
 
@@ -62,9 +62,9 @@ class DataLoader:
                     self.logger.info(
                         "[数据加载] 跳过非泵设备（pump_head只计算type='pump'的设备）",
                         extra={'extra_data': {
-                            'device_id': device_id,
-                            'device_name': device_name,
-                            'device_type': device_type
+                            '设备ID': device_id,
+                            '设备名称': device_name,
+                            '设备类型': device_type
                         }}
                     )
                     return pd.DataFrame()
@@ -130,8 +130,8 @@ class DataLoader:
                 sql,
                 conn,
                 params={
-                    'station_id': station_id,
-                    'device_id': device_id,
+                    '泵站ID': station_id,
+                    '设备ID': device_id,
                     'start_time': start_time,
                     'end_time': end_time
                 }
@@ -141,7 +141,7 @@ class DataLoader:
             "[数据加载] 数据加载完成",
             extra={'extra_data': {
                 'total_rows': len(df),
-                'columns': list(df.columns)
+                '列名': list(df.columns)
             }}
         )
 

@@ -85,7 +85,7 @@ class DataFilter:
         if data.empty:
             self.logger.warning(
                 "[数据过滤] 输入数据为空",
-                extra={'extra_data': {'trace_id': self.trace_id}}
+                extra={'extra_data': {'追踪ID': self.trace_id}}
             )
             return data
 
@@ -94,8 +94,8 @@ class DataFilter:
         self.logger.info(
             "[数据过滤] 开始过滤数据",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'original_rows': original_count
+                '追踪ID': self.trace_id,
+                '原始行数': original_count
             }}
         )
 
@@ -153,16 +153,16 @@ class DataFilter:
         self.logger.info(
             "[数据过滤] 过滤完成",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'original_rows': original_count,
-                'removed_stopped': stopped_count,
-                'removed_nan': nan_count,
+                '追踪ID': self.trace_id,
+                '原始行数': original_count,
+                '移除停机数量': stopped_count,
+                '移除NaN数量': nan_count,
                 'removed_flow_nan': flow_nan_count,
                 'removed_head_nan': head_nan_count,
-                'removed_negative': negative_count,
-                'removed_outlier': outlier_count,
-                'final_rows': final_count,
-                'filter_ratio': f"{(original_count - final_count) / original_count * 100:.2f}%" if original_count > 0 else "0%"
+                '移除负值数量': negative_count,
+                '移除异常值数量': outlier_count,
+                '最终行数': final_count,
+                '过滤比例': f"{(original_count - final_count) / original_count * 100:.2f}%" if original_count > 0 else "0%"
             }}
         )
 

@@ -345,7 +345,7 @@ class DataWriter:
         """获取写入统计"""
         return {
             'total_written': self.total_written,
-            'total_duration_ms': self.total_duration_ms,
+            '总耗时（毫秒）': self.total_duration_ms,
             'avg_duration_ms': self.total_duration_ms / max(1, self.total_written / self.batch_size),
             'current_batch_size': self.batch_size
         }

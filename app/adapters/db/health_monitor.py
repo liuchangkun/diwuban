@@ -100,7 +100,7 @@ class HealthMonitor:
                 extra={
                     "extra_data": {
                         "check_type": check_type,
-                        "duration_ms": int(duration * 1000),
+                        '耗时（毫秒）': int(duration * 1000),
                     }
                 },
             )

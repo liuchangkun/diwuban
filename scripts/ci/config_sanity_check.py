@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 # 1) 关键模块语法检查
 TARGETS = [
-    ROOT / "app" / "core" / "config" / "loader.py",
+    ROOT / "app" / "core" / "config" / "loader_new.py",
     ROOT / "app" / "adapters" / "logging" / "init.py",
     ROOT / "app" / "adapters" / "db" / "gateway.py",
     ROOT / "app" / "services" / "ingest" / "backpressure.py",
@@ -26,7 +26,7 @@ for t in TARGETS:
 print("[CONFIG_SANITY] py_compile: OK")
 
 # 2) 最小化加载与字段断言（不脱敏打印）
-from app.core.config.loader import load_settings  # noqa: E402
+from app.core.config.loader_new import load_settings  # noqa: E402
 
 cfg_dir = ROOT / "configs"
 s = load_settings(cfg_dir)
@@ -34,9 +34,9 @@ s = load_settings(cfg_dir)
 assert s.db.host and isinstance(s.db.host, str)
 assert s.db.pool.min_size >= 0
 assert s.db.timeouts.connect_timeout_ms >= 0
-# 日志
-assert s.logging.level and isinstance(s.logging.level, str)
-assert s.logging.format in ("json", "text")
+# 系统配置（替代日志配置）
+assert s.system.timezone.default and isinstance(s.system.timezone.default, str)
+assert s.system.directories.data and isinstance(s.system.directories.data, str)
 # 导入
 assert s.ingest.csv.encoding
 assert s.ingest.batch.size > 0

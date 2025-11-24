@@ -155,7 +155,7 @@ class Validator:
             'valid_count': valid_count,
             'invalid_count': invalid_count,
             'valid_ratio': valid_ratio,
-            'quality_code': quality_code
+            '质量代码': quality_code
         }
 
     def _get_failure_reason(self, value: float, row: pd.Series = None) -> str:

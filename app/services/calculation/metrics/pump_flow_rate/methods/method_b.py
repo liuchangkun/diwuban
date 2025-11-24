@@ -23,7 +23,15 @@ def calculate_method_b(data: pd.DataFrame, params: Dict[str, Any]) -> pd.DataFra
     Returns:
         计算结果（包含 pump_flow_rate 列）
     """
-    smooth_window = params.get('smooth_window', 5)
+    smooth_window = params.get('smooth_window')
+
+    # 验证必需参数
+    if smooth_window is None:
+        raise ValueError(
+            "缺少必需参数 'smooth_window' (平滑窗口大小). "
+            "请在 calculation_parameters 表中添加该参数: "
+            "metric_key='pump_flow_rate', method_id='method_b', param_name='smooth_window'"
+        )
 
     df_result = data.copy()
 

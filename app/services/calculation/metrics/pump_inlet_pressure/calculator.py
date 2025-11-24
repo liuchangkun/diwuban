@@ -72,7 +72,7 @@ class Calculator:
             error_msg = f"未知的方法ID: {method_id}，可用方法: {list(self.methods.keys())}"
             self.logger.error(
                 f"[计算执行] 失败: {error_msg}",
-                extra={'extra_data': {'trace_id': self.trace_id, 'method_id': method_id}}
+                extra={'extra_data': {'追踪ID': self.trace_id, '方法ID': method_id}}
             )
             raise ValueError(error_msg)
 
@@ -88,10 +88,10 @@ class Calculator:
         self.logger.info(
             "[计算执行] 开始计算",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'method_id': method_id,
-                'params': params,
-                'data_rows': len(data)
+                '追踪ID': self.trace_id,
+                '方法ID': method_id,
+                '参数': params,
+                '数据行数': len(data)
             }}
         )
 
@@ -109,8 +109,8 @@ class Calculator:
             self.logger.info(
                 "[计算执行] 计算完成",
                 extra={'extra_data': {
-                    'trace_id': self.trace_id,
-                    'method_id': method_id,
+                    '追踪ID': self.trace_id,
+                    '方法ID': method_id,
                     'valid_count': int(valid_count),
                     'mean_value': float(mean_value) if pd.notna(mean_value) else None,
                     'max_value': float(max_value) if pd.notna(max_value) else None,
@@ -121,8 +121,8 @@ class Calculator:
             self.logger.warning(
                 "[计算执行] 警告: 结果中缺少 pump_inlet_pressure 列",
                 extra={'extra_data': {
-                    'trace_id': self.trace_id,
-                    'method_id': method_id,
+                    '追踪ID': self.trace_id,
+                    '方法ID': method_id,
                     'result_columns': list(df_result.columns)
                 }}
             )

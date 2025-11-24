@@ -23,7 +23,16 @@ def calculate_method_d(data: pd.DataFrame, params: Dict[str, Any]) -> pd.DataFra
     Returns:
         计算结果（包含 pump_flow_rate 列）
     """
-    alpha = params.get('alpha', 1.0)
+    # 获取参数（不允许默认值）
+    alpha = params.get('alpha')
+
+    # 验证必需参数
+    if alpha is None:
+        raise ValueError(
+            "缺少必需参数 'alpha' (功率分摊指数). "
+            "请在 calculation_parameters 表中添加该参数: "
+            "metric_key='pump_flow_rate', method_id='method_d', param_name='alpha'"
+        )
 
     results = []
 

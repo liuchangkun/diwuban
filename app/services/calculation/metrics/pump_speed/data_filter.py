@@ -50,7 +50,7 @@ class DataFilter:
         if data.empty:
             self.logger.info(
                 "[数据过滤] 输入数据为空，跳过过滤",
-                extra={'extra_data': {'trace_id': self.trace_id}}
+                extra={'extra_data': {'追踪ID': self.trace_id}}
             )
             return data
 
@@ -66,9 +66,9 @@ class DataFilter:
                 self.logger.info(
                     "[数据过滤] NaN值过滤",
                     extra={'extra_data': {
-                        'trace_id': self.trace_id,
+                        '追踪ID': self.trace_id,
                         'filtered_count': nan_filtered,
-                        'remaining_count': len(data)
+                        '剩余数量': len(data)
                     }}
                 )
 
@@ -82,17 +82,39 @@ class DataFilter:
                 self.logger.info(
                     "[数据过滤] Inf值过滤",
                     extra={'extra_data': {
-                        'trace_id': self.trace_id,
+                        '追踪ID': self.trace_id,
                         'filtered_count': inf_filtered,
-                        'remaining_count': len(data)
+                        '剩余数量': len(data)
                     }}
                 )
 
         # 3. 过滤pump_frequency异常值
         if 'pump_frequency' in data.columns and len(data) > 0:
-            # 获取阈值参数
-            min_freq = self.params.get('min_freq', 0.0)
-            max_freq = self.params.get('max_freq', 60.0)
+            # 获取阈值参数（不允许硬编码默认值）
+            min_freq = self.params.get('min_freq')
+            max_freq = self.params.get('max_freq')
+
+            # 验证必需参数
+            if min_freq is None or max_freq is None:
+                missing_params = []
+                if min_freq is None:
+                    missing_params.append('min_freq')
+                if max_freq is None:
+                    missing_params.append('max_freq')
+
+                self.logger.error(
+                    "[数据过滤] pump_speed data_filter缺少必需参数",
+                    extra={'extra_data': {
+                        '追踪ID': self.trace_id,
+                        '缺失参数': missing_params,
+                        '当前参数': self.params,
+                        '错误': '必须在calculation_parameters表中配置这些参数'
+                    }}
+                )
+                raise ValueError(
+                    f"pump_speed data_filter缺少必需参数: {', '.join(missing_params)}. "
+                    f"必须在calculation_parameters表中配置: metric_key='pump_speed', method_id='data_filter'"
+                )
 
             # 过滤频率范围
             before_freq_filter = len(data)
@@ -106,11 +128,11 @@ class DataFilter:
                 self.logger.info(
                     "[数据过滤] 频率范围过滤",
                     extra={'extra_data': {
-                        'trace_id': self.trace_id,
+                        '追踪ID': self.trace_id,
                         'min_freq': min_freq,
                         'max_freq': max_freq,
                         'filtered_count': freq_filtered,
-                        'remaining_count': len(data)
+                        '剩余数量': len(data)
                     }}
                 )
 
@@ -122,11 +144,11 @@ class DataFilter:
         self.logger.info(
             "[数据过滤] 过滤完成",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'original_count': original_count,
-                'final_count': final_count,
+                '追踪ID': self.trace_id,
+                '原始数量': original_count,
+                '最终数量': final_count,
                 'total_filtered': total_filtered,
-                'filter_ratio': f"{filter_ratio:.1f}%"
+                '过滤比例': f"{filter_ratio:.1f}%"
             }}
         )
 

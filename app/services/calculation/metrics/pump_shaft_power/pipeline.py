@@ -99,9 +99,9 @@ class PumpShaftPowerPipeline:
         self.logger.info(
             f"[Pipeline-Stage1-开始] DataLoader",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id,
-                'metric_key': 'pump_shaft_power',
+                '任务ID': task_id,
+                '设备ID': device_id,
+                '指标键': 'pump_shaft_power',
                 'time_range': time_range_str
             }}
         )
@@ -117,10 +117,10 @@ class PumpShaftPowerPipeline:
         self.logger.info(
             f"[Pipeline-Stage1-完成] DataLoader",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id,
-                'loaded_rows': len(raw_data),
-                'duration_ms': round(stage1_duration * 1000, 2)
+                '任务ID': task_id,
+                '设备ID': device_id,
+                '加载行数': len(raw_data),
+                '耗时（毫秒）': round(stage1_duration * 1000, 2)
             }}
         )
         
@@ -129,27 +129,27 @@ class PumpShaftPowerPipeline:
             self.logger.info(
                 f"[Pipeline-跳过] 无数据可计算（设备类型不匹配或无原始数据）",
                 extra={'extra_data': {
-                    'task_id': task_id,
-                    'device_id': device_id,
-                    'metric_key': 'pump_shaft_power',
-                    'reason': '设备类型不匹配或无原始数据'
+                    '任务ID': task_id,
+                    '设备ID': device_id,
+                    '指标键': 'pump_shaft_power',
+                    '原因': '设备类型不匹配或无原始数据'
                 }}
             )
             return {
                 'success': True,
-                'device_id': device_id,
-                'metric_key': 'pump_shaft_power',
+                '设备ID': device_id,
+                '指标键': 'pump_shaft_power',
                 'results_count': 0,
                 'skipped': True,
-                'reason': '设备类型不匹配或无原始数据'
+                '原因': '设备类型不匹配或无原始数据'
             }
         
         # Stage 2: DataFilter
         self.logger.info(
             f"[Pipeline-Stage2-开始] DataFilter",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id,
+                '任务ID': task_id,
+                '设备ID': device_id,
                 'input_rows': len(raw_data)
             }}
         )
@@ -163,8 +163,8 @@ class PumpShaftPowerPipeline:
             self.logger.error(
                 f"[Pipeline] DataFilter缺少必需参数",
                 extra={'extra_data': {
-                    'task_id': task_id,
-                    'device_id': device_id,
+                    '任务ID': task_id,
+                    '设备ID': device_id,
                     'missing_params': ['max_power']
                 }}
             )
@@ -179,10 +179,10 @@ class PumpShaftPowerPipeline:
         self.logger.info(
             f"[Pipeline-Stage2-完成] DataFilter",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id,
-                'filtered_rows': len(filtered_data),
-                'duration_ms': round(stage2_duration * 1000, 2)
+                '任务ID': task_id,
+                '设备ID': device_id,
+                '过滤后行数': len(filtered_data),
+                '耗时（毫秒）': round(stage2_duration * 1000, 2)
             }}
         )
 
@@ -191,26 +191,26 @@ class PumpShaftPowerPipeline:
             self.logger.info(
                 f"[Pipeline-跳过] 过滤后无数据",
                 extra={'extra_data': {
-                    'task_id': task_id,
-                    'device_id': device_id,
-                    'metric_key': 'pump_shaft_power'
+                    '任务ID': task_id,
+                    '设备ID': device_id,
+                    '指标键': 'pump_shaft_power'
                 }}
             )
             return {
                 'success': True,
-                'device_id': device_id,
-                'metric_key': 'pump_shaft_power',
+                '设备ID': device_id,
+                '指标键': 'pump_shaft_power',
                 'results_count': 0,
                 'skipped': True,
-                'reason': '过滤后无数据'
+                '原因': '过滤后无数据'
             }
 
         # Stage 3: MethodSelector
         self.logger.info(
             f"[Pipeline-Stage3-开始] MethodSelector",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id
+                '任务ID': task_id,
+                '设备ID': device_id
             }}
         )
         stage3_start = time.time()
@@ -220,10 +220,10 @@ class PumpShaftPowerPipeline:
         self.logger.info(
             f"[Pipeline-Stage3-完成] MethodSelector",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id,
-                'selected_method': method_id,
-                'duration_ms': round(stage3_duration * 1000, 2)
+                '任务ID': task_id,
+                '设备ID': device_id,
+                '选择的方法': method_id,
+                '耗时（毫秒）': round(stage3_duration * 1000, 2)
             }}
         )
 
@@ -231,9 +231,9 @@ class PumpShaftPowerPipeline:
         self.logger.info(
             f"[Pipeline-Stage4-开始] Calculator",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id,
-                'method_id': method_id
+                '任务ID': task_id,
+                '设备ID': device_id,
+                '方法ID': method_id
             }}
         )
         stage4_start = time.time()
@@ -243,10 +243,10 @@ class PumpShaftPowerPipeline:
         self.logger.info(
             f"[Pipeline-Stage4-完成] Calculator",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id,
-                'calculated_rows': len(calculated_data),
-                'duration_ms': round(stage4_duration * 1000, 2)
+                '任务ID': task_id,
+                '设备ID': device_id,
+                '计算行数': len(calculated_data),
+                '耗时（毫秒）': round(stage4_duration * 1000, 2)
             }}
         )
 
@@ -254,8 +254,8 @@ class PumpShaftPowerPipeline:
         self.logger.info(
             f"[Pipeline-Stage5-开始] Validator",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id
+                '任务ID': task_id,
+                '设备ID': device_id
             }}
         )
         stage5_start = time.time()
@@ -265,10 +265,10 @@ class PumpShaftPowerPipeline:
         self.logger.info(
             f"[Pipeline-Stage5-完成] Validator",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id,
+                '任务ID': task_id,
+                '设备ID': device_id,
                 'valid_rows': len(validated_data),
-                'duration_ms': round(stage5_duration * 1000, 2)
+                '耗时（毫秒）': round(stage5_duration * 1000, 2)
             }}
         )
 
@@ -277,26 +277,26 @@ class PumpShaftPowerPipeline:
             self.logger.warning(
                 f"[Pipeline-警告] 验证后无有效数据",
                 extra={'extra_data': {
-                    'task_id': task_id,
-                    'device_id': device_id,
-                    'metric_key': 'pump_shaft_power'
+                    '任务ID': task_id,
+                    '设备ID': device_id,
+                    '指标键': 'pump_shaft_power'
                 }}
             )
             return {
                 'success': True,
-                'device_id': device_id,
-                'metric_key': 'pump_shaft_power',
+                '设备ID': device_id,
+                '指标键': 'pump_shaft_power',
                 'results_count': 0,
                 'skipped': True,
-                'reason': '验证后无有效数据'
+                '原因': '验证后无有效数据'
             }
 
         # Stage 6: DataWriter
         self.logger.info(
             f"[Pipeline-Stage6-开始] DataWriter",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id,
+                '任务ID': task_id,
+                '设备ID': device_id,
                 'rows_to_write': len(validated_data)
             }}
         )
@@ -327,10 +327,10 @@ class PumpShaftPowerPipeline:
         self.logger.info(
             f"[Pipeline-Stage6-完成] DataWriter",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id,
+                '任务ID': task_id,
+                '设备ID': device_id,
                 'written_count': written_count,
-                'duration_ms': round(stage6_duration * 1000, 2)
+                '耗时（毫秒）': round(stage6_duration * 1000, 2)
             }}
         )
 
@@ -338,11 +338,11 @@ class PumpShaftPowerPipeline:
         total_duration = time.time() - stage1_start
         return {
             'success': True,
-            'device_id': device_id,
-            'metric_key': 'pump_shaft_power',
-            'method_id': method_id,
+            '设备ID': device_id,
+            '指标键': 'pump_shaft_power',
+            '方法ID': method_id,
             'results_count': len(validated_data),
             'written_count': written_count,
-            'total_duration_ms': round(total_duration * 1000, 2)
+            '总耗时（毫秒）': round(total_duration * 1000, 2)
         }
 

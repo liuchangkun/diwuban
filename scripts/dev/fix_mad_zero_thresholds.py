@@ -18,7 +18,7 @@ from pathlib import Path
 project_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(project_root))
 
-from app.core.config.loader import load_settings
+from app.core.config.loader_new import load_settings
 from app.adapters.db import get_connection, init_database
 
 

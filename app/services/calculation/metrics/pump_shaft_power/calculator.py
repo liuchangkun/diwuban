@@ -51,8 +51,8 @@ class Calculator:
         self.logger.info(
             "[计算执行] 开始计算",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'method_id': method_id,
+                '追踪ID': self.trace_id,
+                '方法ID': method_id,
                 'row_count': len(data)
             }}
         )
@@ -81,8 +81,8 @@ class Calculator:
         self.logger.info(
             "[计算执行] 计算完成",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'method_id': method_id,
+                '追踪ID': self.trace_id,
+                '方法ID': method_id,
                 'stats': stats
             }}
         )

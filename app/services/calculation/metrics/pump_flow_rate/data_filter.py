@@ -30,6 +30,7 @@ class DataFilter:
         max_flow: float,
         max_power: float,
         max_freq: float,
+        station_id: Optional[int] = None,
         trace_id: Optional[str] = None
     ):
         """
@@ -39,10 +40,12 @@ class DataFilter:
             max_flow: 流量上限（m³/h）- 必须从params传入，不使用默认值
             max_power: 功率上限（kW）- 必须从params传入，不使用默认值
             max_freq: 频率上限（Hz）- 必须从params传入，不使用默认值
+            station_id: 泵站ID - 用于出水检测时查询 k 系数参数
             trace_id: 追踪ID（用于日志关联）
         """
         self.logger = logging.getLogger(__name__)
         self.trace_id = trace_id
+        self.station_id = station_id
 
         # 验证必需参数（禁止使用默认值）
         missing_params = []
@@ -84,7 +87,7 @@ class DataFilter:
         if data.empty:
             self.logger.warning(
                 "[数据过滤] 输入数据为空",
-                extra={'extra_data': {'trace_id': self.trace_id}}
+                extra={'extra_data': {'追踪ID': self.trace_id}}
             )
             return data
 
@@ -93,8 +96,8 @@ class DataFilter:
         self.logger.info(
             "[数据过滤] 开始过滤数据",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'original_rows': original_count
+                '追踪ID': self.trace_id,
+                '原始行数': original_count
             }}
         )
 
@@ -133,16 +136,71 @@ class DataFilter:
         self.logger.info(
             "[数据过滤] 过滤完成",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'original_rows': original_count,
-                'removed_stopped': stopped_count,
-                'removed_nan': nan_count,
-                'removed_negative': negative_count,
-                'removed_outlier': outlier_count,
-                'final_rows': final_count,
-                'filter_ratio': f"{(original_count - final_count) / original_count * 100:.2f}%" if original_count > 0 else "0%"
+                '追踪ID': self.trace_id,
+                '原始行数': original_count,
+                '移除停机数量': stopped_count,
+                '移除NaN数量': nan_count,
+                '移除负值数量': negative_count,
+                '移除异常值数量': outlier_count,
+                '最终行数': final_count,
+                '过滤比例': f"{(original_count - final_count) / original_count * 100:.2f}%" if original_count > 0 else "0%"
             }}
         )
+
+        # 5. 出水状态检测（使用 k 系数判断泵是否出水）
+        if self.station_id is not None and not data.empty:
+            data = self._detect_water_output(data)
+
+        return data
+
+    def _detect_water_output(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        检测泵的出水状态
+
+        使用 WaterOutputDetector 基于 k 系数和出口压力计算 f_min，
+        判断每行数据中的泵是否在出水。
+
+        Args:
+            data: 过滤后的数据
+
+        Returns:
+            添加了 f_min 和 is_outputting 列的 DataFrame
+        """
+        from .pump_k_coefficient import WaterOutputDetector
+
+        try:
+            detector = WaterOutputDetector(
+                station_id=self.station_id,
+                trace_id=self.trace_id
+            )
+
+            # 检测当前设备的出水状态
+            data = detector.detect(data)
+
+            # 统计出水情况
+            if 'is_outputting' in data.columns:
+                outputting_count = data['is_outputting'].sum()
+                total_count = len(data)
+                self.logger.info(
+                    "[数据过滤] 出水检测完成",
+                    extra={'extra_data': {
+                        '追踪ID': self.trace_id,
+                        '总行数': total_count,
+                        '出水行数': int(outputting_count),
+                        '非出水行数': int(total_count - outputting_count),
+                        '出水比例': f"{outputting_count / total_count * 100:.2f}%" if total_count > 0 else "0%"
+                    }}
+                )
+
+        except Exception as e:
+            self.logger.warning(
+                "[数据过滤] 出水检测失败，跳过",
+                extra={'extra_data': {
+                    '追踪ID': self.trace_id,
+                    '错误': str(e)
+                }}
+            )
+            # 失败时不添加 is_outputting 列，后续逻辑会默认所有泵都出水
 
         return data
 

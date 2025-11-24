@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from app.core.config.loader import load_settings
+from app.core.config.loader_new import load_settings
 from app.adapters.db.gateway import get_conn
 from app.services.device_running_job import DeviceRunningJob, JobConfig
 

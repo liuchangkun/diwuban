@@ -1,0 +1,2 @@
+# Characteristic curves tests
+

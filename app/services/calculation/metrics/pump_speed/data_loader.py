@@ -64,9 +64,9 @@ class DataLoader:
         self.logger.info(
             "[数据加载] 开始加载数据",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'station_id': station_id,
-                'device_id': device_id,
+                '追踪ID': self.trace_id,
+                '泵站ID': station_id,
+                '设备ID': device_id,
                 'start_time': str(start_time),
                 'end_time': str(end_time)
             }}
@@ -87,8 +87,8 @@ class DataLoader:
                     self.logger.warning(
                         "[数据加载] 设备不存在",
                         extra={'extra_data': {
-                            'trace_id': self.trace_id,
-                            'device_id': device_id
+                            '追踪ID': self.trace_id,
+                            '设备ID': device_id
                         }}
                     )
                     return pd.DataFrame()
@@ -99,11 +99,11 @@ class DataLoader:
                     self.logger.info(
                         "[数据加载] 跳过非泵设备（pump_speed只计算type='pump'的设备）",
                         extra={'extra_data': {
-                            'trace_id': self.trace_id,
-                            'device_id': device_id,
-                            'device_name': device_name,
-                            'device_type': device_type,
-                            'reason': 'pump_speed只计算type=pump的设备'
+                            '追踪ID': self.trace_id,
+                            '设备ID': device_id,
+                            '设备名称': device_name,
+                            '设备类型': device_type,
+                            '原因': 'pump_speed只计算type=pump的设备'
                         }}
                     )
                     return pd.DataFrame()
@@ -134,8 +134,8 @@ class DataLoader:
         """
 
         params = {
-            'station_id': station_id,
-            'device_id': device_id,
+            '泵站ID': station_id,
+            '设备ID': device_id,
             'start_time': start_time,
             'end_time': end_time
         }
@@ -164,9 +164,9 @@ class DataLoader:
         self.logger.info(
             "[数据加载] 加载完成",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'loaded_rows': len(df),
-                'duration_ms': round(query_duration * 1000, 2)
+                '追踪ID': self.trace_id,
+                '加载行数': len(df),
+                '耗时（毫秒）': round(query_duration * 1000, 2)
             }}
         )
 

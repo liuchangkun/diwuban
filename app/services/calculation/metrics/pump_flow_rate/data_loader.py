@@ -70,9 +70,9 @@ class DataLoader:
         self.logger.info(
             "[数据加载] 开始加载数据",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'station_id': station_id,
-                'device_id': device_id,
+                '追踪ID': self.trace_id,
+                '泵站ID': station_id,
+                '设备ID': device_id,
                 'start_time': str(start_time),
                 'end_time': str(end_time)
             }}
@@ -93,8 +93,8 @@ class DataLoader:
                     self.logger.warning(
                         "[数据加载] 设备不存在",
                         extra={'extra_data': {
-                            'trace_id': self.trace_id,
-                            'device_id': device_id
+                            '追踪ID': self.trace_id,
+                            '设备ID': device_id
                         }}
                     )
                     return pd.DataFrame()
@@ -105,11 +105,11 @@ class DataLoader:
                     self.logger.info(
                         "[数据加载] 跳过非泵设备（pump_flow_rate只计算type='pump'的设备）",
                         extra={'extra_data': {
-                            'trace_id': self.trace_id,
-                            'device_id': device_id,
-                            'device_name': device_name,
-                            'device_type': device_type,
-                            'reason': 'pump_flow_rate只计算type=pump的设备'
+                            '追踪ID': self.trace_id,
+                            '设备ID': device_id,
+                            '设备名称': device_name,
+                            '设备类型': device_type,
+                            '原因': 'pump_flow_rate只计算type=pump的设备'
                         }}
                     )
                     return pd.DataFrame()
@@ -123,7 +123,8 @@ class DataLoader:
                     'main_pipeline_flow_rate',
                     'pump_active_power',
                     'pump_frequency',
-                    'pump_cumulative_flow'
+                    'pump_cumulative_flow',
+                    'main_pipeline_outlet_pressure'  -- 用于出水判断
                 )
             ),
             device_ids AS (
@@ -162,7 +163,7 @@ class DataLoader:
             # 这样可以避免 pandas 的 SQLAlchemy 警告
             with conn.cursor() as cur:
                 cur.execute(sql, {
-                    'station_id': station_id,
+                    '泵站ID': station_id,
                     'start_time': start_time,
                     'end_time': end_time
                 })
@@ -180,7 +181,7 @@ class DataLoader:
 
         log_sql(
             sql,
-            params={'station_id': station_id, 'start_time': start_time, 'end_time': end_time},
+            params={'泵站ID': station_id, 'start_time': start_time, 'end_time': end_time},
             duration_ms=duration_ms,
             rows=len(df_raw)
         )
@@ -188,11 +189,11 @@ class DataLoader:
         self.logger.info(
             "[数据加载] SQL查询完成",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'station_id': station_id,
-                'device_id': device_id,
+                '追踪ID': self.trace_id,
+                '泵站ID': station_id,
+                '设备ID': device_id,
                 'raw_rows': len(df_raw),
-                'duration_ms': duration_ms
+                '耗时（毫秒）': duration_ms
             }}
         )
 
@@ -200,9 +201,9 @@ class DataLoader:
             self.logger.warning(
                 "[数据加载] 无数据",
                 extra={'extra_data': {
-                    'trace_id': self.trace_id,
-                    'station_id': station_id,
-                    'device_id': device_id
+                    '追踪ID': self.trace_id,
+                    '泵站ID': station_id,
+                    '设备ID': device_id
                 }}
             )
             return pd.DataFrame()
@@ -238,6 +239,15 @@ class DataLoader:
                     df_current['main_pipeline_flow_rate'] = df_current['main_pipeline_flow_rate_main']
                     df_current = df_current.drop(columns=['main_pipeline_flow_rate_main'])
 
+        # 如果当前设备没有 main_pipeline_outlet_pressure，从主管道设备获取（用于出水判断）
+        if 'main_pipeline_outlet_pressure' not in df_current.columns or df_current['main_pipeline_outlet_pressure'].isna().all():
+            if not df_main_pipeline.empty and 'main_pipeline_outlet_pressure' in df_main_pipeline.columns:
+                df_main_pressure = df_main_pipeline[['ts_bucket', 'main_pipeline_outlet_pressure']].drop_duplicates('ts_bucket')
+                df_current = df_current.merge(df_main_pressure, on='ts_bucket', how='left', suffixes=('', '_main'))
+                if 'main_pipeline_outlet_pressure_main' in df_current.columns:
+                    df_current['main_pipeline_outlet_pressure'] = df_current['main_pipeline_outlet_pressure_main']
+                    df_current = df_current.drop(columns=['main_pipeline_outlet_pressure_main'])
+
         # 其他设备（排除当前设备和主管道设备）
         df_others = df_final[
             (df_final['device_id'] != device_id) &
@@ -263,11 +273,11 @@ class DataLoader:
         self.logger.info(
             "[数据加载] 数据透视完成",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'device_id': device_id,
-                'current_device_rows': len(df_current),
-                'other_devices_count': len(df_others['device_id'].unique()) if not df_others.empty else 0,
-                'time_span_hours': f"{(df_current['ts_bucket'].max() - df_current['ts_bucket'].min()).total_seconds() / 3600:.2f}" if not df_current.empty else 0
+                '追踪ID': self.trace_id,
+                '设备ID': device_id,
+                '当前设备行数': len(df_current),
+                '其他设备数量': len(df_others['device_id'].unique()) if not df_others.empty else 0,
+                '时间跨度（小时）': f"{(df_current['ts_bucket'].max() - df_current['ts_bucket'].min()).total_seconds() / 3600:.2f}" if not df_current.empty else 0
             }}
         )
 

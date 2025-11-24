@@ -42,7 +42,7 @@ def calculate(data: pd.DataFrame, params: Dict[str, Any], trace_id: str = None) 
         logger.error(
             "[参数错误] 缺少必需参数 'P_atm'",
             extra={'extra_data': {
-                'trace_id': trace_id,
+                '追踪ID': trace_id,
                 'missing_param': 'P_atm',
                 'fix': '请在 calculation_parameters 表中添加该参数'
             }}
@@ -52,7 +52,7 @@ def calculate(data: pd.DataFrame, params: Dict[str, Any], trace_id: str = None) 
         logger.error(
             "[参数错误] 缺少必需参数 'rho'",
             extra={'extra_data': {
-                'trace_id': trace_id,
+                '追踪ID': trace_id,
                 'missing_param': 'rho',
                 'fix': '请在 calculation_parameters 表中添加该参数'
             }}
@@ -62,7 +62,7 @@ def calculate(data: pd.DataFrame, params: Dict[str, Any], trace_id: str = None) 
         logger.error(
             "[参数错误] 缺少必需参数 'g'",
             extra={'extra_data': {
-                'trace_id': trace_id,
+                '追踪ID': trace_id,
                 'missing_param': 'g',
                 'fix': '请在 calculation_parameters 表中添加该参数'
             }}
@@ -71,7 +71,7 @@ def calculate(data: pd.DataFrame, params: Dict[str, Any], trace_id: str = None) 
 
     logger.info(
         f"[method_b] 开始计算: P_atm={P_atm}, rho={rho}, g={g}",
-        extra={'extra_data': {'trace_id': trace_id}}
+        extra={'extra_data': {'追踪ID': trace_id}}
     )
     
     # 计算
@@ -83,7 +83,7 @@ def calculate(data: pd.DataFrame, params: Dict[str, Any], trace_id: str = None) 
     
     logger.info(
         f"[method_b] 计算完成: 结果数量={len(result)}",
-        extra={'extra_data': {'trace_id': trace_id}}
+        extra={'extra_data': {'追踪ID': trace_id}}
     )
     
     return result

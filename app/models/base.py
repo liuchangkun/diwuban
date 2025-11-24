@@ -185,33 +185,6 @@ class DeviceStatus:
         return [cls.ACTIVE, cls.INACTIVE, cls.MAINTENANCE, cls.ERROR]
 
 
-class CurveType:
-    """特性曲线类型常量"""
-
-    H_Q = "H-Q"  # 扬程-流量曲线
-    ETA_Q = "η-Q"  # 效率-流量曲线
-    N_Q = "N-Q"  # 功率-流量曲线
-
-    @classmethod
-    def all(cls) -> list[str]:
-        """获取所有曲线类型"""
-        return [cls.H_Q, cls.ETA_Q, cls.N_Q]
-
-
-class OptimizationStatus:
-    """优化状态常量"""
-
-    PENDING = "pending"
-    RUNNING = "running"
-    COMPLETED = "completed"
-    FAILED = "failed"
-
-    @classmethod
-    def all(cls) -> list[str]:
-        """获取所有优化状态"""
-        return [cls.PENDING, cls.RUNNING, cls.COMPLETED, cls.FAILED]
-
-
 # 常用验证器
 def validate_positive_decimal(value: Decimal) -> Decimal:
     """验证正数 Decimal 值"""

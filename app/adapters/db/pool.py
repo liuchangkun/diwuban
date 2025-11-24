@@ -123,7 +123,7 @@ class PoolStats:
             corrections["active_connections"] = {
                 "old": self.active_connections,
                 "new": 0,
-                "reason": "negative_value_corrected",
+                '原因': "negative_value_corrected",
             }
             self.active_connections = 0
             self._validation_errors += 1
@@ -133,7 +133,7 @@ class PoolStats:
             corrections["active_connections"] = {
                 "old": self.active_connections,
                 "new": max(0, self.total_connections - self.idle_connections),
-                "reason": "exceeds_total_connections",
+                '原因': "exceeds_total_connections",
             }
             self.active_connections = max(
                 0, self.total_connections - self.idle_connections
@@ -244,7 +244,7 @@ class PooledConnection:
                     check_type,
                     time.time() - start_time,
                     False,
-                    {"reason": "connection_closed"},
+                    {'原因': "connection_closed"},
                 )
                 return False
 
@@ -267,7 +267,7 @@ class PooledConnection:
                             detail = {
                                 "event": "health_check",
                                 "type": check_type,
-                                "duration_ms": dur_ms,
+                                '耗时（毫秒）': dur_ms,
                                 "result": True,
                             }
                             if _global_cfg.db_pool_include_thread:
@@ -339,7 +339,7 @@ class PooledConnection:
                             check_type,
                             time.time() - start_time,
                             False,
-                            {"reason": "transaction_error_state"},
+                            {'原因': "transaction_error_state"},
                         )
                         return False
 
@@ -353,7 +353,7 @@ class PooledConnection:
                     check_type,
                     time.time() - start_time,
                     False,
-                    {"reason": "lightweight_check_failed", "error": str(e)},
+                    {'原因': "lightweight_check_failed", "error": str(e)},
                 )
                 return False
 
@@ -392,7 +392,7 @@ class PooledConnection:
                                     check_type,
                                     time.time() - start_time,
                                     False,
-                                    {"reason": "invalid_query_result"},
+                                    {'原因': "invalid_query_result"},
                                 )
                                 return False
 
@@ -410,7 +410,7 @@ class PooledConnection:
                         check_type,
                         time.time() - start_time,
                         False,
-                        {"reason": "deep_check_failed", "error": str(e)},
+                        {'原因': "deep_check_failed", "error": str(e)},
                     )
                     return False
             else:
@@ -426,7 +426,7 @@ class PooledConnection:
                     detail = {
                         "event": "health_check",
                         "type": check_type,
-                        "duration_ms": dur_ms,
+                        '耗时（毫秒）': dur_ms,
                         "result": bool(success),
                         "pool_id": getattr(self.get_pool(), "_pool_id", None),
                     }
@@ -468,7 +468,7 @@ class PooledConnection:
                 check_type,
                 time.time() - start_time,
                 False,
-                {"reason": "unexpected_error"},
+                {'原因': "unexpected_error"},
             )
             return False
 
@@ -619,7 +619,7 @@ class ConnectionPool:
                     dur_ms = int((time.time() - create_start) * 1000)
                     detail = {
                         "event": "create",
-                        "duration_ms": dur_ms,
+                        '耗时（毫秒）': dur_ms,
                         "dsn_preview": (self._dsn[:50] + "...") if self._dsn else None,
                         "pool_id": getattr(self, "_pool_id", None),
                     }
@@ -902,10 +902,10 @@ class ConnectionPool:
                     if _global_cfg and _global_cfg.db_pool_enabled:
                         detail = {
                             "event": "before_reset",
-                            "transaction_status": str(pooled_conn.connection.info.transaction_status),
-                            "autocommit": pooled_conn.connection.autocommit,
+                            '事务状态': str(pooled_conn.connection.info.transaction_status),
+                            '自动提交': pooled_conn.connection.autocommit,
                         }
-                        log_db_pool("RESET_STATE", detail, logging.INFO)
+                        log_db_pool("RESET_STATE", detail, logging.DEBUG)
                 except Exception:
                     pass
 
@@ -1046,7 +1046,7 @@ class ConnectionPool:
                 detail = {
                     "event": "close_end",
                     "pool_id": getattr(self, "_pool_id", None),
-                    "duration_ms": duration_ms,
+                    '耗时（毫秒）': duration_ms,
                     "active": self._stats.active_connections,
                     "idle": self._stats.idle_connections,
                     "total": self._stats.total_connections,

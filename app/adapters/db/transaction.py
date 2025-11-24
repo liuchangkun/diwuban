@@ -53,12 +53,12 @@ def reset_connection_state(conn: Connection) -> None:
         conn: 数据库连接
     """
     try:
-        _act.info("[核心-事务] [重置连接状态]")
+        _act.debug("[核心-事务] [重置连接状态]")
 
         # 检查连接是否处于事务中
         if conn.info.transaction_status != psycopg.pq.TransactionStatus.IDLE:
             conn.rollback()
-            _act.info("[核心-事务] [回滚未提交事务]")
+            _act.debug("[核心-事务] [回滚未提交事务]")
 
         # 确保连接处于自动提交模式
         if not conn.autocommit:
@@ -149,12 +149,12 @@ def transaction(
                 cur.execute(f"RELEASE SAVEPOINT {savepoint}")
         else:
             # 调试日志：记录提交前的连接状态
-            _act.info(
+            _act.debug(
                 "[核心-事务] [准备提交]",
                 extra={
                     "extra_data": {
-                        "transaction_status_before": str(conn.info.transaction_status),
-                        "autocommit_before": conn.autocommit,
+                        '事务状态（修改前）': str(conn.info.transaction_status),
+                        '自动提交（修改前）': conn.autocommit,
                     }
                 },
             )
@@ -162,12 +162,12 @@ def transaction(
             conn.commit()
 
             # 调试日志：记录提交后的连接状态
-            _act.info(
+            _act.debug(
                 "[核心-事务] [事务已提交]",
                 extra={
                     "extra_data": {
-                        "transaction_status_after": str(conn.info.transaction_status),
-                        "autocommit_after": conn.autocommit,
+                        '事务状态（修改后）': str(conn.info.transaction_status),
+                        '自动提交（修改后）': conn.autocommit,
                     }
                 },
             )
@@ -190,13 +190,13 @@ def transaction(
         # 恢复原始自动提交状态
         try:
             # 调试日志：记录恢复前的状态
-            _act.info(
+            _act.debug(
                 "[核心-事务] [恢复autocommit前]",
                 extra={
                     "extra_data": {
-                        "transaction_status": str(conn.info.transaction_status),
-                        "autocommit_current": conn.autocommit,
-                        "autocommit_original": original_autocommit,
+                        '事务状态': str(conn.info.transaction_status),
+                        '自动提交（当前）': conn.autocommit,
+                        '自动提交（原始）': original_autocommit,
                     }
                 },
             )
@@ -204,12 +204,12 @@ def transaction(
             conn.autocommit = original_autocommit
 
             # 调试日志：记录恢复后的状态
-            _act.info(
+            _act.debug(
                 "[核心-事务] [恢复autocommit后]",
                 extra={
                     "extra_data": {
-                        "transaction_status": str(conn.info.transaction_status),
-                        "autocommit": conn.autocommit,
+                        '事务状态': str(conn.info.transaction_status),
+                        '自动提交': conn.autocommit,
                     }
                 },
             )
@@ -310,8 +310,8 @@ def validate_connection_state(conn: Connection) -> dict:
     try:
         state_info = {
             "connection_closed": conn.closed,
-            "autocommit": conn.autocommit,
-            "transaction_status": (
+            '自动提交': conn.autocommit,
+            '事务状态': (
                 conn.info.transaction_status.name
                 if hasattr(conn.info.transaction_status, "name")
                 else str(conn.info.transaction_status)

@@ -508,6 +508,693 @@ def cmd_rules_diff_report(
     typer.echo(_json.dumps(res, ensure_ascii=False, indent=2))
 
 
+# ===== 特性曲线拟合命令 =====
+
+
+@app.command(
+    name="fit-curve",
+    help=(
+        "拟合泵特性曲线；"
+        "示例：python -m app.cli.main fit-curve --pump-id=1 --curve-type=qh"
+    ),
+)
+def cmd_fit_curve(
+    pump_id: int = typer.Option(..., "--pump-id", help="泵设备ID"),
+    curve_type: str = typer.Option("qh", "--curve-type", help="曲线类型: qh, qp, qeta"),
+    output: str | None = typer.Option(None, "--output", "-o", help="输出文件路径（JSON）"),
+) -> None:
+    """拟合泵特性曲线。
+    示例：python -m app.cli.main fit-curve --pump-id=1 --curve-type=qh
+    """
+    initialize_app()
+    import json as _json
+
+    from app.services.characteristic_curves.pipeline import CurveFittingPipeline
+
+    pipeline = CurveFittingPipeline()
+    result = pipeline.fit(device_id=pump_id, curve_type=curve_type)
+
+    output_data = {
+        "success": result.success,
+        "curve_type": result.curve_type,
+        "method_id": result.method_id,
+        "r_squared": result.r_squared,
+        "rmse": result.rmse,
+        "quality_grade": result.quality_grade,
+        "formula": result.formula,
+    }
+
+    if output:
+        Path(output).write_text(_json.dumps(output_data, ensure_ascii=False, indent=2))
+        typer.echo(f"✅ 结果已保存到: {output}")
+    else:
+        typer.echo(_json.dumps(output_data, ensure_ascii=False, indent=2))
+
+
+@app.command(
+    name="validate-curve",
+    help=(
+        "验证已拟合的曲线；"
+        "示例：python -m app.cli.main validate-curve --result-id=123 --r-squared-threshold=0.95"
+    ),
+)
+def cmd_validate_curve(
+    result_id: int = typer.Option(..., "--result-id", help="拟合结果ID（数据库主键）"),
+    r_squared_threshold: float = typer.Option(0.90, "--r-squared-threshold", help="R²阈值（默认0.90）"),
+    rmse_threshold: float = typer.Option(0.10, "--rmse-threshold", help="RMSE阈值（默认0.10）"),
+    min_data_points: int = typer.Option(10, "--min-data-points", help="最小数据点数（默认10）"),
+    strict: bool = typer.Option(False, "--strict", help="严格模式：所有检查必须通过"),
+) -> None:
+    """验证已拟合的曲线。
+
+    示例：
+        # 使用默认阈值
+        python -m app.cli.main validate-curve --result-id=123
+
+        # 自定义阈值
+        python -m app.cli.main validate-curve --result-id=123 --r-squared-threshold=0.95 --rmse-threshold=0.05
+
+        # 严格模式
+        python -m app.cli.main validate-curve --result-id=123 --strict
+    """
+    initialize_app()
+    import json as _json
+    from app.adapters.db.pool import get_connection
+
+    # 从数据库加载拟合结果
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cursor:
+                # 查询拟合结果和指标
+                query = """
+                    SELECT r.id, r.device_id, r.curve_type, r.version, r.method_name,
+                           m.r_squared, m.rmse, m.mae, m.mape,
+                           r.data_point_count, r.status
+                    FROM curve_fit_results r
+                    LEFT JOIN curve_fit_metrics m ON r.id = m.result_id
+                    WHERE r.id = %s
+                """
+                cursor.execute(query, (result_id,))
+                row = cursor.fetchone()
+
+                if not row:
+                    typer.echo(f"❌ 未找到结果: result_id={result_id}", err=True)
+                    raise typer.Exit(code=1)
+
+                # 解析结果
+                r_squared = row[5] or 0.0
+                rmse = row[6] or 0.0
+                mae = row[7] or 0.0
+                mape = row[8] or 0.0
+                data_points = row[9] or 0
+                status = row[10]
+
+                # 质量检查
+                checks = {}
+
+                # 检查1: R² 阈值检查
+                r_squared_passed = r_squared >= r_squared_threshold
+                checks["r_squared_check"] = {
+                    "passed": r_squared_passed,
+                    "threshold": r_squared_threshold,
+                    "actual": round(r_squared, 4),
+                    "importance": "critical" if strict else "high"
+                }
+
+                # 检查2: RMSE 检查
+                rmse_passed = rmse < rmse_threshold if rmse > 0 else True
+                checks["rmse_check"] = {
+                    "passed": rmse_passed,
+                    "threshold": rmse_threshold,
+                    "actual": round(rmse, 4),
+                    "importance": "critical" if strict else "high"
+                }
+
+                # 检查3: 数据点数量检查
+                data_points_passed = data_points >= min_data_points
+                checks["data_points_check"] = {
+                    "passed": data_points_passed,
+                    "threshold": min_data_points,
+                    "actual": data_points,
+                    "importance": "medium"
+                }
+
+                # 检查4: 状态检查
+                status_passed = status == 'active'
+                checks["status_check"] = {
+                    "passed": status_passed,
+                    "expected": "active",
+                    "actual": status,
+                    "importance": "high"
+                }
+
+                # 总体验证结果
+                if strict:
+                    # 严格模式：所有检查必须通过
+                    validation_passed = all(check["passed"] for check in checks.values())
+                else:
+                    # 宽松模式：关键检查通过即可
+                    critical_checks = ["r_squared_check", "rmse_check", "status_check"]
+                    validation_passed = all(checks[key]["passed"] for key in critical_checks)
+
+                overall_status = "valid" if validation_passed else "invalid"
+
+                # 生成建议
+                suggestions = []
+                if not r_squared_passed:
+                    suggestions.append(f"R²低于阈值，建议重新拟合或调整拟合方法")
+                if not rmse_passed:
+                    suggestions.append(f"RMSE过高，建议检查数据质量或增加数据点")
+                if not data_points_passed:
+                    suggestions.append(f"数据点不足，建议扩大数据采集范围")
+                if not status_passed:
+                    suggestions.append(f"结果状态为{status}，可能已被废弃")
+
+                validation_result = {
+                    "result_id": result_id,
+                    "device_id": row[1],
+                    "curve_type": row[2],
+                    "version": row[3],
+                    "method_name": row[4],
+                    "validation_mode": "strict" if strict else "normal",
+                    "validation_passed": validation_passed,
+                    "checks": checks,
+                    "overall_status": overall_status,
+                    "suggestions": suggestions,
+                }
+
+                typer.echo(_json.dumps(validation_result, ensure_ascii=False, indent=2))
+
+    except Exception as e:
+        typer.echo(f"❌ 验证失败: {e}", err=True)
+        raise typer.Exit(code=1)
+
+
+@app.command(
+    name="compare-versions",
+    help=(
+        "比较不同版本的曲线；"
+        "示例：python -m app.cli.main compare-versions --device-id=1 --curve-type=qh --v1=20250101_100000 --v2=20250102_100000"
+    ),
+)
+def cmd_compare_versions(
+    device_id: int = typer.Option(..., "--device-id", help="设备ID"),
+    curve_type: str = typer.Option(..., "--curve-type", help="曲线类型（qh/qp/qeta）"),
+    v1: str = typer.Option(..., "--v1", help="版本1的版本号"),
+    v2: str = typer.Option(..., "--v2", help="版本2的版本号"),
+    output: str | None = typer.Option(None, "--output", "-o", help="输出文件路径（JSON）"),
+) -> None:
+    """比较不同版本的曲线。
+    示例：python -m app.cli.main compare-versions --device-id=1 --curve-type=qh --v1=20250101_100000 --v2=20250102_100000
+    """
+    initialize_app()
+    import json as _json
+    from app.services.characteristic_curves.shared import ResultStorage
+
+    try:
+        storage = ResultStorage()
+
+        # 加载两个版本
+        result_v1 = storage.load(device_id=device_id, curve_type=curve_type, version=v1)
+        result_v2 = storage.load(device_id=device_id, curve_type=curve_type, version=v2)
+
+        if not result_v1:
+            typer.echo(f"❌ 未找到版本1: device_id={device_id}, curve_type={curve_type}, version={v1}", err=True)
+            raise typer.Exit(code=1)
+
+        if not result_v2:
+            typer.echo(f"❌ 未找到版本2: device_id={device_id}, curve_type={curve_type}, version={v2}", err=True)
+            raise typer.Exit(code=1)
+
+        # 比较指标
+        r_squared_diff = result_v2.r_squared - result_v1.r_squared
+        rmse_diff = result_v2.rmse - result_v1.rmse
+        mae_diff = result_v2.mae - result_v1.mae
+
+        # 比较系数
+        coefficient_changes = []
+        all_keys = set(result_v1.coefficients.keys()) | set(result_v2.coefficients.keys())
+        for key in sorted(all_keys):
+            c1 = result_v1.coefficients.get(key, 0.0)
+            c2 = result_v2.coefficients.get(key, 0.0)
+            if c1 != 0 or c2 != 0:  # 只记录非零系数
+                coefficient_changes.append({
+                    "coefficient": key,
+                    "v1": round(c1, 6),
+                    "v2": round(c2, 6),
+                    "diff": round(c2 - c1, 6),
+                    "relative_change": round((c2 - c1) / c1 * 100, 2) if c1 != 0 else None
+                })
+
+        # 判断质量变化
+        if r_squared_diff > 0.01:
+            quality_change = "improved"
+        elif r_squared_diff < -0.01:
+            quality_change = "degraded"
+        else:
+            quality_change = "similar"
+
+        # 推荐版本（基于R²）
+        if r_squared_diff > 0:
+            recommendation = v2
+            recommendation_reason = f"R²提升 {r_squared_diff:.4f}"
+        elif r_squared_diff < 0:
+            recommendation = v1
+            recommendation_reason = f"R²下降 {abs(r_squared_diff):.4f}"
+        else:
+            # R²相同，比较RMSE
+            if rmse_diff < 0:
+                recommendation = v2
+                recommendation_reason = f"RMSE降低 {abs(rmse_diff):.4f}"
+            else:
+                recommendation = v1
+                recommendation_reason = "指标相似，保持原版本"
+
+        comparison_result = {
+            "device_id": device_id,
+            "curve_type": curve_type,
+            "version_1": {
+                "version": v1,
+                "method_name": result_v1.method_name,
+                "r_squared": round(result_v1.r_squared, 4),
+                "rmse": round(result_v1.rmse, 4),
+                "mae": round(result_v1.mae, 4),
+                "data_points": result_v1.data_points,
+            },
+            "version_2": {
+                "version": v2,
+                "method_name": result_v2.method_name,
+                "r_squared": round(result_v2.r_squared, 4),
+                "rmse": round(result_v2.rmse, 4),
+                "mae": round(result_v2.mae, 4),
+                "data_points": result_v2.data_points,
+            },
+            "comparison": {
+                "r_squared_diff": round(r_squared_diff, 4),
+                "rmse_diff": round(rmse_diff, 4),
+                "mae_diff": round(mae_diff, 4),
+                "coefficient_changes": coefficient_changes,
+                "fit_quality_change": quality_change,
+            },
+            "recommendation": recommendation,
+            "recommendation_reason": recommendation_reason,
+        }
+
+        if output:
+            Path(output).write_text(_json.dumps(comparison_result, ensure_ascii=False, indent=2))
+            typer.echo(f"✅ 比较结果已保存到: {output}")
+        else:
+            typer.echo(_json.dumps(comparison_result, ensure_ascii=False, indent=2))
+
+    except Exception as e:
+        typer.echo(f"❌ 比较失败: {e}", err=True)
+        raise typer.Exit(code=1)
+
+
+@app.command(
+    name="batch-fit",
+    help=(
+        "批量拟合多个设备的特性曲线；"
+        "示例：python -m app.cli.main batch-fit --device-ids=1,2,3 --curve-type=qh"
+    ),
+)
+def cmd_batch_fit(
+    device_ids: str = typer.Option(..., "--device-ids", help="设备ID列表（逗号分隔），如：1,2,3"),
+    curve_type: str = typer.Option("qh", "--curve-type", help="曲线类型: qh, qp, qeta"),
+    output: str | None = typer.Option(None, "--output", "-o", help="输出文件路径（JSON）"),
+    continue_on_error: bool = typer.Option(True, "--continue-on-error", help="遇到错误时继续处理"),
+) -> None:
+    """批量拟合多个设备的特性曲线。
+
+    示例：
+        # 拟合3个设备的QH曲线
+        python -m app.cli.main batch-fit --device-ids=1,2,3 --curve-type=qh
+
+        # 拟合并保存结果
+        python -m app.cli.main batch-fit --device-ids=1,2,3 --curve-type=qh --output=results.json
+
+        # 遇到错误时停止
+        python -m app.cli.main batch-fit --device-ids=1,2,3 --curve-type=qh --continue-on-error=false
+    """
+    initialize_app()
+    import json as _json
+    from app.services.characteristic_curves.pipeline import CurveFittingPipeline
+
+    # 解析设备ID列表
+    try:
+        device_id_list = [int(x.strip()) for x in device_ids.split(",")]
+    except ValueError:
+        typer.echo("❌ 设备ID格式错误，请使用逗号分隔的整数，如：1,2,3", err=True)
+        raise typer.Exit(code=1)
+
+    if not device_id_list:
+        typer.echo("❌ 设备ID列表为空", err=True)
+        raise typer.Exit(code=1)
+
+    typer.echo(f"📊 开始批量拟合：{len(device_id_list)}个设备，曲线类型={curve_type}")
+
+    pipeline = CurveFittingPipeline()
+    results = []
+    success_count = 0
+    failed_count = 0
+
+    for idx, device_id in enumerate(device_id_list, 1):
+        typer.echo(f"\n[{idx}/{len(device_id_list)}] 拟合设备 {device_id}...")
+
+        try:
+            result = pipeline.fit(device_id=device_id, curve_type=curve_type)
+
+            result_data = {
+                "device_id": device_id,
+                "success": result.success,
+                "curve_type": result.curve_type,
+                "method_id": result.method_id,
+                "r_squared": result.r_squared,
+                "rmse": result.rmse,
+                "quality_grade": result.quality_grade,
+                "formula": result.formula,
+            }
+
+            results.append(result_data)
+
+            if result.success:
+                success_count += 1
+                typer.echo(
+                    f"  ✅ 成功: method={result.method_id}, r²={result.r_squared:.4f}, "
+                    f"rmse={result.rmse:.4f}, grade={result.quality_grade}"
+                )
+            else:
+                failed_count += 1
+                error_info = result.metadata.get("error", "未知错误") if result.metadata else "拟合失败"
+                typer.echo(f"  ⚠️ 失败: {error_info}")
+
+        except Exception as e:
+            failed_count += 1
+            error_msg = str(e)
+            typer.echo(f"  ❌ 异常: {error_msg}")
+
+            results.append(
+                {
+                    "device_id": device_id,
+                    "success": False,
+                    "error": error_msg,
+                }
+            )
+
+            if not continue_on_error:
+                typer.echo("\n❌ 遇到错误，停止批量处理", err=True)
+                raise typer.Exit(code=1)
+
+    # 输出汇总
+    typer.echo(f"\n{'='*60}")
+    typer.echo(f"📊 批量拟合完成")
+    typer.echo(f"  总数: {len(device_id_list)}")
+    typer.echo(f"  成功: {success_count}")
+    typer.echo(f"  失败: {failed_count}")
+    typer.echo(f"  成功率: {success_count/len(device_id_list)*100:.1f}%")
+
+    # 保存结果
+    output_data = {
+        "summary": {
+            "total": len(device_id_list),
+            "success": success_count,
+            "failed": failed_count,
+            "success_rate": success_count / len(device_id_list),
+        },
+        "results": results,
+    }
+
+    if output:
+        Path(output).write_text(_json.dumps(output_data, ensure_ascii=False, indent=2))
+        typer.echo(f"\n✅ 结果已保存到: {output}")
+    else:
+        typer.echo(f"\n{_json.dumps(output_data, ensure_ascii=False, indent=2)}")
+
+
+@app.command(
+    name="evaluate-fit",
+    help=(
+        "评估已拟合曲线的预测准确性；"
+        "示例：python -m app.cli.main evaluate-fit --result-id=123"
+    ),
+)
+def cmd_evaluate_fit(
+    result_id: int = typer.Option(..., "--result-id", help="拟合结果ID（数据库主键）"),
+    test_days: int = typer.Option(7, "--test-days", help="测试窗口天数（默认7天）"),
+    output: str | None = typer.Option(None, "--output", "-o", help="输出文件路径（JSON）"),
+) -> None:
+    """评估已拟合曲线的预测准确性。
+
+    使用独立的测试数据评估曲线的预测能力。
+    合格标准：90%的测试点偏差小于5%。
+
+    示例：
+        # 评估拟合结果
+        python -m app.cli.main evaluate-fit --result-id=123
+
+        # 自定义测试窗口
+        python -m app.cli.main evaluate-fit --result-id=123 --test-days=14
+
+        # 保存评估结果
+        python -m app.cli.main evaluate-fit --result-id=123 --output=evaluation.json
+    """
+    initialize_app()
+    import json as _json
+    from datetime import datetime, timedelta
+    from app.adapters.db.pool import get_connection
+    from app.services.characteristic_curves.shared.historical_data_evaluator import (
+        HistoricalDataEvaluator,
+        TimeWindow,
+    )
+
+    typer.echo(f"📊 开始评估拟合结果: result_id={result_id}")
+
+    # 从数据库加载拟合结果
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cursor:
+                # 查询拟合结果
+                query = """
+                    SELECT r.id, r.device_id, r.curve_type, r.method_name,
+                           m.r_squared, m.rmse
+                    FROM curve_fit_results r
+                    LEFT JOIN curve_fit_metrics m ON r.id = m.result_id
+                    WHERE r.id = %s
+                """
+                cursor.execute(query, (result_id,))
+                row = cursor.fetchone()
+
+                if not row:
+                    typer.echo(f"❌ 未找到结果: result_id={result_id}", err=True)
+                    raise typer.Exit(code=1)
+
+                device_id = row[1]
+                curve_type = row[2]
+                method_name = row[3]
+                r_squared = row[4]
+                rmse = row[5]
+
+                # 查询系数参数（从curve_fit_params表）
+                param_query = """
+                    SELECT param_key, param_value
+                    FROM curve_fit_params
+                    WHERE result_id = %s AND param_category = 'coefficients'
+                    ORDER BY param_key
+                """
+                cursor.execute(param_query, (result_id,))
+                param_rows = cursor.fetchall()
+                coefficients = [row[1] for row in param_rows] if param_rows else []
+
+                typer.echo(f"  设备ID: {device_id}")
+                typer.echo(f"  曲线类型: {curve_type}")
+                typer.echo(f"  拟合方法: {method_name}")
+                typer.echo(f"  R²: {r_squared:.4f}")
+                typer.echo(f"  RMSE: {rmse:.4f}")
+
+    except Exception as e:
+        typer.echo(f"❌ 加载拟合结果失败: {e}", err=True)
+        raise typer.Exit(code=1)
+
+    # 创建预测函数（简化版，仅支持多项式）
+    def predict_func(x: float) -> float:
+        """多项式预测函数"""
+        if not coefficients:
+            return 0.0
+        y = 0.0
+        for i, coef in enumerate(coefficients):
+            y += coef * (x**i)
+        return y
+
+    # 定义测试窗口（最近N天）
+    end_time = datetime.now()
+    start_time = end_time - timedelta(days=test_days)
+    test_window = TimeWindow(start=start_time, end=end_time)
+
+    typer.echo(f"\n📅 测试窗口: {start_time.strftime('%Y-%m-%d')} ~ {end_time.strftime('%Y-%m-%d')}")
+
+    # 评估预测准确性
+    try:
+        evaluator = HistoricalDataEvaluator()
+        evaluation = evaluator.evaluate_prediction_accuracy(
+            device_id=device_id,
+            curve_type=curve_type,
+            predict_func=predict_func,
+            test_window=test_window,
+        )
+
+        # 输出评估结果
+        typer.echo(f"\n{'='*60}")
+        typer.echo("📊 评估结果")
+        typer.echo(f"  测试点数: {evaluation['test_point_count']}")
+        typer.echo(f"  5%偏差内: {evaluation['pass_rate']['within_5_percent']*100:.1f}%")
+        typer.echo(f"  10%偏差内: {evaluation['pass_rate']['within_10_percent']*100:.1f}%")
+        typer.echo(f"  平均偏差: {evaluation['deviation_stats']['mean_deviation']:.2f}%")
+        typer.echo(f"  最大偏差: {evaluation['deviation_stats']['max_deviation']:.2f}%")
+
+        # 判断是否合格
+        is_qualified = evaluation["pass_rate"]["within_5_percent"] >= 0.90
+        if is_qualified:
+            typer.echo(f"\n✅ 评估合格（90%点位偏差<5%）")
+        else:
+            typer.echo(f"\n⚠️ 评估不合格（90%点位偏差<5%）")
+
+        # 保存结果
+        output_data = {
+            "result_id": result_id,
+            "device_id": device_id,
+            "curve_type": curve_type,
+            "method_name": method_name,
+            "fit_quality": {"r_squared": r_squared, "rmse": rmse},
+            "evaluation": evaluation,
+            "is_qualified": is_qualified,
+        }
+
+        if output:
+            Path(output).write_text(_json.dumps(output_data, ensure_ascii=False, indent=2))
+            typer.echo(f"\n✅ 评估结果已保存到: {output}")
+        else:
+            typer.echo(f"\n{_json.dumps(output_data, ensure_ascii=False, indent=2)}")
+
+    except Exception as e:
+        typer.echo(f"❌ 评估失败: {e}", err=True)
+        raise typer.Exit(code=1)
+
+
+@app.command(
+    name="export-curves",
+    help=(
+        "导出曲线拟合结果；"
+        "示例：python -m app.cli.main export-curves --device-id=1 --format=csv --output=curves.csv"
+    ),
+)
+def cmd_export_curves(
+    device_id: int | None = typer.Option(None, "--device-id", help="设备ID（可选，不指定则导出所有）"),
+    curve_type: str | None = typer.Option(None, "--curve-type", help="曲线类型（可选）: qh, qp, qeta"),
+    format: str = typer.Option("csv", "--format", "-f", help="导出格式: csv, json, excel"),
+    output: str = typer.Option(..., "--output", "-o", help="输出文件路径"),
+    limit: int = typer.Option(1000, "--limit", help="最大导出行数（默认1000）"),
+) -> None:
+    """导出曲线拟合结果到文件。
+
+    支持CSV、JSON、Excel格式。
+
+    示例：
+        # 导出所有曲线到CSV
+        python -m app.cli.main export-curves --output=all_curves.csv
+
+        # 导出指定设备的QH曲线
+        python -m app.cli.main export-curves --device-id=1 --curve-type=qh --output=device1_qh.csv
+
+        # 导出为JSON格式
+        python -m app.cli.main export-curves --device-id=1 --format=json --output=curves.json
+
+        # 导出为Excel格式
+        python -m app.cli.main export-curves --format=excel --output=curves.xlsx --limit=5000
+    """
+    initialize_app()
+    import json as _json
+    from app.adapters.db.pool import get_connection
+    from app.services.characteristic_curves.shared.data_exporter import DataExporter
+
+    typer.echo(f"📊 开始导出曲线数据")
+    typer.echo(f"  设备ID: {device_id or '全部'}")
+    typer.echo(f"  曲线类型: {curve_type or '全部'}")
+    typer.echo(f"  导出格式: {format}")
+    typer.echo(f"  输出文件: {output}")
+
+    # 从数据库查询曲线数据
+    try:
+        with get_connection() as conn:
+            # 构建查询
+            query = """
+                SELECT
+                    r.id,
+                    r.device_id,
+                    r.curve_type,
+                    r.version,
+                    r.method_name,
+                    r.data_point_count,
+                    r.status,
+                    r.created_at,
+                    m.r_squared,
+                    m.rmse,
+                    m.mae,
+                    m.mape
+                FROM curve_fit_results r
+                LEFT JOIN curve_fit_metrics m ON r.id = m.result_id
+                WHERE 1=1
+            """
+            params = []
+
+            if device_id is not None:
+                query += " AND r.device_id = %s"
+                params.append(device_id)
+
+            if curve_type is not None:
+                query += " AND r.curve_type = %s"
+                params.append(curve_type)
+
+            query += " ORDER BY r.created_at DESC LIMIT %s"
+            params.append(limit)
+
+            import pandas as pd
+
+            # 使用cursor执行查询，避免pandas警告
+            with conn.cursor() as cursor:
+                cursor.execute(query, params)
+                rows = cursor.fetchall()
+                columns = [desc[0] for desc in cursor.description]
+                df = pd.DataFrame(rows, columns=columns)
+
+            if df.empty:
+                typer.echo("⚠️ 未找到符合条件的曲线数据", err=True)
+                raise typer.Exit(code=1)
+
+            typer.echo(f"\n✅ 查询到 {len(df)} 条记录")
+
+    except Exception as e:
+        typer.echo(f"❌ 查询数据失败: {e}", err=True)
+        raise typer.Exit(code=1)
+
+    # 导出数据
+    try:
+        exporter = DataExporter()
+        result = exporter.export(data=df, format=format, file_path=output)
+
+        if result.success:
+            typer.echo(f"\n✅ 导出成功")
+            typer.echo(f"  文件路径: {result.file_path}")
+            typer.echo(f"  导出行数: {result.rows}")
+            typer.echo(f"  导出格式: {result.format}")
+        else:
+            typer.echo(f"❌ 导出失败: {result.message}", err=True)
+            raise typer.Exit(code=1)
+
+    except Exception as e:
+        typer.echo(f"❌ 导出失败: {e}", err=True)
+        raise typer.Exit(code=1)
+
+
 @app.command(
     name="admin-clear-db",
     help="危险：清空 public 架构所有表数据（TRUNCATE + RESTART IDENTITY + CASCADE）；仅限 DEV",

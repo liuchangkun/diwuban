@@ -73,7 +73,7 @@ class Scheduler:
         "pump_speed",  # 6. 水泵转速（基础指标）
         "pump_shaft_power",  # 7. 水泵轴功率（依赖 pump_active_power）
         "pump_torque",  # 8. 水泵扭矩（依赖 pump_active_power, pump_speed）
-        "main_pipeline_outlet_pressure",  # 9. 总管出口压力（依赖 pump_outlet_pressure）
+       # "main_pipeline_outlet_pressure",  # 9. 总管出口压力（依赖 pump_outlet_pressure）
 
     ]
 
@@ -400,7 +400,7 @@ class Scheduler:
             "failure_count": failure_count,
             "success_rate": f"{(success_count / len(tasks) * 100):.1f}%" if tasks else "0%",
             "total_points": total_points,
-            "total_duration_seconds": round(total_duration, 2),
+            '总耗时（秒）': round(total_duration, 2),
             "avg_duration_per_task_seconds": round(avg_duration_per_task, 2),
             "results": results,
         }

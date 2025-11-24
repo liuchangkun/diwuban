@@ -55,7 +55,7 @@ class MethodSelector:
         for method in self.METHODS:
             self.logger.info(
                 f"[方法选择] 检查方法: {method['name']}",
-                extra={'extra_data': {'method_id': method['id'], 'priority': method['priority']}}
+                extra={'extra_data': {'方法ID': method['id'], 'priority': method['priority']}}
             )
 
             # 检查依赖
@@ -67,7 +67,7 @@ class MethodSelector:
             if dependencies_met and conditions_met:
                 self.logger.info(
                     f"[方法选择] 选中方法: {method['name']}",
-                    extra={'extra_data': {'method_id': method['id']}}
+                    extra={'extra_data': {'方法ID': method['id']}}
                 )
                 return method['id']
 

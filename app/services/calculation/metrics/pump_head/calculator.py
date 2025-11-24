@@ -37,8 +37,8 @@ class Calculator:
         self.logger.info(
             "[计算执行] 开始计算",
             extra={'extra_data': {
-                'method_id': method_id,
-                'data_rows': len(data)
+                '方法ID': method_id,
+                '数据行数': len(data)
             }}
         )
 

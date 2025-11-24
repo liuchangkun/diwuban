@@ -394,9 +394,9 @@ def run_all(
 
                 # 从配置读取参数
                 _calc_cfg = calculation_cfg or {}
-                metrics = _calc_cfg.get("metrics", None)  # None表示计算所有METRIC_ORDER中的指标
                 max_workers = int(_calc_cfg.get("max_workers", 4))
-                write_to_db = bool(_calc_cfg.get("write_to_db", True))
+                # metrics 固定为 None，表示计算所有 METRIC_ORDER 中的指标
+                # write_to_db 已移除，Scheduler 总是写入数据库
 
                 # 转换时间格式（从 ISO8601 UTC 转换为本地时间）
                 _ws_dt = datetime.fromisoformat(ws.replace("Z", "+00:00"))
@@ -427,9 +427,8 @@ def run_all(
                         "extra_data": {
                             "event": "calculation.batch_start",
                             "device_count": len(device_ids),
-                            "metrics": metrics if metrics else "all",
+                            "metrics": "all",  # 计算所有 METRIC_ORDER 中的指标
                             "max_workers": max_workers,
-                            "write_to_db": write_to_db,
                         }
                     }
                 )
@@ -441,7 +440,7 @@ def run_all(
                     start_time=_ws_dt,
                     end_time=_we_dt,
                     time_chunk_hours=None,  # 使用自适应分块
-                    metrics=metrics  # None表示计算所有指标
+                    metrics=None  # None表示计算所有 METRIC_ORDER 中的指标
                 )
 
                 # 汇总所有指标的结果
@@ -459,9 +458,8 @@ def run_all(
                     "total_points": total_points,
                     "metrics_details": result,
                     "config": {
-                        "metrics": metrics if metrics else "all",
+                        "metrics": "all",  # 计算所有 METRIC_ORDER 中的指标
                         "max_workers": max_workers,
-                        "write_to_db": write_to_db,
                     }
                 }
 

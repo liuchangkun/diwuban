@@ -109,9 +109,9 @@ class MethodSelector:
         self.logger.info(
             "[方法选择] 开始选择计算方法",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'data_rows': len(data),
-                'available_columns': list(data.columns)
+                '追踪ID': self.trace_id,
+                '数据行数': len(data),
+                '可用列': list(data.columns)
             }}
         )
 
@@ -130,8 +130,8 @@ class MethodSelector:
             self.logger.debug(
                 f"[方法选择] 检查方法: {method_name}",
                 extra={'extra_data': {
-                    'trace_id': self.trace_id,
-                    'method_id': method_id,
+                    '追踪ID': self.trace_id,
+                    '方法ID': method_id,
                     'priority': priority,
                     'dependencies_met': dependencies_met,
                     'conditions_met': conditions_met
@@ -143,8 +143,8 @@ class MethodSelector:
                 self.logger.info(
                     f"[方法选择] 选择完成: {method_name}",
                     extra={'extra_data': {
-                        'trace_id': self.trace_id,
-                        'selected_method': method_id,
+                        '追踪ID': self.trace_id,
+                        '选择的方法': method_id,
                         'method_name': method_name,
                         'priority': priority
                     }}
@@ -156,9 +156,9 @@ class MethodSelector:
         self.logger.error(
             f"[方法选择] 失败: {error_msg}",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'data_rows': len(data),
-                'available_columns': list(data.columns)
+                '追踪ID': self.trace_id,
+                '数据行数': len(data),
+                '可用列': list(data.columns)
             }}
         )
         raise ValueError(error_msg)
@@ -334,7 +334,7 @@ class MethodSelector:
             self.logger.error(
                 "[方法选择] 待机状态检测缺少必需参数",
                 extra={'extra_data': {
-                    'trace_id': self.trace_id,
+                    '追踪ID': self.trace_id,
                     'standby_power_threshold': standby_power_threshold,
                     'standby_freq_threshold': standby_freq_threshold,
                     '错误': '必须在calculation_parameters表中配置这些参数'
@@ -361,7 +361,7 @@ class MethodSelector:
             self.logger.info(
                 "[方法选择] 检测到待机状态",
                 extra={'extra_data': {
-                    'trace_id': self.trace_id,
+                    '追踪ID': self.trace_id,
                     'standby_ratio': f"{standby_ratio:.2%}",
                     'avg_power': f"{power.mean():.2f} kW",
                     'avg_freq': f"{freq.mean():.2f} Hz",

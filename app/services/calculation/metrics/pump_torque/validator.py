@@ -52,16 +52,16 @@ class Validator:
         if data.empty:
             self.logger.warning(
                 "[结果验证] 输入数据为空",
-                extra={'extra_data': {'trace_id': self.trace_id}}
+                extra={'extra_data': {'追踪ID': self.trace_id}}
             )
             return data
 
         self.logger.info(
             "[结果验证] 开始验证",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'method_id': method_id,
-                'data_rows': len(data)
+                '追踪ID': self.trace_id,
+                '方法ID': method_id,
+                '数据行数': len(data)
             }}
         )
 
@@ -73,7 +73,7 @@ class Validator:
             self.logger.error(
                 "[参数错误] 缺少必需参数 'max_torque'",
                 extra={'extra_data': {
-                    'trace_id': self.trace_id,
+                    '追踪ID': self.trace_id,
                     'missing_param': 'max_torque',
                     'fix': '请在 calculation_parameters 表中添加该参数'
                 }}
@@ -102,15 +102,15 @@ class Validator:
         self.logger.info(
             "[结果验证] 验证完成",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'method_id': method_id,
+                '追踪ID': self.trace_id,
+                '方法ID': method_id,
                 'total_rows': len(result),
                 'valid_rows': valid_count,
                 'invalid_rows': invalid_count,
                 'valid_ratio': f"{valid_count / len(result) * 100:.2f}%" if len(result) > 0 else "0%",
-                'avg_torque': round(result[result['quality_code'] == 0]['pump_torque'].mean(), 2) if valid_count > 0 else 0,
-                'min_torque': round(result[result['quality_code'] == 0]['pump_torque'].min(), 2) if valid_count > 0 else 0,
-                'max_torque': round(result[result['quality_code'] == 0]['pump_torque'].max(), 2) if valid_count > 0 else 0
+                '平均扭矩': round(result[result['quality_code'] == 0]['pump_torque'].mean(), 2) if valid_count > 0 else 0,
+                '最小扭矩': round(result[result['quality_code'] == 0]['pump_torque'].min(), 2) if valid_count > 0 else 0,
+                '最大扭矩': round(result[result['quality_code'] == 0]['pump_torque'].max(), 2) if valid_count > 0 else 0
             }}
         )
 

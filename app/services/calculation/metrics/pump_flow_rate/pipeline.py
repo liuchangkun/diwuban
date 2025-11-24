@@ -75,9 +75,9 @@ class PumpFlowRatePipeline:
         self.logger.info(
             f"[Pipeline-Stage1-开始] DataLoader",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id,
-                'metric_key': 'pump_flow_rate',
+                '任务ID': task_id,
+                '设备ID': device_id,
+                '指标键': 'pump_flow_rate',
                 'time_range': time_range_str
             }}
         )
@@ -93,10 +93,10 @@ class PumpFlowRatePipeline:
         self.logger.info(
             f"[Pipeline-Stage1-完成] DataLoader",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id,
-                'loaded_rows': len(raw_data),
-                'duration_ms': round(stage1_duration * 1000, 2)
+                '任务ID': task_id,
+                '设备ID': device_id,
+                '加载行数': len(raw_data),
+                '耗时（毫秒）': round(stage1_duration * 1000, 2)
             }}
         )
 
@@ -105,27 +105,27 @@ class PumpFlowRatePipeline:
             self.logger.info(
                 f"[Pipeline-跳过] 无数据可计算（设备类型不匹配或无原始数据）",
                 extra={'extra_data': {
-                    'task_id': task_id,
-                    'device_id': device_id,
-                    'metric_key': 'pump_flow_rate',
-                    'reason': '设备类型不匹配或无原始数据'
+                    '任务ID': task_id,
+                    '设备ID': device_id,
+                    '指标键': 'pump_flow_rate',
+                    '原因': '设备类型不匹配或无原始数据'
                 }}
             )
             return {
                 'success': True,
-                'device_id': device_id,
-                'metric_key': 'pump_flow_rate',
+                '设备ID': device_id,
+                '指标键': 'pump_flow_rate',
                 'results_count': 0,
                 'skipped': True,
-                'reason': '设备类型不匹配或无原始数据'
+                '原因': '设备类型不匹配或无原始数据'
             }
 
         # Stage 2: DataFilter
         self.logger.info(
             f"[Pipeline-Stage2-开始] DataFilter",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id,
+                '任务ID': task_id,
+                '设备ID': device_id,
                 'input_rows': len(raw_data)
             }}
         )
@@ -149,8 +149,8 @@ class PumpFlowRatePipeline:
             self.logger.error(
                 f"[Pipeline] DataFilter缺少必需参数",
                 extra={'extra_data': {
-                    'task_id': task_id,
-                    'device_id': device_id,
+                    '任务ID': task_id,
+                    '设备ID': device_id,
                     '缺失参数': missing,
                     '错误': '必须在calculation_parameters表中配置这些参数'
                 }}
@@ -164,6 +164,7 @@ class PumpFlowRatePipeline:
             max_flow=max_flow,
             max_power=max_power,
             max_freq=max_freq,
+            station_id=station_id,  # 传递 station_id 用于出水检测
             trace_id=task_id
         )
         filtered_data = filter.filter_data(raw_data)
@@ -172,12 +173,12 @@ class PumpFlowRatePipeline:
         self.logger.info(
             f"[Pipeline-Stage2-完成] DataFilter",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id,
+                '任务ID': task_id,
+                '设备ID': device_id,
                 'input_rows': len(raw_data),
                 'output_rows': len(filtered_data),
-                'filter_ratio': f"{filter_ratio:.2f}%",
-                'duration_ms': round(stage2_duration * 1000, 2)
+                '过滤比例': f"{filter_ratio:.2f}%",
+                '耗时（毫秒）': round(stage2_duration * 1000, 2)
             }}
         )
 
@@ -185,9 +186,9 @@ class PumpFlowRatePipeline:
         self.logger.info(
             f"[Pipeline-Stage3-开始] MethodSelector",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id,
-                'data_rows': len(filtered_data)
+                '任务ID': task_id,
+                '设备ID': device_id,
+                '数据行数': len(filtered_data)
             }}
         )
         stage3_start = time.time()
@@ -197,10 +198,10 @@ class PumpFlowRatePipeline:
         self.logger.info(
             f"[Pipeline-Stage3-完成] MethodSelector",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id,
-                'selected_method': selected_method,
-                'duration_ms': round(stage3_duration * 1000, 2)
+                '任务ID': task_id,
+                '设备ID': device_id,
+                '选择的方法': selected_method,
+                '耗时（毫秒）': round(stage3_duration * 1000, 2)
             }}
         )
 
@@ -208,9 +209,9 @@ class PumpFlowRatePipeline:
         self.logger.info(
             f"[Pipeline-Stage4-开始] Calculator",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id,
-                'method_id': selected_method,
+                '任务ID': task_id,
+                '设备ID': device_id,
+                '方法ID': selected_method,
                 'parameters': params
             }}
         )
@@ -225,11 +226,11 @@ class PumpFlowRatePipeline:
         self.logger.info(
             f"[Pipeline-Stage4-完成] Calculator",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id,
-                'method_id': selected_method,
-                'calculated_rows': len(calc_result),
-                'duration_ms': round(stage4_duration * 1000, 2)
+                '任务ID': task_id,
+                '设备ID': device_id,
+                '方法ID': selected_method,
+                '计算行数': len(calc_result),
+                '耗时（毫秒）': round(stage4_duration * 1000, 2)
             }}
         )
 
@@ -237,8 +238,8 @@ class PumpFlowRatePipeline:
         self.logger.info(
             f"[Pipeline-Stage5-开始] Validator",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id,
+                '任务ID': task_id,
+                '设备ID': device_id,
                 'input_rows': len(calc_result)
             }}
         )
@@ -253,12 +254,12 @@ class PumpFlowRatePipeline:
         self.logger.info(
             f"[Pipeline-Stage5-完成] Validator",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id,
+                '任务ID': task_id,
+                '设备ID': device_id,
                 'valid_count': valid_count,
                 'invalid_count': invalid_count,
                 'validation_pass_rate': f"{validation_pass_rate:.2f}%",
-                'duration_ms': round(stage5_duration * 1000, 2)
+                '耗时（毫秒）': round(stage5_duration * 1000, 2)
             }}
         )
 
@@ -267,8 +268,8 @@ class PumpFlowRatePipeline:
         self.logger.info(
             f"[Pipeline-Stage6-开始] DataWriter",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id,
+                '任务ID': task_id,
+                '设备ID': device_id,
                 'valid_count': valid_count
             }}
         )
@@ -301,8 +302,8 @@ class PumpFlowRatePipeline:
             self.logger.warning(
                 "[流水线] 跳过数据写入: 没有有效数据",
                 extra={'extra_data': {
-                    'task_id': task_id,
-                    'device_id': device_id,
+                    '任务ID': task_id,
+                    '设备ID': device_id,
                     'total_count': len(validated_result),
                     'valid_count': valid_count
                 }}
@@ -312,16 +313,16 @@ class PumpFlowRatePipeline:
         self.logger.info(
             f"[Pipeline-Stage6-完成] DataWriter",
             extra={'extra_data': {
-                'task_id': task_id,
-                'device_id': device_id,
+                '任务ID': task_id,
+                '设备ID': device_id,
                 'written_count': written_count,
-                'duration_ms': round(stage6_duration * 1000, 2)
+                '耗时（毫秒）': round(stage6_duration * 1000, 2)
             }}
         )
 
         return {
             'written_count': written_count,
-            'task_id': task_id
+            '任务ID': task_id
         }
         # 阶段1: DataLoader
         # 阶段2: DataFilter

@@ -47,7 +47,15 @@ def calculate_method_a(data: pd.DataFrame, params: Dict[str, Any]) -> pd.DataFra
         frequency = float(row['pump_frequency'])
         other_devices = row.get('other_devices', None)
 
-        # 计算当前设备的权重
+        # 检查当前设备是否出水
+        # 如果有 is_outputting 列且值为 0，则该泵不参与流量分摊
+        is_outputting_current = row.get('is_outputting', 1)  # 默认认为出水
+        if is_outputting_current == 0:
+            # 当前泵不出水，流量为0
+            results.append(0.0)
+            continue
+
+        # 计算当前设备的权重（只有出水的泵才计算权重）
         weight_current = (power ** alpha) * (frequency ** beta)
 
         # 计算其他设备的权重总和
@@ -57,9 +65,11 @@ def calculate_method_a(data: pd.DataFrame, params: Dict[str, Any]) -> pd.DataFra
                 power_other = float(record.get('pump_active_power', 0))
                 frequency_other = float(record.get('pump_frequency', 0))
                 running_other = record.get('running', 1)
+                # 检查其他设备的出水状态
+                is_outputting_other = record.get('is_outputting', 1)  # 默认认为出水
 
-                # 只计算运行设备的权重（使用 running 字段）
-                if running_other == 1:
+                # 只计算运行且出水的设备的权重
+                if running_other == 1 and is_outputting_other == 1:
                     weight_others += (power_other ** alpha) * (frequency_other ** beta)
 
         # 计算总权重

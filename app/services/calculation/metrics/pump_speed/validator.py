@@ -140,6 +140,6 @@ class Validator:
             'valid_count': int(valid_count),
             'invalid_count': int(invalid_count),
             'valid_ratio': valid_ratio,
-            'quality_code': quality_code
+            '质量代码': quality_code
         }
 

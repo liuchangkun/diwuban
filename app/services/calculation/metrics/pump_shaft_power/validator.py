@@ -57,8 +57,8 @@ class Validator:
         self.logger.info(
             "[结果验证] 开始验证",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'method_id': method_id,
+                '追踪ID': self.trace_id,
+                '方法ID': method_id,
                 'row_count': len(data)
             }}
         )
@@ -71,7 +71,7 @@ class Validator:
             self.logger.error(
                 "[参数错误] 缺少必需参数 'max_shaft_power'",
                 extra={'extra_data': {
-                    'trace_id': self.trace_id,
+                    '追踪ID': self.trace_id,
                     'missing_param': 'max_shaft_power',
                     'fix': '请在 calculation_parameters 表中添加该参数'
                 }}
@@ -112,8 +112,8 @@ class Validator:
         self.logger.info(
             "[结果验证] 验证完成",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'method_id': method_id,
+                '追踪ID': self.trace_id,
+                '方法ID': method_id,
                 'total_count': len(result),
                 'valid_count': len(valid_data),
                 'invalid_count': invalid_count,

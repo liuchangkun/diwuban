@@ -23,7 +23,16 @@ def calculate_method_e(data: pd.DataFrame, params: Dict[str, Any]) -> pd.DataFra
     Returns:
         计算结果（包含 pump_flow_rate 列）
     """
-    beta = params.get('beta', 1.0)
+    # 获取参数（不允许默认值）
+    beta = params.get('beta')
+
+    # 验证必需参数
+    if beta is None:
+        raise ValueError(
+            "缺少必需参数 'beta' (频率分摊指数). "
+            "请在 calculation_parameters 表中添加该参数: "
+            "metric_key='pump_flow_rate', method_id='method_e', param_name='beta'"
+        )
 
     results = []
 

@@ -72,8 +72,8 @@ class DataLoader:
                 sql,
                 conn,
                 params={
-                    'station_id': station_id,
-                    'device_id': device_id,
+                    '泵站ID': station_id,
+                    '设备ID': device_id,
                     'start_time': start_time,
                     'end_time': end_time
                 }

@@ -64,9 +64,9 @@ class DataLoader:
         self.logger.info(
             "[数据加载] 开始加载数据",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'station_id': station_id,
-                'device_id': device_id,
+                '追踪ID': self.trace_id,
+                '泵站ID': station_id,
+                '设备ID': device_id,
                 'start_time': str(start_time),
                 'end_time': str(end_time)
             }}
@@ -87,8 +87,8 @@ class DataLoader:
                     self.logger.warning(
                         "[数据加载] 设备不存在",
                         extra={'extra_data': {
-                            'trace_id': self.trace_id,
-                            'device_id': device_id
+                            '追踪ID': self.trace_id,
+                            '设备ID': device_id
                         }}
                     )
                     return pd.DataFrame()
@@ -99,10 +99,10 @@ class DataLoader:
                     self.logger.info(
                         "[数据加载] 设备类型不匹配，跳过",
                         extra={'extra_data': {
-                            'trace_id': self.trace_id,
-                            'device_id': device_id,
-                            'device_name': device_name,
-                            'device_type': device_type,
+                            '追踪ID': self.trace_id,
+                            '设备ID': device_id,
+                            '设备名称': device_name,
+                            '设备类型': device_type,
                             'expected_type': 'pump'
                         }}
                     )
@@ -135,8 +135,8 @@ class DataLoader:
                 """
                 
                 params = {
-                    'station_id': station_id,
-                    'device_id': device_id,
+                    '泵站ID': station_id,
+                    '设备ID': device_id,
                     'start_time': start_time,
                     'end_time': end_time
                 }
@@ -150,9 +150,9 @@ class DataLoader:
                     self.logger.warning(
                         "[数据加载] 未查询到数据",
                         extra={'extra_data': {
-                            'trace_id': self.trace_id,
-                            'station_id': station_id,
-                            'device_id': device_id
+                            '追踪ID': self.trace_id,
+                            '泵站ID': station_id,
+                            '设备ID': device_id
                         }}
                     )
                     return pd.DataFrame()
@@ -168,9 +168,9 @@ class DataLoader:
                 self.logger.info(
                     "[数据加载] 数据加载完成",
                     extra={'extra_data': {
-                        'trace_id': self.trace_id,
-                        'rows_loaded': len(pivot_data),
-                        'columns': list(pivot_data.columns)
+                        '追踪ID': self.trace_id,
+                        '加载行数': len(pivot_data),
+                        '列名': list(pivot_data.columns)
                     }}
                 )
 

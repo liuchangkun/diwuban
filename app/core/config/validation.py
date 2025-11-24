@@ -178,49 +178,6 @@ class ConfigValidator:
         return result
 
     @staticmethod
-    def validate_web_config(web_config: Dict[str, Any]) -> ValidationResult:
-        """
-        验证Web服务配置
-
-        参数：
-            web_config: Web配置字典
-
-        返回：
-            ValidationResult: 验证结果
-        """
-        result = ValidationResult(True, [], [])
-
-        # 验证服务器配置
-        server_config = web_config.get("server", {})
-        if isinstance(server_config, dict):
-            # 验证主机地址
-            host = server_config.get("host", "")
-            if not isinstance(host, str) or not host.strip():
-                result.add_error(
-                    "web.server.host", host, "Web服务器主机地址必须是非空字符串"
-                )
-
-            # 验证端口
-            port = server_config.get("port", 8000)
-            if not isinstance(port, int) or port < 1 or port > 65535:
-                result.add_error(
-                    "web.server.port", port, "Web服务器端口必须是1-65535之间的整数"
-                )
-            elif port < 1024:
-                result.add_warning(
-                    "web.server.port", port, "使用小于1024的端口可能需要管理员权限"
-                )
-
-            # 验证工作进程数
-            workers = server_config.get("workers", 1)
-            if not isinstance(workers, int) or workers < 1:
-                result.add_error(
-                    "web.server.workers", workers, "工作进程数必须是正整数"
-                )
-
-        return result
-
-    @staticmethod
     def validate_system_config(system_config: Dict[str, Any]) -> ValidationResult:
         """
         验证系统配置
@@ -448,7 +405,6 @@ class ConfigValidator:
         # 验证各个子模块配置
         validators = [
             ("database", ConfigValidator.validate_database_config),
-            ("web", ConfigValidator.validate_web_config),
             ("system", ConfigValidator.validate_system_config),
             ("ingest", ConfigValidator.validate_ingest_config),
             ("merge", ConfigValidator.validate_merge_config),

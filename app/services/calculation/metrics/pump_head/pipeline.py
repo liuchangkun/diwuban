@@ -50,9 +50,9 @@ class PumpHeadPipeline:
         self.logger.info(
             "=" * 80,
             extra={'extra_data': {
-                'task_id': task_id,
-                'station_id': station_id,
-                'device_id': device_id,
+                '任务ID': task_id,
+                '泵站ID': station_id,
+                '设备ID': device_id,
                 'start_time': start_time.isoformat(),
                 'end_time': end_time.isoformat()
             }}
@@ -70,7 +70,7 @@ class PumpHeadPipeline:
 
         self.logger.info(
             "[流水线] 参数加载完成",
-            extra={'extra_data': {'params': params}}
+            extra={'extra_data': {'参数': params}}
         )
 
         # 阶段1：数据加载
@@ -78,7 +78,7 @@ class PumpHeadPipeline:
 
         if data.empty:
             self.logger.info("[流水线] 数据为空，跳过计算")
-            return {'written_count': 0, 'task_id': task_id}
+            return {'written_count': 0, '任务ID': task_id}
 
         # 阶段2：数据过滤（使用 params 初始化）
         data_filter = DataFilter(params=params)
@@ -86,14 +86,14 @@ class PumpHeadPipeline:
 
         if filtered_data.empty:
             self.logger.info("[流水线] 过滤后数据为空，跳过计算")
-            return {'written_count': 0, 'task_id': task_id}
+            return {'written_count': 0, '任务ID': task_id}
 
         # 阶段3：方法选择
         try:
             selected_method = self.method_selector.select_method(filtered_data, params)
         except ValueError as e:
             self.logger.error(f"[流水线] 方法选择失败: {e}")
-            return {'written_count': 0, 'task_id': task_id}
+            return {'written_count': 0, '任务ID': task_id}
 
         # 阶段4：计算执行
         pump_outlet_pressure_result, pump_head_result = self.calculator.calculate(
@@ -159,5 +159,5 @@ class PumpHeadPipeline:
 
         self.logger.info("=" * 80)
 
-        return {'written_count': written_count, 'task_id': task_id}
+        return {'written_count': written_count, '任务ID': task_id}
 

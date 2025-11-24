@@ -19,11 +19,34 @@ class DataFilter:
         """
         self.logger = logging.getLogger(__name__)
 
-        # 从参数中读取范围配置（或使用默认值）
+        # 从参数中读取范围配置（不允许硬编码默认值）
         params = params or {}
-        self.max_pump_inlet_pressure = params.get('max_pump_inlet_pressure', 2.0)  # MPa
-        self.max_main_pipeline_outlet_pressure = params.get('max_main_pipeline_outlet_pressure', 2.0)  # MPa
-        self.max_n_running = params.get('max_n_running', 10)  # 最大运行泵数量
+        self.max_pump_inlet_pressure = params.get('max_pump_inlet_pressure')  # MPa
+        self.max_main_pipeline_outlet_pressure = params.get('max_main_pipeline_outlet_pressure')  # MPa
+        self.max_n_running = params.get('max_n_running')  # 最大运行泵数量
+
+        # 验证必需参数
+        missing_params = []
+        if self.max_pump_inlet_pressure is None:
+            missing_params.append('max_pump_inlet_pressure')
+        if self.max_main_pipeline_outlet_pressure is None:
+            missing_params.append('max_main_pipeline_outlet_pressure')
+        if self.max_n_running is None:
+            missing_params.append('max_n_running')
+
+        if missing_params:
+            self.logger.error(
+                f"[DataFilter] pump_head data_filter缺少必需参数",
+                extra={'extra_data': {
+                    '缺失参数': missing_params,
+                    '当前参数': params,
+                    '错误': '必须在calculation_parameters表中配置这些参数'
+                }}
+            )
+            raise ValueError(
+                f"pump_head data_filter缺少必需参数: {', '.join(missing_params)}. "
+                f"必须在calculation_parameters表中配置: metric_key='pump_head', method_id='data_filter'"
+            )
 
     def filter(self, data: pd.DataFrame) -> pd.DataFrame:
         """
@@ -110,7 +133,7 @@ class DataFilter:
             "[数据过滤] 过滤完成",
             extra={'extra_data': {
                 'initial_count': initial_count,
-                'final_count': final_count,
+                '最终数量': final_count,
                 'total_removed': initial_count - final_count,
                 'removal_rate': f"{(initial_count - final_count) / initial_count * 100:.2f}%"
             }}

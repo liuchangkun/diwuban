@@ -31,7 +31,7 @@ def record_fallback(reason: str | None = None) -> None:
 
     _act.warning(
         "[核心-连接池] [回退触发]",
-        extra={"extra_data": {"reason": reason or "unknown", "count": _fallback_count}},
+        extra={"extra_data": {'原因': reason or "unknown", "count": _fallback_count}},
     )
 
 

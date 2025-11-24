@@ -67,8 +67,8 @@ class DataFilter:
         self.logger.info(
             "[数据过滤] 开始过滤",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'original_count': original_count
+                '追踪ID': self.trace_id,
+                '原始数量': original_count
             }}
         )
         
@@ -79,9 +79,9 @@ class DataFilter:
         self.logger.info(
             "[数据过滤] running字段过滤完成",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
+                '追踪ID': self.trace_id,
                 'filtered_count': original_count - running_filtered_count,
-                'remaining_count': running_filtered_count
+                '剩余数量': running_filtered_count
             }}
         )
         
@@ -105,11 +105,11 @@ class DataFilter:
         self.logger.info(
             "[数据过滤] 过滤完成",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'original_count': original_count,
+                '追踪ID': self.trace_id,
+                '原始数量': original_count,
                 'filtered_count': filtered_count,
-                'final_count': final_count,
-                'filter_ratio': f"{filter_ratio:.2f}%"
+                '最终数量': final_count,
+                '过滤比例': f"{filter_ratio:.2f}%"
             }}
         )
         

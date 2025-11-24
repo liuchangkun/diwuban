@@ -27,7 +27,6 @@ BEGIN = "<!-- BEGIN:CONFIG_AUTO -->"
 END = "<!-- END:CONFIG_AUTO -->"
 
 YAML_FILES = [
-    "web.yaml",
     "database.yaml",
     "logging.yaml",
     "system.yaml",

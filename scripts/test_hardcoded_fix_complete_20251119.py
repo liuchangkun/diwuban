@@ -10,7 +10,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from app.adapters.db import init_database, get_connection
-from app.core.config.loader import load_settings
+from app.core.config.loader_new import load_settings
 
 
 def test_all_parameters_in_db():

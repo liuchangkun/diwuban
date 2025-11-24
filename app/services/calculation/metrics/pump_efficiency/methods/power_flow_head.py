@@ -39,10 +39,38 @@ def calculate_power_flow_head(
     logger = logging.getLogger(__name__)
 
     # 获取参数
-    rho = params.get('rho', 1000.0)  # 水密度 (kg/m³)
-    g = params.get('g', 9.81)  # 重力加速度 (m/s²)
-    eta_min = params.get('eta_min', 0.30)  # 最小效率阈值
-    eta_max = params.get('eta_max', 0.95)  # 最大效率阈值
+    rho = params.get('rho', 1000.0)  # 水密度 (kg/m³) - 物理常数，可保留默认值
+    g = params.get('g', 9.81)  # 重力加速度 (m/s²) - 物理常数，可保留默认值
+    eta_min = params.get('eta_min')  # 最小效率阈值 - 必需参数，不允许默认值
+    eta_max = params.get('eta_max')  # 最大效率阈值 - 必需参数，不允许默认值
+
+    # 验证必需参数
+    if eta_min is None:
+        logger.error(
+            "[参数错误] 缺少必需参数 'eta_min'",
+            extra={'extra_data': {
+                'missing_param': 'eta_min',
+                'fix': '请在 calculation_parameters 表中添加该参数'
+            }}
+        )
+        raise ValueError(
+            "缺少必需参数 'eta_min' (最小效率阈值). "
+            "请在 calculation_parameters 表中添加该参数: "
+            "metric_key='pump_efficiency', method_id='EFF_SIMPLE_V1', param_name='eta_min'"
+        )
+    if eta_max is None:
+        logger.error(
+            "[参数错误] 缺少必需参数 'eta_max'",
+            extra={'extra_data': {
+                'missing_param': 'eta_max',
+                'fix': '请在 calculation_parameters 表中添加该参数'
+            }}
+        )
+        raise ValueError(
+            "缺少必需参数 'eta_max' (最大效率阈值). "
+            "请在 calculation_parameters 表中添加该参数: "
+            "metric_key='pump_efficiency', method_id='EFF_SIMPLE_V1', param_name='eta_max'"
+        )
 
     logger.info(
         "[计算方法] 功率-流量-扬程法",

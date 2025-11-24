@@ -67,14 +67,14 @@ class MethodSelector:
         if data.empty:
             self.logger.warning(
                 "[方法选择] 输入数据为空，无法选择方法",
-                extra={'extra_data': {'trace_id': self.trace_id}}
+                extra={'extra_data': {'追踪ID': self.trace_id}}
             )
             return None
         
         self.logger.info(
             "[方法选择] 开始选择计算方法",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
+                '追踪ID': self.trace_id,
                 'data_columns': list(data.columns),
                 'data_count': len(data)
             }}
@@ -92,7 +92,7 @@ class MethodSelector:
             if missing_deps:
                 self.logger.debug(
                     f"[方法选择] 方法 {method_id} 不可用：缺少依赖指标 {missing_deps}",
-                    extra={'extra_data': {'trace_id': self.trace_id}}
+                    extra={'extra_data': {'追踪ID': self.trace_id}}
                 )
                 continue
             
@@ -103,7 +103,7 @@ class MethodSelector:
                 if actual_value not in expected_values:
                     self.logger.debug(
                         f"[方法选择] 方法 {method_id} 不可用：条件不满足 {param_key}={actual_value}, 期望{expected_values}",
-                        extra={'extra_data': {'trace_id': self.trace_id}}
+                        extra={'extra_data': {'追踪ID': self.trace_id}}
                     )
                     conditions_met = False
                     break
@@ -114,14 +114,14 @@ class MethodSelector:
             # 找到可用方法
             self.logger.info(
                 f"[方法选择] 选择方法: {method_id} (优先级={priority})",
-                extra={'extra_data': {'trace_id': self.trace_id}}
+                extra={'extra_data': {'追踪ID': self.trace_id}}
             )
             return (method_id, priority)
         
         # 无可用方法
         self.logger.warning(
             "[方法选择] 无可用方法",
-            extra={'extra_data': {'trace_id': self.trace_id}}
+            extra={'extra_data': {'追踪ID': self.trace_id}}
         )
         return None
 

@@ -50,7 +50,7 @@ class DataFilter:
         if data.empty:
             self.logger.info(
                 "[数据过滤] 输入数据为空，跳过过滤",
-                extra={'extra_data': {'trace_id': self.trace_id}}
+                extra={'extra_data': {'追踪ID': self.trace_id}}
             )
             return data
         
@@ -66,18 +66,40 @@ class DataFilter:
             self.logger.info(
                 "[数据过滤] 运行状态过滤",
                 extra={'extra_data': {
-                    'trace_id': self.trace_id,
-                    'original_count': original_count,
+                    '追踪ID': self.trace_id,
+                    '原始数量': original_count,
                     'filtered_count': running_filtered,
-                    'remaining_count': len(data)
+                    '剩余数量': len(data)
                 }}
             )
         
         # 2. 过滤pool_liquid_level异常值
         if 'pool_liquid_level' in data.columns and len(data) > 0:
-            # 获取阈值参数
-            min_level = self.params.get('min_level', 0.0)
-            max_level = self.params.get('max_level', 10.0)
+            # 获取阈值参数（不允许硬编码默认值）
+            min_level = self.params.get('min_level')
+            max_level = self.params.get('max_level')
+
+            # 验证必需参数
+            if min_level is None or max_level is None:
+                missing_params = []
+                if min_level is None:
+                    missing_params.append('min_level')
+                if max_level is None:
+                    missing_params.append('max_level')
+
+                self.logger.error(
+                    "[数据过滤] main_pipeline_inlet_pressure data_filter缺少必需参数",
+                    extra={'extra_data': {
+                        '追踪ID': self.trace_id,
+                        '缺失参数': missing_params,
+                        '当前参数': self.params,
+                        '错误': '必须在calculation_parameters表中配置这些参数'
+                    }}
+                )
+                raise ValueError(
+                    f"main_pipeline_inlet_pressure data_filter缺少必需参数: {', '.join(missing_params)}. "
+                    f"必须在calculation_parameters表中配置: metric_key='main_pipeline_inlet_pressure', method_id='data_filter'"
+                )
             
             # 过滤液位范围
             before_level_filter = len(data)
@@ -91,11 +113,11 @@ class DataFilter:
                 self.logger.info(
                     "[数据过滤] 液位范围过滤",
                     extra={'extra_data': {
-                        'trace_id': self.trace_id,
+                        '追踪ID': self.trace_id,
                         'min_level': min_level,
                         'max_level': max_level,
                         'filtered_count': level_filtered,
-                        'remaining_count': len(data)
+                        '剩余数量': len(data)
                     }}
                 )
         
@@ -109,9 +131,9 @@ class DataFilter:
                 self.logger.info(
                     "[数据过滤] NaN值过滤",
                     extra={'extra_data': {
-                        'trace_id': self.trace_id,
+                        '追踪ID': self.trace_id,
                         'filtered_count': nan_filtered,
-                        'remaining_count': len(data)
+                        '剩余数量': len(data)
                     }}
                 )
 
@@ -125,9 +147,9 @@ class DataFilter:
                 self.logger.info(
                     "[数据过滤] Inf值过滤",
                     extra={'extra_data': {
-                        'trace_id': self.trace_id,
+                        '追踪ID': self.trace_id,
                         'filtered_count': inf_filtered,
-                        'remaining_count': len(data)
+                        '剩余数量': len(data)
                     }}
                 )
 
@@ -139,11 +161,11 @@ class DataFilter:
         self.logger.info(
             "[数据过滤] 过滤完成",
             extra={'extra_data': {
-                'trace_id': self.trace_id,
-                'original_count': original_count,
-                'final_count': final_count,
+                '追踪ID': self.trace_id,
+                '原始数量': original_count,
+                '最终数量': final_count,
                 'total_filtered': total_filtered,
-                'filter_ratio': f"{filter_ratio:.1f}%"
+                '过滤比例': f"{filter_ratio:.1f}%"
             }}
         )
         
