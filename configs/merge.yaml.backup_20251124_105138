@@ -1,4 +1,4 @@
-﻿# 合并配置（merge.yaml）
+# 合并配置（merge.yaml）
 # 说明：run_all 为一键流程的开关与参数；每个子项均有中文注释
 run_all:
   # 异常诊断输出级别：off | brief | full
@@ -8,9 +8,10 @@ run_all:
   calculation_cfg:
     auto_parallel: true  # 是否自动选择串/并行
     max_workers: 4       # 并行工作线程上限
+    enable_optimization: true  # 启用参数优化器（RLS增量优化）
     metrics:
-      # 计算指标清单：留空表示计算所有 Scheduler.METRIC_ORDER 中的指标
-      # 当前计划启用的指标（来自 Scheduler.METRIC_ORDER）：9 项
+      # 计算指标清单：留空表示“计算所有已在 calculation_method_registry 启用的方法对应的指标”
+      # 当前计划启用的指标（来自 registry + 代码可计算项）：10 项
       - pump_flow_rate        # 泵流量；用途：估算各泵瞬时流量；依赖：main_pipeline_flow_rate / pump_active_power / pump_frequency 等；方法：A~F
       - pump_inlet_pressure   # 泵进口压力；用途：计算泵扬程的关键依赖；依赖：pool_liquid_level / main_pipeline_inlet_pressure；方法：A/B（必须在 pump_head 之前计算）
       - pump_head             # 泵扬程；用途：衡量泵进出口压力差形成的水头；依赖：pump_outlet_pressure / pump_inlet_pressure / pool_liquid_level；方法：MAIN/HEAD_COEF_V1

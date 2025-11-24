@@ -629,16 +629,6 @@ def admin_clear_db() -> None:
     typer.echo("已清空 public 架构所有表数据")
 
 
-# =====================================================
-# 缺失指标计算功能命令
-# =====================================================
-try:
-    from app.cli.calculation import app as calc_app
-    app.add_typer(calc_app, name="calc", help="缺失指标计算功能命令")
-except ImportError as e:
-    typer.echo(f"⚠️  缺失指标计算功能命令加载失败: {e}", err=True)
-
-
 def _main() -> None:
     try:
         app()

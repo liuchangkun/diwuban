@@ -440,38 +440,75 @@ def run_all(
                 },
             )
 
-            from app.services.calculation.shared.scheduler import Scheduler
+            from app.services.calculation.orchestrator import CalculationOrchestrator
             from app.adapters.db import get_connection
 
             # 获取需要计算的设备列表
-            device_ids = []
+            devices = []
             with get_connection() as conn:
                 cur = conn.cursor()
                 if device_id:
                     # 如果指定了设备ID，只计算该设备
                     cur.execute(
-                        "SELECT id FROM dim_devices WHERE id = %s",
+                        "SELECT station_id, id FROM dim_devices WHERE id = %s",
                         (device_id,)
                     )
-                    device_ids = [row[0] for row in cur.fetchall()]
                 else:
                     # 否则计算所有设备
-                    cur.execute("SELECT id FROM dim_devices WHERE COALESCE(is_active, TRUE)=TRUE AND COALESCE(NULLIF(type,''),'') NOT IN ('clear_water_pool','other') ORDER BY id")
-                    device_ids = [row[0] for row in cur.fetchall()]
+                    cur.execute("SELECT station_id, id FROM dim_devices WHERE COALESCE(is_active, TRUE)=TRUE AND COALESCE(NULLIF(type,''),'') NOT IN ('clear_water_pool','other') ORDER BY station_id, id")
+                devices = cur.fetchall()
 
-            if device_ids:
+            if devices:
                 _act.info(
-                    f"[进度] 缺失指标计算：找到 {len(device_ids)} 个设备",
-                    extra={"extra_data": {"event": "calculation.devices_found", "device_count": len(device_ids)}}
+                    f"[进度] 缺失指标计算：找到 {len(devices)} 个设备",
+                    extra={"extra_data": {"event": "calculation.devices_found", "device_count": len(devices)}}
                 )
+
+                # 创建计算编排器
+                # 安全卫兵：若方法注册表为空，则自动初始化一次，避免"没有注册的方法"
+                try:
+                    with get_connection() as conn:
+                        with conn.cursor() as cur:
+                            cur.execute("SELECT COUNT(*) FROM calculation_method_registry WHERE is_enabled = TRUE")
+                            _method_cnt = cur.fetchone()[0]
+                    if not _method_cnt:
+                        import logging as _logging
+                        _logging.getLogger(__name__).warning(
+                            "calculation_method_registry 为空，自动执行 init-methods 进行自愈",
+                            extra={"extra_data": {"event": "calculation.methods_bootstrap"}}
+                        )
+                        # 直接复用 CLI 初始化逻辑
+                        try:
+                            from app.cli.calculation import init_methods as _init_methods
+                            _init_methods()
+                        except Exception:
+                            # 回退到 SQL 直执行（更保守）
+                            from pathlib import Path as _P
+                            sql_file = _P("scripts")/"sql"/"calculation"/"init_methods.sql"
+                            if sql_file.exists():
+                                with get_connection() as _conn:
+                                    with _conn.cursor() as _cur:
+                                        _cur.execute(sql_file.read_text(encoding="utf-8"))
+                                        _conn.commit()
+                except Exception:
+                    # 自愈失败不阻断主流程，后续依然会有日志暴露问题根因
+                    pass
 
                 # 从配置读取参数
                 _calc_cfg = calculation_cfg or {}
-                metrics = _calc_cfg.get("metrics", None)  # None表示计算所有METRIC_ORDER中的指标
+                metrics = _calc_cfg.get("metrics", [])
                 max_workers = int(_calc_cfg.get("max_workers", 4))
+                auto_parallel = bool(_calc_cfg.get("auto_parallel", True))
                 write_to_db = bool(_calc_cfg.get("write_to_db", True))
+                enable_optimization = bool(_calc_cfg.get("enable_optimization", False))
 
-                # 转换时间格式（从 ISO8601 UTC 转换为本地时间）
+                # 创建计算编排器（启用参数优化）
+                calc_orchestrator = CalculationOrchestrator(
+                    enable_adaptive=True,
+                    enable_optimization=enable_optimization
+                )
+
+                # 转换时间格式（从 ISO8601 UTC 转换为本地时间字符串）
                 _ws_dt = datetime.fromisoformat(ws.replace("Z", "+00:00"))
                 _we_dt = datetime.fromisoformat(we.replace("Z", "+00:00"))
 
@@ -494,46 +531,46 @@ def run_all(
                     _ws_local = _ws_dt
                     _we_local = _we_dt
 
+                start_time_str = _ws_dt.isoformat()
+                end_time_str = _we_dt.isoformat()
+
                 _act.info(
                     f"[进度] 缺失指标计算：开始批量计算",
                     extra={
                         "extra_data": {
                             "event": "calculation.batch_start",
-                            "device_count": len(device_ids),
+                            "device_count": len(devices),
                             "metrics": metrics if metrics else "all",
                             "max_workers": max_workers,
+                            "auto_parallel": auto_parallel,
                             "write_to_db": write_to_db,
                         }
                     }
                 )
 
-                # 创建Scheduler并执行计算
-                scheduler = Scheduler(max_workers=max_workers, enable_adaptive_chunk=True)
-                result = scheduler.schedule_all_metrics(
-                    device_ids=device_ids,
-                    start_time=_ws_dt,
-                    end_time=_we_dt,
-                    time_chunk_hours=None,  # 使用自适应分块
-                    metrics=metrics  # None表示计算所有指标
+                # 执行批量计算
+                result = calc_orchestrator.calculate_missing_metrics_batch(
+                    devices=devices,
+                    start_time=start_time_str,
+                    end_time=end_time_str,
+                    metrics=metrics if metrics else [],  # 空列表表示计算所有可计算的指标
+                    write_to_db=write_to_db,
+                    max_workers=max_workers,
+                    auto_parallel=auto_parallel,
                 )
-
-                # 汇总所有指标的结果
-                total_success = sum(r.get("success_count", 0) for r in result.values())
-                total_failure = sum(r.get("failure_count", 0) for r in result.values())
-                total_points = sum(r.get("total_points", 0) for r in result.values())
 
                 calculation_summary = {
                     "status": "ok",
                     "window": {"start": ws_local, "end": we_local},
-                    "devices": len(device_ids),
-                    "metrics_count": len(result),
-                    "successful_tasks": total_success,
-                    "failed_tasks": total_failure,
-                    "total_points": total_points,
-                    "metrics_details": result,
+                    "devices": len(devices),
+                    "successful_devices": result.get("successful_devices", 0),
+                    "failed_devices": result.get("failed_devices", 0),
+                    "total_points": result.get("total_points", 0),
+                    "performance": result.get("performance_stats", {}),
                     "config": {
                         "metrics": metrics if metrics else "all",
                         "max_workers": max_workers,
+                        "auto_parallel": auto_parallel,
                         "write_to_db": write_to_db,
                     }
                 }
