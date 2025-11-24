@@ -21,14 +21,13 @@ def _parse_bool(val: str | None, default: bool = False) -> bool:
 
 def get_orchestrator_default_flags(
     config_dir: Path = Path("configs"),
-) -> Tuple[bool, bool]:
-    """读取 run-all 的两个开关默认值。
-    优先级：ENV > configs/merge.yaml(run_all) > 代码缺省(False)
-    ENV: ORCHESTRATOR_WITH_DEVICE_RUNNING_DEFAULT / ORCHESTRATOR_WITH_PRESENCE_DEFAULT
-    merge.yaml keys (under run_all): device_running / presence
+) -> bool:
+    """读取 run-all 的 device_running 开关默认值。
+    优先级：ENV > configs/merge.yaml(run_all) > 代码缺省(True)
+    ENV: ORCHESTRATOR_WITH_DEVICE_RUNNING_DEFAULT
+    merge.yaml keys (under run_all): device_running
     """
     dev_default = True
-    pres_default = True
 
     # YAML（可选）
     try:
@@ -40,24 +39,20 @@ def get_orchestrator_default_flags(
             data = yaml.safe_load(merge_yml.read_text(encoding="utf-8")) or {}
             ra = (data or {}).get("run_all", {}) or {}
             dev_default = bool(ra.get("device_running", dev_default))
-            pres_default = bool(ra.get("presence", pres_default))
     except Exception:
-        # 配置缺失或解析失败时，保持默认 False
+        # 配置缺失或解析失败时，保持默认 True
         pass
 
     # ENV（最高优先级）
     dev_default = _parse_bool(
         os.getenv("ORCHESTRATOR_WITH_DEVICE_RUNNING_DEFAULT"), dev_default
     )
-    pres_default = _parse_bool(
-        os.getenv("ORCHESTRATOR_WITH_PRESENCE_DEFAULT"), pres_default
-    )
 
-    return dev_default, pres_default
+    return dev_default
 
 
 # 计算动态默认值（模块加载时）
-_DEV_RUN_DEFAULT, _PRES_DEFAULT = get_orchestrator_default_flags()
+_DEV_RUN_DEFAULT = get_orchestrator_default_flags()
 
 from app.services.ingest.prepare_dim import prepare_dim
 
@@ -86,7 +81,7 @@ def initialize_app():
 app = typer.Typer(
     help=(
         "CSV 高性能导入（方案A）："
-        "prepare-dim / create-staging / ingest:copy / merge:fact / run-all / presence:compute"
+        "prepare-dim / create-staging / ingest:copy / merge:fact / run-all"
     ),
 )
 
@@ -273,57 +268,6 @@ def cmd_check_mapping(
 
 
 @app.command(
-    name="presence:compute",
-    help=(
-        "统计每秒(UTC)×站×设备的已有/需要计算指标名并写入 public.metrics_presence_per_second_device；"
-        "默认全量，若表已有数据则增量+滚动7天"
-    ),
-)
-def presence_compute(
-    station_name: str | None = typer.Option(
-        None,
-        "--station-name",
-        help="限定站点名称；默认全部站（当提供 --station-id 时忽略）",
-    ),
-    station_id: int | None = typer.Option(
-        None, "--station-id", help="优先使用：按站点ID过滤；可与 --device-id 联用"
-    ),
-    device_id: int | None = typer.Option(
-        None,
-        "--device-id",
-        help="可选：按设备ID过滤；若未提供 station_id 将自动根据设备ID推断其站点",
-    ),
-    start: str | None = typer.Option(
-        None, "--start", help="起始时间（ISO8601）。不带时区按系统默认时区解析；对外展示统一为 +08 格式"
-    ),
-    end: str | None = typer.Option(
-        None, "--end", help="结束时间（ISO8601）。不带时区按系统默认时区解析；对外展示统一为 +08 格式"
-    ),
-    batch_days: int = typer.Option(1, "--batch-days", help="按天分片大小"),
-    rolling_days: int = typer.Option(7, "--rolling-days", help="增量时回退刷新近N天"),
-    dry_run: bool = typer.Option(False, "--dry-run", help="仅显示计划，不执行写入"),
-) -> None:
-    initialize_app()
-    settings = load_settings(Path("configs"))
-    from app.services.reporting.presence_cli import run_presence_compute_command
-
-    res = run_presence_compute_command(
-        settings,
-        station_name,
-        station_id,
-        device_id,
-        start,
-        end,
-        batch_days,
-        rolling_days,
-        dry_run,
-    )
-    import json as _json
-
-    typer.echo(_json.dumps(res, ensure_ascii=False))
-
-
-@app.command(
     name="db-ping",
     help=(
         "免密连接测试；--verbose 输出 host/db/user(脱敏)/时区/版本；"
@@ -377,9 +321,6 @@ def cmd_run_all(
     ),
     with_device_running: bool = typer.Option(
         _DEV_RUN_DEFAULT, "--with-device-running", help="合并后追加设备运行状态落地"
-    ),
-    with_presence: bool = typer.Option(
-        _PRES_DEFAULT, "--with-presence", help="合并后按窗口执行 presence:compute"
     ),
     device_id: int | None = typer.Option(
         None, "--device-id", help="可选：限定设备ID，仅处理该设备"
@@ -473,7 +414,6 @@ def cmd_run_all(
             window_end=window_end,
             summary_json=summary_json,
             with_device_running=with_device_running,
-            with_presence=with_presence,
             with_device_phase=False,
             device_id=device_id,
         )

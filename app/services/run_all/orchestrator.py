@@ -25,7 +25,6 @@ def run_all(
     window_end: Optional[str],
     summary_json: Optional[str],
     with_device_running: bool = False,
-    with_presence: bool = False,
     with_device_phase: bool = False,
     device_id: int | None = None,
 ) -> Dict[str, Any]:
@@ -55,7 +54,6 @@ def run_all(
                 "window_start": window_start,
                 "window_end": window_end,
                 "with_device_running": with_device_running,
-                "with_presence": with_presence,
                 "device_id": device_id,
             }
         },
@@ -64,14 +62,13 @@ def run_all(
     t0_total = time.perf_counter()
     timing_stats: Dict[str, Any] = {}
 
-    # 读取配置开关（不存在或解析失败则默认开启前4步，device_running/presence 默认 False）
+    # 读取配置开关（不存在或解析失败则默认开启前4步，device_running 默认 False）
     do_prepare_dim = True
     do_create_staging = True
     do_ingest_copy = True
     do_merge_fact = True
     do_prepare_dim_stage2 = False  # 默认关闭阶段2
     cfg_device_running = with_device_running
-    cfg_presence = with_presence
     cfg_calculation = False  # 默认关闭计算功能
     device_running_cfg: dict[str, Any] = {}
     calculation_cfg: dict[str, Any] = {}
@@ -92,7 +89,6 @@ def run_all(
             do_merge_fact = bool(ra.get("merge_fact", do_merge_fact))
             do_prepare_dim_stage2 = bool(ra.get("prepare_dim_stage2", do_prepare_dim_stage2))
             cfg_device_running = bool(ra.get("device_running", cfg_device_running))
-            cfg_presence = bool(ra.get("presence", cfg_presence))
             cfg_calculation = bool(ra.get("enable_calculation", cfg_calculation))
             device_running_cfg = (ra.get("device_running_cfg", {}) or {})
             calculation_cfg = (ra.get("calculation_cfg", {}) or {})
@@ -124,7 +120,6 @@ def run_all(
                         "prepare_dim_stage2": do_prepare_dim_stage2,
                         "calculation": cfg_calculation,
                         "device_running": cfg_device_running,
-                        "presence": cfg_presence,
                     },
                 }
             },
@@ -352,75 +347,7 @@ def run_all(
 
     # 6.5) 可选后续：device_phase（放在 device_running 之后）
 
-    # 6) 可选后续：presence（在线状态检测，在质量标注之后执行）
-    presence_summary: Dict[str, Any] | None = None
-    if cfg_presence:
-        t0_stage = time.perf_counter()
-        try:
-            import logging as _logging
-            _logging.getLogger("activity").info(
-                "[进度] presence 开始",
-                extra={
-                    "extra_data": {
-                        "event": "presence.start",
-                        "window": {"start": ws_local, "end": we_local},
-                        "device_id": device_id,
-                    }
-                }
-            )
-        except Exception:
-            pass
-
-        try:
-            from datetime import datetime as _dt
-            from datetime import timezone as _tz
-
-            from app.services.reporting.presence_writer import (
-                run_presence_compute as _rpc,
-            )
-
-            # 直接复用已确定的窗口
-            s = _dt.fromisoformat(ws.replace("Z", "+00:00")).astimezone(_tz.utc)
-            e = _dt.fromisoformat(we.replace("Z", "+00:00")).astimezone(_tz.utc)
-            presence_summary = _rpc(start=s, end=e, device_id=device_id)
-            duration_s = time.perf_counter() - t0_stage
-            timing_stats["presence"] = {"duration_s": duration_s}
-
-            try:
-                import logging as _logging
-                _logging.getLogger("activity").info(
-                    f"[进度] presence 完成 (耗时: {duration_s:.2f}秒)",
-                    extra={
-                        "extra_data": {
-                            "event": "presence.done",
-                            "duration_s": duration_s,
-                            "summary": presence_summary,
-                        }
-                    }
-                )
-            except Exception:
-                pass
-        except Exception as ex:
-            duration_s = time.perf_counter() - t0_stage
-            timing_stats["presence"] = {"duration_s": duration_s, "error": str(ex)}
-            presence_summary = {"status": "error", "message": str(ex)}
-
-            try:
-                import logging as _logging
-                _logging.getLogger("activity").error(
-                    f"[进度] presence 失败 (耗时: {duration_s:.2f}秒): {ex}",
-                    extra={
-                        "extra_data": {
-                            "event": "presence.error",
-                            "duration_s": duration_s,
-                            "error": str(ex),
-                        }
-                    }
-                )
-            except Exception:
-                pass
-
-    # 7) 可选后续：缺失指标计算（在 presence 之后执行）
+    # 6) 可选后续：缺失指标计算（在质量标注之后执行）
     calculation_summary: Dict[str, Any] | None = None
     if cfg_calculation:
         t0_stage = time.perf_counter()
@@ -676,7 +603,6 @@ def run_all(
         "merge_stats": (merge_stats or {}),
         "calculation": calculation_summary,
         "device_running": device_running_summary,
-        "presence": presence_summary,
         "timing_stats": timing_stats,  # 添加耗时统计到摘要
     }
 

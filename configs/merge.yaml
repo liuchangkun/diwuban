@@ -36,8 +36,6 @@ run_all:
   prepare_dim: true         # 阶段1：重建维度表（在 merge-fact 前执行）
   prepare_dim_stage2: true  # 阶段2：生成规则表（在 merge-fact 后执行）
   skip_shadow_rules: true  # 是否跳过影子规则生成（生产环境可设为true以提升50%性能；影响：无法进行影子表对比验证；跳过函数：run_auto_baseline_b, compute_metric_quality_rules_shadow, run_running_thresholds_b）
-  presence: true            # 计算存在性统计（mv_presence_*）
- 
   reset_db: false
   reset_db_schemas:
   - public
