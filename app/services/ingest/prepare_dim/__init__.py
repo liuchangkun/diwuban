@@ -413,12 +413,11 @@ def _clear_non_backup_tables(cur) -> int:
     0. calculation_failures_log, calculation_performance_metrics, completion_audit, completion_failures, staging_rejects, staging_raw（立刻清空）
     1. fact_measurements（所有历史数据，叶子节点）
     2. mv_device_running_1s（派生数据，叶子节点）
-    3. metrics_presence_per_second_device（派生数据，叶子节点）
-    4. completion_runs, completion_steps（审计数据，叶子节点）
-    5. （dim_device_capabilities 改为永久配置表，不再清空 - 2025-11-11）
-    6. dim_devices（设备维度表，依赖 dim_stations）
-    7. dim_stations（站点维度表，根节点）
-    8. dim_mapping_items（映射表，叶子节点）
+    3. completion_runs, completion_steps（审计数据，叶子节点）
+    4. （dim_device_capabilities 改为永久配置表，不再清空 - 2025-11-11）
+    5. dim_devices（设备维度表，依赖 dim_stations）
+    6. dim_stations（站点维度表，根节点）
+    7. dim_mapping_items（映射表，叶子节点）
 
     不清空的15个备份表（2025-11-11更新）：
     - A类手动配置表（6个）：dim_device_capabilities（永久保留，不再清空 - 2025-11-11）,
@@ -522,12 +521,6 @@ def _clear_non_backup_tables(cur) -> int:
     deleted = cur.rowcount
     total_deleted += deleted
     _act.info(f"[清空表] mv_device_running_1s: {deleted} 行（派生数据，将在 device_running 阶段重新生成）")
-
-    # metrics_presence_per_second_device: 指标存在性表（派生表，依赖 fact_measurements）
-    cur.execute("DELETE FROM metrics_presence_per_second_device")
-    deleted = cur.rowcount
-    total_deleted += deleted
-    _act.info(f"[清空表] metrics_presence_per_second_device: {deleted} 行（派生表，将在 presence 阶段重新计算）")
 
     # completion_runs, completion_steps: 审计数据
     cur.execute("DELETE FROM completion_runs")
