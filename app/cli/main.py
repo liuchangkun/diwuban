@@ -324,51 +324,6 @@ def presence_compute(
 
 
 @app.command(
-    name="missing-metrics:compute",
-    help=(
-        "批量计算缺失指标：按设备×时间窗进行全量/增量计算；"
-        "示例：python -m app.cli.main missing-metrics:compute --start '2025-01-01 00:00:00+08' --end '2025-02-28 23:59:59+08' "
-        "[--station-id] [--device-id] [--window-hours 1] [--concurrency 3] "
-        "[--dry-run/--no-dry-run] [--filter-running/--no-filter-running] [--filter-quality/--no-filter-quality]"
-    ),
-)
-def cmd_missing_metrics_compute(
-    start: str | None = typer.Option(None, "--start", help="起始时间（ISO8601，默认取fact表最早时间）"),
-    end: str | None = typer.Option(None, "--end", help="结束时间（ISO8601，默认取fact表最晚时间）"),
-    station_id: int | None = typer.Option(None, "--station-id", help="可选：限定站点ID"),
-    device_id: int | None = typer.Option(None, "--device-id", help="可选：限定设备ID"),
-    window_hours: int = typer.Option(1, "--window-hours", help="时间分片粒度（小时）"),
-    concurrency: int = typer.Option(3, "--concurrency", help="并发度（线程数），建议≤连接池max"),
-    dry_run: bool = typer.Option(False, "--dry-run/--no-dry-run", help="仅试运行，不写库"),
-    filter_running: bool = typer.Option(True, "--filter-running/--no-filter-running", help="按运行态过滤"),
-    filter_quality: bool = typer.Option(True, "--filter-quality/--no-filter-quality", help="仅使用质量=0的原始数据作为输入"),
-    limit_devices: int | None = typer.Option(None, "--limit-devices", help="限设备数量（排障/演练用）"),
-    limit_windows_per_device: int | None = typer.Option(None, "--limit-windows-per-device", help="每设备限窗口数（排障/演练用）"),
-    use_presence_table: bool = typer.Option(True, "--use-presence-table/--no-use-presence-table", help="使用metrics_presence_per_second_device表动态查询指标"),
-) -> None:
-    """批量计算缺失指标（可全量）。
-
-    注意：默认直接写入 fact_measurements（quality_status=1）。如需合规，请先将写入路径改为存储过程。
-    """
-    initialize_app()
-    settings = load_settings(Path("configs"))
-
-    from app.services.calculation.missing_metrics_batch import build_plan, run_missing_metrics_compute
-
-    plan = build_plan(
-        start=start, end=end, station_id=station_id, device_id=device_id,
-        window_hours=window_hours, concurrency=concurrency, dry_run=dry_run,
-        filter_running=filter_running, filter_quality=filter_quality,
-        limit_devices=limit_devices, limit_windows_per_device=limit_windows_per_device,
-        use_presence_table=use_presence_table,
-    )
-
-    res = run_missing_metrics_compute(plan)
-    import json as _json
-    typer.echo(_json.dumps(res, ensure_ascii=False))
-
-
-@app.command(
     name="db-ping",
     help=(
         "免密连接测试；--verbose 输出 host/db/user(脱敏)/时区/版本；"
