@@ -21,72 +21,78 @@ TRUNCATE TABLE device_rated_params CASCADE;
 -- ============================================
 
 -- 1号泵（变频泵）
-INSERT INTO device_rated_params (device_id, param_key, value_numeric, unit, source)
-SELECT 
+INSERT INTO device_rated_params (device_id, station_id, param_key, value_numeric, unit, source)
+SELECT
     d.id,
-    unnest(ARRAY['rated_frequency', 'poles_pair', 'rated_efficiency', 'rated_flow', 'rated_head', 'eta_motor', 'eta_vfd']),
-    unnest(ARRAY[50, 2, 0.78, 400, 25, 0.93, 0.97]),
-    unnest(ARRAY['Hz', NULL, NULL, 'm3/h', 'm', NULL, NULL]),
+    d.station_id,
+    unnest(ARRAY['rated_frequency', 'poles_pair', 'rated_efficiency', 'rated_flow', 'rated_head', 'rated_power', 'rated_current', 'eta_motor', 'eta_vfd']),
+    unnest(ARRAY[50, 2, 0.78, 400, 25, 75, 150, 0.93, 0.97]),
+    unnest(ARRAY['Hz', NULL, NULL, 'm3/h', 'm', 'kW', 'A', NULL, NULL]),
     '自适应SQL脚本生成'
 FROM dim_devices d
 JOIN dim_stations s ON d.station_id = s.id
 WHERE s.name = '二期供水泵房' AND d.name = '二期供水泵房1#泵';
 
 -- 2号泵（变频泵）
-INSERT INTO device_rated_params (device_id, param_key, value_numeric, unit, source)
-SELECT 
+INSERT INTO device_rated_params (device_id, station_id, param_key, value_numeric, unit, source)
+SELECT
     d.id,
-    unnest(ARRAY['rated_frequency', 'poles_pair', 'rated_efficiency', 'rated_flow', 'rated_head', 'eta_motor', 'eta_vfd']),
-    unnest(ARRAY[50, 2, 0.78, 400, 25, 0.93, 0.97]),
-    unnest(ARRAY['Hz', NULL, NULL, 'm3/h', 'm', NULL, NULL]),
+    d.station_id,
+    unnest(ARRAY['rated_frequency', 'poles_pair', 'rated_efficiency', 'rated_flow', 'rated_head', 'rated_power', 'rated_current', 'eta_motor', 'eta_vfd']),
+    unnest(ARRAY[50, 2, 0.78, 400, 25, 75, 150, 0.93, 0.97]),
+    unnest(ARRAY['Hz', NULL, NULL, 'm3/h', 'm', 'kW', 'A', NULL, NULL]),
     '自适应SQL脚本生成'
 FROM dim_devices d
 JOIN dim_stations s ON d.station_id = s.id
 WHERE s.name = '二期供水泵房' AND d.name = '二期供水泵房2#泵';
 
 -- 3号泵（变频泵）
-INSERT INTO device_rated_params (device_id, param_key, value_numeric, unit, source)
-SELECT 
+INSERT INTO device_rated_params (device_id, station_id, param_key, value_numeric, unit, source)
+SELECT
     d.id,
-    unnest(ARRAY['rated_frequency', 'poles_pair', 'rated_efficiency', 'rated_flow', 'rated_head', 'eta_motor', 'eta_vfd']),
-    unnest(ARRAY[50, 2, 0.78, 400, 25, 0.93, 0.97]),
-    unnest(ARRAY['Hz', NULL, NULL, 'm3/h', 'm', NULL, NULL]),
+    d.station_id,
+    unnest(ARRAY['rated_frequency', 'poles_pair', 'rated_efficiency', 'rated_flow', 'rated_head', 'rated_power', 'rated_current', 'eta_motor', 'eta_vfd']),
+    unnest(ARRAY[50, 2, 0.78, 400, 25, 75, 150, 0.93, 0.97]),
+    unnest(ARRAY['Hz', NULL, NULL, 'm3/h', 'm', 'kW', 'A', NULL, NULL]),
     '自适应SQL脚本生成'
 FROM dim_devices d
 JOIN dim_stations s ON d.station_id = s.id
 WHERE s.name = '二期供水泵房' AND d.name = '二期供水泵房3#泵';
 
 -- 4号泵（变频泵）
-INSERT INTO device_rated_params (device_id, param_key, value_numeric, unit, source)
-SELECT 
+INSERT INTO device_rated_params (device_id, station_id, param_key, value_numeric, unit, source)
+SELECT
     d.id,
-    unnest(ARRAY['rated_frequency', 'poles_pair', 'rated_efficiency', 'rated_flow', 'rated_head', 'eta_motor', 'eta_vfd']),
-    unnest(ARRAY[50, 2, 0.78, 400, 25, 0.93, 0.97]),
-    unnest(ARRAY['Hz', NULL, NULL, 'm3/h', 'm', NULL, NULL]),
+    d.station_id,
+    unnest(ARRAY['rated_frequency', 'poles_pair', 'rated_efficiency', 'rated_flow', 'rated_head', 'rated_power', 'rated_current', 'eta_motor', 'eta_vfd']),
+    unnest(ARRAY[50, 2, 0.78, 400, 25, 75, 150, 0.93, 0.97]),
+    unnest(ARRAY['Hz', NULL, NULL, 'm3/h', 'm', 'kW', 'A', NULL, NULL]),
     '自适应SQL脚本生成'
 FROM dim_devices d
 JOIN dim_stations s ON d.station_id = s.id
 WHERE s.name = '二期供水泵房' AND d.name = '二期供水泵房4#泵';
 
 -- 5号泵（变频泵）
-INSERT INTO device_rated_params (device_id, param_key, value_numeric, unit, source)
-SELECT 
+INSERT INTO device_rated_params (device_id, station_id, param_key, value_numeric, unit, source)
+SELECT
     d.id,
-    unnest(ARRAY['rated_frequency', 'poles_pair', 'rated_efficiency', 'rated_flow', 'rated_head', 'eta_motor', 'eta_vfd']),
-    unnest(ARRAY[50, 2, 0.78, 400, 25, 0.93, 0.97]),
-    unnest(ARRAY['Hz', NULL, NULL, 'm3/h', 'm', NULL, NULL]),
+    d.station_id,
+    unnest(ARRAY['rated_frequency', 'poles_pair', 'rated_efficiency', 'rated_flow', 'rated_head', 'rated_power', 'rated_current', 'eta_motor', 'eta_vfd']),
+    unnest(ARRAY[50, 2, 0.78, 400, 25, 75, 150, 0.93, 0.97]),
+    unnest(ARRAY['Hz', NULL, NULL, 'm3/h', 'm', 'kW', 'A', NULL, NULL]),
     '自适应SQL脚本生成'
 FROM dim_devices d
 JOIN dim_stations s ON d.station_id = s.id
 WHERE s.name = '二期供水泵房' AND d.name = '二期供水泵房5#泵';
 
 -- 6号泵（变频泵）
-INSERT INTO device_rated_params (device_id, param_key, value_numeric, unit, source)
-SELECT 
+INSERT INTO device_rated_params (device_id, station_id, param_key, value_numeric, unit, source)
+SELECT
     d.id,
-    unnest(ARRAY['rated_frequency', 'poles_pair', 'rated_efficiency', 'rated_flow', 'rated_head', 'eta_motor', 'eta_vfd']),
-    unnest(ARRAY[50, 2, 0.78, 400, 25, 0.93, 0.97]),
-    unnest(ARRAY['Hz', NULL, NULL, 'm3/h', 'm', NULL, NULL]),
+    d.station_id,
+    unnest(ARRAY['rated_frequency', 'poles_pair', 'rated_efficiency', 'rated_flow', 'rated_head', 'rated_power', 'rated_current', 'eta_motor', 'eta_vfd']),
+    unnest(ARRAY[50, 2, 0.78, 400, 25, 75, 150, 0.93, 0.97]),
+    unnest(ARRAY['Hz', NULL, NULL, 'm3/h', 'm', 'kW', 'A', NULL, NULL]),
     '自适应SQL脚本生成'
 FROM dim_devices d
 JOIN dim_stations s ON d.station_id = s.id
@@ -183,39 +189,52 @@ WHERE s.name = '二期取水泵房' AND d.type = 'main_pipeline';
 -- ============================================
 -- 表2：dim_device_capabilities（设备能力配置）
 -- ============================================
+-- 注意：rated_power_kw 和 rated_current_a 字段已删除（迁移到 device_rated_params）
+-- 使用 UPSERT 策略，避免 TRUNCATE CASCADE
 
--- 清空表（完全重建）
-TRUNCATE TABLE dim_device_capabilities CASCADE;
-
--- 插入所有变频泵的能力配置
+-- 插入或更新所有变频泵的能力配置
 INSERT INTO dim_device_capabilities (
-    device_id, vfd_enabled, freq_min, freq_max, rated_power_kw, rated_current_a, remark
+    device_id, vfd_enabled, freq_min, freq_max, remark, updated_at, updated_by
 )
-SELECT 
+SELECT
     d.id,
     TRUE,
     25.0,
     50.0,
-    75.0,
-    150.0,
-    '自适应SQL脚本生成 - 变频泵'
+    '自适应SQL脚本生成 - 变频泵',
+    NOW(),
+    'adaptive_sql_script'
 FROM dim_devices d
-WHERE d.pump_type = 'variable_frequency';
+WHERE d.pump_type = 'variable_frequency'
+ON CONFLICT (device_id) DO UPDATE SET
+    vfd_enabled = EXCLUDED.vfd_enabled,
+    freq_min = EXCLUDED.freq_min,
+    freq_max = EXCLUDED.freq_max,
+    remark = EXCLUDED.remark,
+    updated_at = NOW(),
+    updated_by = EXCLUDED.updated_by;
 
--- 插入所有软启泵的能力配置
+-- 插入或更新所有软启泵的能力配置
 INSERT INTO dim_device_capabilities (
-    device_id, vfd_enabled, freq_min, freq_max, rated_power_kw, rated_current_a, remark
+    device_id, vfd_enabled, freq_min, freq_max, remark, updated_at, updated_by
 )
-SELECT 
+SELECT
     d.id,
     FALSE,
     50.0,
     50.0,
-    55.0,
-    110.0,
-    '自适应SQL脚本生成 - 软启泵'
+    '自适应SQL脚本生成 - 软启泵',
+    NOW(),
+    'adaptive_sql_script'
 FROM dim_devices d
-WHERE d.pump_type = 'soft_start';
+WHERE d.pump_type = 'soft_start'
+ON CONFLICT (device_id) DO UPDATE SET
+    vfd_enabled = EXCLUDED.vfd_enabled,
+    freq_min = EXCLUDED.freq_min,
+    freq_max = EXCLUDED.freq_max,
+    remark = EXCLUDED.remark,
+    updated_at = NOW(),
+    updated_by = EXCLUDED.updated_by;
 
 COMMIT;
 

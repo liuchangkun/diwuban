@@ -95,7 +95,6 @@ def generate_dictionary():
             'completion_steps',
             'optimization_history',
             'quality_diagnosis_log',
-            'quality_eval_by_device_metric',
             'quality_profile_log'
         ]
         

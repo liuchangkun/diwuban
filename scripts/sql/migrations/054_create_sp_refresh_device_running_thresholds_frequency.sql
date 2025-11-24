@@ -61,8 +61,9 @@ BEGIN
         FROM dim_devices
         WHERE (p_station_id IS NULL OR station_id = p_station_id)
           AND (p_device_id IS NULL OR id = p_device_id)
+          AND type = 'pump'  -- 仅处理 pump 类型设备
     ),
-    -- 读取频率数据（质量=0）
+    -- 读取频率数据
     frequency_data AS (
         SELECT
             f.device_id,
@@ -72,7 +73,6 @@ BEGIN
           AND f.ts_bucket >= v_start_ts
           AND f.ts_bucket < v_end_ts
           AND f.metric_id = v_metric_id
-          AND f.quality_status = 0
           AND f.value > 0
     ),
     -- Otsu 双峰法计算阈值（步骤1：计算中位数）

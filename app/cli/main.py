@@ -394,64 +394,6 @@ def db_ping(
 
 
 @app.command(
-    name="quality:codes:dist-window",
-    help=(
-        "按时间窗导出质量码分布（JSON/CSV）；"
-        "示例：python -m app.cli.main quality:codes:dist-window --start 'YYYY-MM-DD HH:MM:SS+08' --end 'YYYY-MM-DD HH:MM:SS+08' --out-dir reports；"
-        "说明：输入支持 ISO8601（可带时区），未带时区按系统默认时区解析；对外展示统一为 +08 格式"
-    ),
-)
-def cmd_quality_codes_dist_window(
-    start: str = typer.Option(..., "--start", help="起始时间（ISO8601）。不带时区按系统默认时区解析；对外展示统一为 +08 格式"),
-    end: str = typer.Option(..., "--end", help="结束时间（ISO8601）。不带时区按系统默认时区解析；对外展示统一为 +08 格式"),
-    out_dir: str | None = typer.Option(
-        None, "--out-dir", help="输出目录，默认 reports/"
-    ),
-) -> None:
-    initialize_app()
-    settings = load_settings(Path("configs"))
-    from app.services.reporting.code_dist import export_window_code_distribution
-
-    res = export_window_code_distribution(
-        settings, start, end, Path(out_dir) if out_dir else None
-    )
-    import json as _json
-
-    typer.echo(_json.dumps(res, ensure_ascii=False))
-
-
-@app.command(
-    name="quality:codes:dist-recent",
-    help=(
-        "基于 quality_profile_log 的近24h/7d 质量码命中分布（JSON）；"
-        "示例：python -m app.cli.main quality:codes:dist-recent --hours-24 --days-7 --out-dir reports"
-    ),
-)
-def cmd_quality_codes_dist_recent(
-    hours_24: bool = typer.Option(
-        True, "--hours-24/--no-hours-24", help="是否包含近24小时汇总"
-    ),
-    days_7: bool = typer.Option(True, "--days-7/--no-days-7", help="是否包含近7天汇总"),
-    out_dir: str | None = typer.Option(
-        None, "--out-dir", help="输出目录，默认 reports/"
-    ),
-) -> None:
-    initialize_app()
-    settings = load_settings(Path("configs"))
-    from app.services.reporting.code_dist import export_recent_code_distribution
-
-    res = export_recent_code_distribution(
-        settings,
-        hours_24=hours_24,
-        days_7=days_7,
-        out_dir=Path(out_dir) if out_dir else None,
-    )
-    import json as _json
-
-    typer.echo(_json.dumps(res, ensure_ascii=False))
-
-
-@app.command(
     name="run-all",
     help=(
         "一键执行完整流程：prepare-dim → create-staging → ingest-copy → merge-fact；"
@@ -486,15 +428,6 @@ def cmd_run_all(
     ),
     device_id: int | None = typer.Option(
         None, "--device-id", help="可选：限定设备ID，仅处理该设备"
-    ),
-    quality_codes: list[int] | None = typer.Option(
-        None, "--quality-codes", help="仅执行该子集质量码（示例：--quality-codes 101 --quality-codes 111）"
-    ),
-    quality_diag_level: str | None = typer.Option(
-        None, "--quality-diag-level", help="质量诊断级别：off|brief|full"
-    ),
-    quality_parallel: str = typer.Option(
-        "4", "--quality-parallel", help="质量标注设备并行度：整数(>1)启用并行，auto 自适应；默认 4"
     ),
 ) -> None:
     """完整流程执行：
@@ -577,14 +510,6 @@ def cmd_run_all(
     try:
         from app.services.run_all.orchestrator import run_all as _run_all
 
-        # 解析质量并行参数：支持 'auto' 或整数；默认 4
-        _qp_arg: int | str
-        try:
-            _qp_s = str(quality_parallel).strip().lower() if quality_parallel is not None else "4"
-            _qp_arg = "auto" if _qp_s == "auto" else int(_qp_s)
-        except Exception:
-            _qp_arg = 4
-
         summary = _run_all(
             settings=settings,
             mapping=mapping,
@@ -592,14 +517,10 @@ def cmd_run_all(
             window_start=window_start,
             window_end=window_end,
             summary_json=summary_json,
-            with_quality_mark=True,
             with_device_running=with_device_running,
             with_presence=with_presence,
             with_device_phase=False,
             device_id=device_id,
-            quality_codes=quality_codes,
-            quality_diag_level=quality_diag_level,
-            quality_parallel=_qp_arg,
         )
     except Exception:
         _logging.getLogger("error").exception(
@@ -641,125 +562,12 @@ def cmd_run_all(
     )
 
 
-@app.command(
-    name="baseline:auto:compute",
-    hidden=True,
-    help=(
-        "计算并刷新 metric_rule_auto_baseline（近N天历史，仅使用质量=0且稳态数据，默认全设备）；"
-        "示例：python -m app.cli.main baseline:auto:compute --lookback-days 30 [--station-id] [--device-id]"
-    ),
-)
-def cmd_baseline_auto_compute(
-    lookback_days: int = typer.Option(30, "--lookback-days", help="回溯天数"),
-    station_id: int | None = typer.Option(
-        None, "--station-id", help="可选：限定站点ID"
-    ),
-    device_id: int | None = typer.Option(None, "--device-id", help="可选：限定设备ID"),
-    method: str = typer.Option(
-        "robust",
-        "--method",
-        help="基线算法：robust（分位/MAD）| stl（趋势季节分解+残差稳健）",
-        show_default=True,
-    ),
-    output: str = typer.Option(
-        "table",
-        "--output",
-        help="输出目标：table（正式表）| shadow（影子表）",
-        show_default=True,
-    ),
-) -> None:
-    initialize_app()
-    settings = load_settings(Path("configs"))
-
-    if (method or "robust").lower() == "stl" or (output or "table").lower() == "shadow":
-        # 方案B影子或 stl：写入 shadow，不影响正式表
-        from app.services.rules.auto_baseline_b import run_auto_baseline_b
-
-        res = run_auto_baseline_b(
-            settings,
-            lookback_days=lookback_days,
-            station_id=station_id,
-            device_id=device_id,
-            method=(
-                "stl_residual"
-                if (method or "robust").lower() == "stl"
-                else "robust_pcnt+meta"
-            ),
-            version="vB_shadow",
-        )
-    else:
-        from app.services.rules.auto_baseline import run_auto_baseline
-
-        res = run_auto_baseline(settings, lookback_days, station_id, device_id)
-
-    import json as _json
-
-    typer.echo(_json.dumps(res, ensure_ascii=False))
+# baseline:auto:compute command removed (2025-11-07)
+# Reason: Quality checking feature deleted, baseline tables no longer used
+# Archive location: _archive/baseline_feature_20251107/
 
 
-@app.command(
-    name="quality:mark-window",
-    hidden=True,
-    help="在时间窗内执行首批质量标注规则（越界/跳变/平台期/状态矛盾/功率因数/液位守恒）",
-)
-def cmd_quality_mark_window(
-    start: str = typer.Option(..., "--start", help="UTC 起始（YYYY-MM-DDTHH:MM:SSZ）"),
-    end: str = typer.Option(..., "--end", help="UTC 结束（YYYY-MM-DDTHH:MM:SSZ）"),
-    station_id: int | None = typer.Option(
-        None, "--station-id", help="可选：限定站点ID"
-    ),
-    device_id: int | None = typer.Option(None, "--device-id", help="可选：限定设备ID"),
-) -> None:
-    initialize_app()
-    settings = load_settings(Path("configs"))
-    from app.services.quality.mark_window import mark_quality_window
 
-    res = mark_quality_window(settings, start, end, station_id, device_id)
-    import json as _json
-
-    typer.echo(_json.dumps(res, ensure_ascii=False))
-
-
-@app.command(
-    name="quality:full-pass",
-    hidden=True,
-    help=(
-        "一键执行：生成相位→刷新自动基线→标注质量。"
-        "示例：python -m app.cli.main quality:full-pass --start ...Z --end ...Z "
-        "--lookback-days 30 [--station-id] [--device-id]"
-    ),
-)
-def cmd_quality_full_pass(
-    start: str = typer.Option(..., "--start", help="UTC 起始（YYYY-MM-DDTHH:MM:SSZ）"),
-    end: str = typer.Option(..., "--end", help="UTC 结束（YYYY-MM-DDTHH:MM:SSZ）"),
-    lookback_days: int = typer.Option(30, "--lookback-days", help="自动基线回溯天数"),
-    station_id: int | None = typer.Option(
-        None, "--station-id", help="可选：限定站点ID（用于自动基线与质量标注）"
-    ),
-    device_id: int | None = typer.Option(
-        None, "--device-id", help="可选：限定设备ID（三个步骤均可过滤该设备）"
-    ),
-) -> None:
-    """执行顺序：
-    1) device-phase:compute （按窗口生成相位）
-    2) baseline:auto:compute （按回溯天数刷新自动基线，可按站/设备过滤）
-    3) quality:mark-window （按窗口执行首批质量标注，可按站/设备过滤）
-    """
-    initialize_app()
-    settings = load_settings(Path("configs"))
-    from app.services.quality.full_pass import run_quality_full_pass
-
-    res = run_quality_full_pass(
-        settings,
-        start=start,
-        end=end,
-        lookback_days=lookback_days,
-        station_id=station_id,
-        device_id=device_id,
-    )
-    import json as _json
-
-    typer.echo(_json.dumps(res, ensure_ascii=False))
 
 
 @app.command(

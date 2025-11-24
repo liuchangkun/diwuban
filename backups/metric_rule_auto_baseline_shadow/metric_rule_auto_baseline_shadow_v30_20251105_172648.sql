@@ -1,6 +1,0 @@
--- 备份表: metric_rule_auto_baseline_shadow
--- 时间: 2025-11-05 17:26:48
--- 行数: 0
--- MD5: 
-
--- 表 metric_rule_auto_baseline_shadow 为空，无数据需要备份

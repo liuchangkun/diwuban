@@ -176,16 +176,7 @@ ON UPDATE CASCADE ON DELETE CASCADE;
 \echo '✅ metric_rule_auto_baseline.station_id 外键已添加'
 
 \echo ''
-\echo '2.4 为 device_metric_candidates 添加外键'
-ALTER TABLE device_metric_candidates
-ADD CONSTRAINT device_metric_candidates_device_id_fkey
-FOREIGN KEY (device_id) REFERENCES dim_devices(id)
-ON UPDATE CASCADE ON DELETE CASCADE;
-
-\echo '✅ device_metric_candidates.device_id 外键已添加'
-
-\echo ''
-\echo '2.5 为 metric_anomaly_strategy 添加外键'
+\echo '2.4 为 metric_anomaly_strategy 添加外键'
 ALTER TABLE metric_anomaly_strategy
 ADD CONSTRAINT metric_anomaly_strategy_device_id_fkey
 FOREIGN KEY (device_id) REFERENCES dim_devices(id)

@@ -57,15 +57,16 @@ BEGIN
     RAISE NOTICE '[电流阈值学习] 电流指标ID: A=%, B=%, C=%', v_metric_id_a, v_metric_id_b, v_metric_id_c;
 
     -- =====================================================================
-    -- 步骤3：为每个设备学习电流阈值
+    -- 步骤3：为每个设备学习电流阈值（仅 pump 类型设备）
     -- =====================================================================
     WITH device_list AS (
         SELECT id as device_id
         FROM dim_devices
         WHERE (p_station_id IS NULL OR station_id = p_station_id)
           AND (p_device_id IS NULL OR id = p_device_id)
+          AND type = 'pump'  -- 仅处理 pump 类型设备
     ),
-    -- 读取三相电流数据（质量=0）
+    -- 读取三相电流数据
     current_data AS (
         SELECT
             f.device_id,
@@ -80,7 +81,6 @@ BEGIN
           AND f.ts_bucket >= v_start_ts
           AND f.ts_bucket < v_end_ts
           AND f.metric_id IN (v_metric_id_a, v_metric_id_b, v_metric_id_c)
-          AND f.quality_status = 0
         GROUP BY f.device_id, f.ts_bucket
         HAVING GREATEST(
             COALESCE(MAX(CASE WHEN f.metric_id = v_metric_id_a THEN f.value END), 0),

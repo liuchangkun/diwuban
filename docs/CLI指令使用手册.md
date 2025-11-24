@@ -236,9 +236,6 @@ python -m app.cli.main run-all [mapping_file] [options]
 - `--with-device-running`: 合并后追加设备运行状态落地
 - `--with-presence`: 合并后按窗口执行 presence:compute
 - `--device-id`: 可选，限定设备ID
-- `--quality-codes`: 仅执行该子集质量码
-- `--quality-diag-level`: 质量诊断级别（off|brief|full）
-- `--quality-parallel`: 质量标注设备并行度（默认: 4）
 
 **示例用法**:
 ```bash
@@ -274,7 +271,6 @@ python -m app.cli.main run-all --summary-json temp/run_all_summary.json
   6. device_running（可选）
   7. calculation（可选）
   8. presence（可选）
-  9. quality_mark（可选）
 
 ---
 
@@ -467,81 +463,6 @@ python -m app.cli.main baseline:auto:compute --output shadow
 
 ---
 
-### 11. quality:mark-window
-
-**功能描述**: 在时间窗内执行首批质量标注规则
-
-**完整语法**:
-```bash
-python -m app.cli.main quality:mark-window --start <start> --end <end> [options]
-```
-
-**影响的数据库表**:
-- `fact_measurements` - 更新 quality_codes 字段
-
-**执行顺序**: 在 `merge-fact` 和 `baseline:auto:compute` 之后执行
-
-**参数说明**:
-- `--start`: UTC起始时间（YYYY-MM-DDTHH:MM:SSZ）
-- `--end`: UTC结束时间（YYYY-MM-DDTHH:MM:SSZ）
-- `--station-id`: 可选，限定站点ID
-- `--device-id`: 可选，限定设备ID
-
-**示例用法**:
-```bash
-python -m app.cli.main quality:mark-window \
-  --start '2025-02-28T00:00:00Z' \
-  --end '2025-02-28T23:59:59Z'
-```
-
-**注意事项**:
-- **前置条件**:
-  - fact_measurements 表有数据
-  - metric_rule_auto_baseline 表已生成
-- **副作用**: 更新 fact_measurements 表的 quality_codes 字段
-- **质量规则**: 越界/跳变/平台期/状态矛盾/功率因数/液位守恒
-
----
-
-### 12. quality:full-pass
-
-**功能描述**: 一键执行完整质量流程
-
-**完整语法**:
-```bash
-python -m app.cli.main quality:full-pass --start <start> --end <end> [options]
-```
-
-**影响的数据库表**:
-- `metric_rule_auto_baseline` - 自动基线表
-- `fact_measurements` - 质量标注
-
-**执行顺序**: 在 `merge-fact` 之后执行
-
-**参数说明**:
-- `--start`: UTC起始时间
-- `--end`: UTC结束时间
-- `--lookback-days`: 自动基线回溯天数，默认30
-- `--station-id`: 可选，限定站点ID
-- `--device-id`: 可选，限定设备ID
-
-**示例用法**:
-```bash
-python -m app.cli.main quality:full-pass \
-  --start '2025-02-28T00:00:00Z' \
-  --end '2025-02-28T23:59:59Z' \
-  --lookback-days 30
-```
-
-**注意事项**:
-- **执行顺序**:
-  1. device-phase:compute（生成相位）
-  2. baseline:auto:compute（刷新自动基线）
-  3. quality:mark-window（标注质量）
-- **前置条件**: fact_measurements 表有足够的历史数据
-
----
-
 ## 规则管理指令
 
 ### 13. quality:codes:dist-window
@@ -555,7 +476,7 @@ python -m app.cli.main quality:codes:dist-window --start <start> --end <end> [op
 
 **影响的数据库表**: 读取 `fact_measurements`
 
-**执行顺序**: 在质量标注之后执行
+**执行顺序**: 在 merge-fact 之后执行
 
 **参数说明**:
 - `--start`: 起始时间（ISO8601）
@@ -942,7 +863,6 @@ run_all:
   device_running: true           # 设备运行状态计算
   enable_calculation: true       # 缺失指标计算
   presence: true                 # 存在性统计
-  quality_mark: false            # 质量标注（默认关闭）
 ```
 
 ### 独立指令

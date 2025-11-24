@@ -3,7 +3,7 @@
 run_all:
   # 异常诊断输出级别：off | brief | full
   anomaly_diagnosis:
-    level: brief
+    level: off  # 临时禁用诊断模式以提升性能
   # 缺失指标计算配置：用于 orchestrator 的缺失指标批量计算（enable_calculation=true 时生效）
   calculation_cfg:
     auto_parallel: true  # 是否自动选择串/并行
@@ -38,33 +38,7 @@ run_all:
   prepare_dim_stage2: true  # 阶段2：生成规则表（在 merge-fact 后执行）
   skip_shadow_rules: true  # 是否跳过影子规则生成（生产环境可设为true以提升50%性能；影响：无法进行影子表对比验证；跳过函数：run_auto_baseline_b, compute_metric_quality_rules_shadow, run_running_thresholds_b）
   presence: true            # 计算存在性统计（mv_presence_*）
-  quality_mark: true       # 质量标注（需要 presence 与窗口准备）
-  quality_mark_codes_enabled:
-  - 101
-  - 102
-  - 111
-  - 112
-  - 121
-  - 131
-  - 132
-  - 141
-  - 201
-  - 202
-  - 301
-  - 302
-  - 303
-  - 401
-  - 402
-  - 403
-  - 501
-  - 502
-  - 503
-  - 601
-  - 602
-  - 603
-  - 701
-  - 702
-  - 751
+ 
   reset_db: false
   reset_db_schemas:
   - public

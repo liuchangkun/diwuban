@@ -4,13 +4,11 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional
 from datetime import datetime, timedelta, timezone
 
-from app.services.rules.auto_baseline_b import run_auto_baseline_b
-from app.services.rules.auto_baseline import run_auto_baseline
-from app.services.rules.metric_quality_rules_b import (
-    compute_metric_quality_rules_shadow,
-)
-from app.services.rules.metric_quality_rules import compute_metric_quality_rules
-from app.services.rules.running_thresholds_b import run_running_thresholds_b
+# Baseline imports removed (2025-11-07) - feature deleted
+# from app.services.rules.auto_baseline_b import run_auto_baseline_b
+# from app.services.rules.auto_baseline import run_auto_baseline
+# Shadow thresholds import removed (2025-11-07) - feature deleted
+# from app.services.rules.running_thresholds_b import run_running_thresholds_b
 from app.services.rules.running_thresholds import run_running_thresholds
 from app.services.ingest.prepare_dim import prepare_dim
 from app.core.time_utils import format_for_display
@@ -26,7 +24,6 @@ class RefreshAllPlan:
     method_thresholds_a: str  # robust|otsu
     mode: str  # shadow|prod|both
     capabilities_mapping: Optional[str]
-    with_mark: bool = True
     with_diff_report: bool = False
     report_dir: Optional[str] = None
 
@@ -120,179 +117,24 @@ def run_refresh_all(settings, plan: RefreshAllPlan) -> Dict[str, Any]:
         }
     )
 
-    # 2) 基线（影子 B）
-    if do_shadow:
-        _act.info(
-            "[流程-阶段] [开始计算影子基线]",
-            extra={
-                "extra_data": {
-                    "lookback_days": plan.lookback_days,
-                    "station_id": plan.station_id,
-                    "device_id": plan.device_id,
-                    "method": "stl_residual",
-                    "version": "vB_shadow",
-                }
-            }
-        )
-        try:
-            res_b = run_auto_baseline_b(
-                settings,
-                lookback_days=plan.lookback_days,
-                station_id=plan.station_id,
-                device_id=plan.device_id,
-                method="stl_residual",
-                version="vB_shadow",
-            )
-            summary["steps"].append(
-                {
-                    "step": "baseline_shadow",
-                    "ok": True,
-                    "inserted": res_b.get("inserted", 0),
-                }
-            )
-            _act.info(
-                "[流程-阶段] [影子基线计算完成]",
-                extra={
-                    "extra_data": {
-                        "inserted": res_b.get("inserted", 0),
-                        "ok": True,
-                    }
-                }
-            )
-        except Exception as e:
-            summary["steps"].append(
-                {"step": "baseline_shadow", "ok": False, "error": str(e)}
-            )
-            _act.error(
-                "[流程-错误] [影子基线计算失败]",
-                extra={"extra_data": {"error": str(e)}}
-            )
+    # 2) 基线计算步骤已删除（2025-11-07）
+    # Reason: Quality checking feature deleted, baseline tables no longer used
+    # Archive location: _archive/baseline_feature_20251107/
+    # Original steps: baseline_shadow (step 2) and baseline_prod (step 3)
 
-    # 3) 基线（正式 A）
-    if do_prod:
-        _act.info(
-            "[流程-阶段] [开始计算正式基线]",
-            extra={
-                "extra_data": {
-                    "lookback_days": plan.lookback_days,
-                    "station_id": plan.station_id,
-                    "device_id": plan.device_id,
-                }
-            }
-        )
-        try:
-            res_a = run_auto_baseline(
-                settings, plan.lookback_days, plan.station_id, plan.device_id
-            )
-            summary["steps"].append({"step": "baseline_prod", "ok": True})
-            _act.info(
-                "[流程-阶段] [正式基线计算完成]",
-                extra={"extra_data": {"ok": True}}
-            )
-        except Exception as e:
-            summary["steps"].append(
-                {"step": "baseline_prod", "ok": False, "error": str(e)}
-            )
-            _act.error(
-                "[流程-错误] [正式基线计算失败]",
-                extra={"extra_data": {"error": str(e)}}
-            )
-
-    # 4) 质量规则（影子 B）
+    # 4) 质量规则（影子 B）- 已删除（表不存在）
     if do_shadow:
-        _act.info(
-            "[流程-阶段] [开始计算影子质量规则]",
-            extra={
-                "extra_data": {
-                    "station_id": plan.station_id,
-                    "device_id": plan.device_id,
-                    "method": "stl_residual",
-                    "version": "vB_shadow",
-                }
-            }
+        _act.info("[流程-跳过] [影子质量规则计算 - 表已删除]")
+        summary["steps"].append(
+            {"step": "quality_rules_shadow", "ok": True, "skipped": True, "reason": "table_deleted"}
         )
-        try:
-            res_qb = compute_metric_quality_rules_shadow(
-                settings,
-                station_id=plan.station_id,
-                device_id=plan.device_id,
-                method="stl_residual",
-                version="vB_shadow",
-            )
-            summary["steps"].append(
-                {
-                    "step": "quality_rules_shadow",
-                    "ok": True,
-                    "inserted": res_qb.get("inserted", 0),
-                }
-            )
-            _act.info(
-                "[流程-阶段] [影子质量规则计算完成]",
-                extra={
-                    "extra_data": {
-                        "inserted": res_qb.get("inserted", 0),
-                        "ok": True,
-                    }
-                }
-            )
-        except Exception as e:
-            summary["steps"].append(
-                {"step": "quality_rules_shadow", "ok": False, "error": str(e)}
-            )
-            _act.error(
-                "[流程-错误] [影子质量规则计算失败]",
-                extra={"extra_data": {"error": str(e)}}
-            )
 
-    # 5) 运行阈值（影子 B - GMM）
+    # 5) 运行阈值（影子 B - GMM）- 已删除 (2025-11-07)
     if do_shadow:
-        _act.info(
-            "[流程-阶段] [开始计算影子运行阈值]",
-            extra={
-                "extra_data": {
-                    "window_start": win_start,
-                    "window_end": win_end,
-                    "station_id": plan.station_id,
-                    "device_id": plan.device_id,
-                    "method": "gmm_bimodal",
-                    "version": "vB_shadow",
-                }
-            }
+        _act.info("[流程-跳过] [影子运行阈值计算 - 表已删除]")
+        summary["steps"].append(
+            {"step": "running_thresholds_shadow", "ok": True, "skipped": True, "reason": "table_deleted"}
         )
-        try:
-            res_rb = run_running_thresholds_b(
-                settings=settings,
-                start=win_start,
-                end=win_end,
-                station_id=plan.station_id,
-                device_id=plan.device_id,
-                method="gmm_bimodal",
-                version="vB_shadow",
-            )
-            summary["steps"].append(
-                {
-                    "step": "running_thresholds_shadow",
-                    "ok": True,
-                    "inserted": res_rb.get("inserted", 0),
-                }
-            )
-            _act.info(
-                "[流程-阶段] [影子运行阈值计算完成]",
-                extra={
-                    "extra_data": {
-                        "inserted": res_rb.get("inserted", 0),
-                        "ok": True,
-                    }
-                }
-            )
-        except Exception as e:
-            summary["steps"].append(
-                {"step": "running_thresholds_shadow", "ok": False, "error": str(e)}
-            )
-            _act.error(
-                "[流程-错误] [影子运行阈值计算失败]",
-                extra={"extra_data": {"error": str(e)}}
-            )
 
     # 6) 运行阈值（正式 A）
     if do_prod:
@@ -345,94 +187,14 @@ def run_refresh_all(settings, plan: RefreshAllPlan) -> Dict[str, Any]:
                 extra={"extra_data": {"error": str(e)}}
             )
 
-    # 7) 质量规则（正式 A）
+    # 7) 质量规则（正式 A）- 已删除（表不存在）
     if do_prod:
-        _act.info(
-            "[流程-阶段] [开始计算正式质量规则]",
-            extra={
-                "extra_data": {
-                    "station_id": plan.station_id,
-                    "device_id": plan.device_id,
-                }
-            }
+        _act.info("[流程-跳过] [正式质量规则计算 - 表已删除]")
+        summary["steps"].append(
+            {"step": "quality_rules_prod", "ok": True, "skipped": True, "reason": "table_deleted"}
         )
-        try:
-            res_qa = compute_metric_quality_rules(
-                settings, station_id=plan.station_id, device_id=plan.device_id
-            )
-            summary["steps"].append(
-                {
-                    "step": "quality_rules_prod",
-                    "ok": True,
-                    "inserted": res_qa.get("inserted", 0),
-                    "updated": res_qa.get("updated", 0),
-                }
-            )
-            _act.info(
-                "[流程-阶段] [正式质量规则计算完成]",
-                extra={
-                    "extra_data": {
-                        "inserted": res_qa.get("inserted", 0),
-                        "updated": res_qa.get("updated", 0),
-                        "ok": True,
-                    }
-                }
-            )
-        except Exception as e:
-            summary["steps"].append(
-                {"step": "quality_rules_prod", "ok": False, "error": str(e)}
-            )
-            _act.error(
-                "[流程-错误] [正式质量规则计算失败]",
-                extra={"extra_data": {"error": str(e)}}
-            )
 
-
-    # 9) 明细层（可选）：质量打标
-    if plan.with_mark:
-        _act.info(
-            "[流程-阶段] [开始质量打标]",
-            extra={
-                "extra_data": {
-                    "window_start": win_start,
-                    "window_end": win_end,
-                    "station_id": plan.station_id,
-                    "device_id": plan.device_id,
-                }
-            }
-        )
-        try:
-            from app.services.quality.mark_window import mark_quality_window
-
-            mark_res = mark_quality_window(
-                settings,
-                start=win_start,
-                end=win_end,
-                station_id=plan.station_id,
-                device_id=plan.device_id,
-            )
-            summary["steps"].append(
-                {"step": "quality_mark", "ok": True, **(mark_res or {})}
-            )
-            _act.info(
-                "[流程-阶段] [质量打标完成]",
-                extra={
-                    "extra_data": {
-                        "ok": True,
-                        "result": mark_res,
-                    }
-                }
-            )
-        except Exception as e:
-            summary["steps"].append(
-                {"step": "quality_mark", "ok": False, "error": str(e)}
-            )
-            _act.error(
-                "[流程-错误] [质量打标失败]",
-                extra={"extra_data": {"error": str(e)}}
-            )
-
-    # 10) 差异报告（可选）
+    # 9) 差异报告（可选）
     if plan.with_diff_report:
         try:
             from app.services.reporting.rules_diff_report import run_rules_diff_report

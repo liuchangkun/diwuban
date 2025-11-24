@@ -1,6 +1,16 @@
 """
 CalculationOrchestrator - 主流程编排器
 
+⚠️ **DEPRECATED**: 此模块正在逐步废弃，请迁移到新的流水线架构
+    - 新架构位置: app/services/calculation/shared/ 和 app/services/calculation/metrics/
+    - 迁移指南: 见 缺失指标计算改造/pump_flow_rate/11-pump_flow_rate重构任务跟踪.md
+    - 废弃原因:
+      1. 文件过大（2659行，违反≤600行规则）
+      2. 包含硬编码阈值逻辑（已在新架构中移除）
+      3. 缺乏完整的日志追踪（新架构支持 trace_id/span_id）
+    - 废弃时间: 2025-01-14
+    - 计划删除: 2025-02-14（30天后）
+
 协调所有组件，完成缺失指标的计算流程。
 
 核心流程:
@@ -253,9 +263,6 @@ class CalculationOrchestrator:
                           AND value IS NOT NULL
                     """
 
-                if filter_quality:
-                    query_device += " AND quality_status = 0"
-
                 query_device += " ORDER BY ts_bucket, metric_id" if not filter_running else " ORDER BY fm.ts_bucket, fm.metric_id"
 
                 cur.execute(query_device, (station_id, device_id, start_time, end_time, metric_ids))
@@ -279,8 +286,6 @@ class CalculationOrchestrator:
                               AND metric_id = ANY(%s)
                               AND value IS NOT NULL
                         """
-                        if filter_quality:
-                            query_station += " AND quality_status = 0"
                         query_station += " ORDER BY ts_bucket, metric_id"
                         cur.execute(query_station, (station_id, start_time, end_time, station_metric_ids))
                         station_rows = cur.fetchall()
@@ -503,8 +508,6 @@ class CalculationOrchestrator:
                               AND metric_id = ANY(%s)
                               AND value IS NOT NULL
                         """
-                        if filter_quality:
-                            query_station += " AND quality_status = 0"
                         query_station += " ORDER BY ts_bucket, metric_id"
                         cur.execute(query_station, (station_id, start_time, end_time, station_metric_ids))
                         rows = cur.fetchall()
@@ -554,10 +557,6 @@ class CalculationOrchestrator:
                               AND metric_id = ANY(%s)
                               AND value IS NOT NULL
                         """
-
-                    # 添加质量过滤
-                    if filter_quality:
-                        query_data += " AND quality_status = 0"
 
                     query_data += " ORDER BY ts_bucket, metric_id" if not filter_running else " ORDER BY fm.ts_bucket, fm.metric_id"
 
@@ -854,7 +853,6 @@ class CalculationOrchestrator:
                           AND fm.device_id = %s
                           AND mc.metric_key = %s
                           AND fm.ts_bucket = ANY(%s)
-                          AND fm.quality_status = 0
                           AND fm.value IS NOT NULL
                         ORDER BY fm.ts_bucket
                         """,
@@ -963,7 +961,6 @@ class CalculationOrchestrator:
         metric_key: str,
         timestamps: np.ndarray,
         values: np.ndarray,
-        quality_status: int = 0,
         method_id: Optional[str] = None,
         is_cyclic: bool = False
     ) -> int:
@@ -976,7 +973,6 @@ class CalculationOrchestrator:
             metric_key: 指标键
             timestamps: 时间戳数组
             values: 值数组
-            quality_status: 质量状态（0=正常，非0=有问题）
             method_id: 计算方法ID，用于构造 source_hint（可选）
             is_cyclic: 是否为循环依赖指标，默认False
 
@@ -1064,19 +1060,15 @@ class CalculationOrchestrator:
         insert_query = """
             INSERT INTO fact_measurements (
                 id, station_id, device_id, metric_id, ts_raw, ts_bucket,
-                value, quality_status, quality_codes, source_hint
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                value, source_hint
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (station_id, device_id, metric_id, ts_bucket)
             DO UPDATE SET
                 value = EXCLUDED.value,
-                quality_status = EXCLUDED.quality_status,
-                quality_codes = EXCLUDED.quality_codes,
                 source_hint = EXCLUDED.source_hint
         """
 
         # 准备数据
-        # quality_codes是整数数组，计算值使用空数组（正常数据）
-        quality_codes = []  # 计算值是正常数据，不需要质量码
 
         # 根据计算类型构造 source_hint（使用审计模块生成扩展格式）
         if is_cyclic:
@@ -1104,8 +1096,6 @@ class CalculationOrchestrator:
                 ts,  # ts_raw
                 ts,  # ts_bucket
                 float(val),
-                quality_status,
-                quality_codes,
                 source_hint,
             )
             for ts, val in zip(valid_timestamps, valid_values)
@@ -1617,7 +1607,6 @@ class CalculationOrchestrator:
                             metric_key=member,
                             timestamps=write_ts,  # 修复：使用对齐后的 timestamps
                             values=values,
-                            quality_status=0,
                             is_cyclic=True,  # 标记为循环指标
                         )
                         result['written_points'] += written
@@ -1754,7 +1743,6 @@ class CalculationOrchestrator:
                             WHERE fm.station_id = %s
                               AND fm.ts_bucket = ANY(%s)
                               AND mc.metric_key IN ('pump_active_power', 'pump_frequency')
-                              AND fm.quality_status = 0
                               AND dr.running = 1
                             GROUP BY fm.ts_bucket, fm.device_id
                             """,
@@ -1773,7 +1761,6 @@ class CalculationOrchestrator:
                             WHERE fm.station_id = %s
                               AND fm.ts_bucket = ANY(%s)
                               AND mc.metric_key IN ('pump_active_power', 'pump_frequency')
-                              AND fm.quality_status = 0
                             GROUP BY fm.ts_bucket, fm.device_id
                             """,
                             (station_id, unique_ts),
@@ -2160,7 +2147,6 @@ class CalculationOrchestrator:
                         metric_key=metric_key,
                         timestamps=write_ts,
                         values=filtered_values,
-                        quality_status=0,
                         method_id=method_desc.method_id,  # 传递方法ID
                     )
                     result['written_points'] += written
@@ -2219,6 +2205,12 @@ class CalculationOrchestrator:
     ) -> Dict:
         """
         计算缺失指标
+
+        ⚠️ **DEPRECATED**: 此函数正在逐步废弃，请迁移到新的流水线架构
+            - 新架构: app/services/calculation/metrics/pump_flow_rate/pipeline.py
+            - 迁移指南: 见 缺失指标计算改造/pump_flow_rate/11-pump_flow_rate重构任务跟踪.md
+            - 废弃时间: 2025-01-14
+            - 计划删除: 2025-02-14
 
         Args:
             station_id: 泵站ID

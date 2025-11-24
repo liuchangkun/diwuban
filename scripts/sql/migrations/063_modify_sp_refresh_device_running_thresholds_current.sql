@@ -61,15 +61,17 @@ BEGIN
     -- =====================================================================
     -- 步骤3：学习阈值（第一阶段：从设备自己的历史数据学习）
     -- =====================================================================
-    WITH 
-    -- 设备列表
+    WITH
+    -- 设备列表（仅 pump 类型设备）
     device_list AS (
-        SELECT DISTINCT device_id
-        FROM device_running_thresholds
-        WHERE (p_station_id IS NULL OR device_id IN (SELECT id FROM dim_devices WHERE station_id = p_station_id))
-          AND (p_device_id IS NULL OR device_id = p_device_id)
+        SELECT DISTINCT t.device_id
+        FROM device_running_thresholds t
+        JOIN dim_devices d ON d.id = t.device_id
+        WHERE (p_station_id IS NULL OR d.station_id = p_station_id)
+          AND (p_device_id IS NULL OR t.device_id = p_device_id)
+          AND d.type = 'pump'  -- 仅处理 pump 类型设备
     ),
-    -- 读取三相电流数据（质量=0）
+    -- 读取三相电流数据
     current_data AS (
         SELECT
             f.device_id,
@@ -84,7 +86,6 @@ BEGIN
           AND f.ts_bucket >= v_start_ts
           AND f.ts_bucket < v_end_ts
           AND f.metric_id IN (v_metric_id_a, v_metric_id_b, v_metric_id_c)
-          AND f.quality_status = 0
         GROUP BY f.device_id, f.ts_bucket
         HAVING GREATEST(
             COALESCE(MAX(CASE WHEN f.metric_id = v_metric_id_a THEN f.value END), 0),

@@ -248,69 +248,161 @@ def _upsert_mapping_item(
 
 
 
-
-def _update_metadata_from_facts(cur) -> Dict[str, Any]:
+def _validate_metadata_completeness(cur) -> Dict[str, Any]:
     """
-    从 fact_measurements 数据计算并更新元数据
+    验证 dim_metric_metadata 表的数据完整性
 
-    基于实际数据自动计算：
-    - phys_min/phys_max（物理边界）：使用 p01-3σ 和 p99+3σ
-    - saturation_min/saturation_max（饱和阈值）：使用 p001 和 p999
+    检查项：
+    1. 表是否存在
+    2. 总记录数是否正确（56全局 + 56站点 + N设备×56）
+    3. 全局级数据是否完整（56条）
+    4. 站点级数据是否完整（56条）
+    5. 设备级数据是否完整（每个设备56条）
 
     参数：
         cur: 数据库游标
 
     返回：
-        更新结果字典
+        验证结果字典：
+        {
+            "is_valid": bool,
+            "errors": List[str],
+            "warnings": List[str],
+            "details": {
+                "total_count": int,
+                "expected_count": int,
+                "global_count": int,
+                "station_count": int,
+                "device_count": int,
+                "device_details": List[Dict]
+            }
+        }
     """
-    # 读取SQL脚本
-    sql_file = Path(__file__).parent.parent.parent.parent / "scripts" / "sql" / "migrations" / "022_update_metadata_from_facts.sql"
+    result = {
+        "is_valid": True,
+        "errors": [],
+        "warnings": [],
+        "details": {}
+    }
 
-    if not sql_file.exists():
-        _act.warning(f"[元数据更新] SQL脚本不存在: {sql_file}")
-        return {
-            "updated_count": 0,
-            "phys_min_count": 0,
-            "phys_max_count": 0,
-            "saturation_min_count": 0,
-            "saturation_max_count": 0,
+    try:
+        # 检查表是否存在
+        cur.execute("""
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables
+                WHERE table_schema = 'public'
+                AND table_name = 'dim_metric_metadata'
+            )
+        """)
+        table_exists = cur.fetchone()[0]
+
+        if not table_exists:
+            result["is_valid"] = False
+            result["errors"].append("❌ dim_metric_metadata 表不存在")
+            return result
+
+        # 获取设备数量
+        cur.execute("SELECT COUNT(*) FROM public.dim_devices")
+        device_count = cur.fetchone()[0]
+
+        # 获取指标数量
+        cur.execute("SELECT COUNT(*) FROM public.dim_metric_config")
+        metric_count = cur.fetchone()[0]
+
+        # 计算期望的总记录数
+        expected_total = metric_count + metric_count + (device_count * metric_count)
+
+        # 查询实际数据
+        cur.execute("""
+            SELECT
+                COUNT(*) as total_count,
+                COUNT(*) FILTER (WHERE station_id IS NULL AND device_id IS NULL) as global_count,
+                COUNT(*) FILTER (WHERE station_id IS NOT NULL AND device_id IS NULL) as station_count,
+                COUNT(*) FILTER (WHERE device_id IS NOT NULL) as device_count
+            FROM public.dim_metric_metadata
+        """)
+        row = cur.fetchone()
+
+        total_count = row[0]
+        global_count = row[1]
+        station_count = row[2]
+        device_level_count = row[3]
+
+        # 保存详细信息
+        result["details"] = {
+            "total_count": total_count,
+            "expected_count": expected_total,
+            "global_count": global_count,
+            "station_count": station_count,
+            "device_count": device_level_count,
+            "metric_count": metric_count,
+            "device_total": device_count
         }
 
-    sql_content = sql_file.read_text(encoding="utf-8")
+        # 验证总记录数
+        if total_count == 0:
+            result["is_valid"] = False
+            result["errors"].append(f"❌ dim_metric_metadata 表为空！期望 {expected_total} 条记录")
+            result["errors"].append("   请手动执行迁移脚本：scripts/sql/migrations/100_migrate_metadata_to_three_tier.sql")
+            return result
 
-    # 执行UPDATE语句
-    cur.execute(sql_content)
-    updated_count = cur.rowcount
+        if total_count != expected_total:
+            result["is_valid"] = False
+            result["errors"].append(f"❌ 总记录数不正确：期望 {expected_total} 条，实际 {total_count} 条")
 
-    # 查询更新结果
-    cur.execute("""
-        SELECT
-            COUNT(*) AS total_count,
-            COUNT(*) FILTER (WHERE phys_min IS NOT NULL) AS phys_min_count,
-            COUNT(*) FILTER (WHERE phys_max IS NOT NULL) AS phys_max_count,
-            COUNT(*) FILTER (WHERE saturation_min IS NOT NULL) AS saturation_min_count,
-            COUNT(*) FILTER (WHERE saturation_max IS NOT NULL) AS saturation_max_count
-        FROM public.dim_metric_metadata
-        WHERE updated_at >= now() - interval '1 minute'
-    """)
-    row = cur.fetchone()
+        # 验证全局级数据
+        if global_count != metric_count:
+            result["is_valid"] = False
+            result["errors"].append(f"❌ 全局级数据不完整：期望 {metric_count} 条，实际 {global_count} 条")
 
-    if row:
-        return {
-            "updated_count": updated_count,
-            "phys_min_count": row[1] or 0,
-            "phys_max_count": row[2] or 0,
-            "saturation_min_count": row[3] or 0,
-            "saturation_max_count": row[4] or 0,
-        }
-    else:
-        return {
-            "updated_count": updated_count,
-            "phys_min_count": 0,
-            "phys_max_count": 0,
-            "saturation_min_count": 0,
-            "saturation_max_count": 0,
-        }
+        # 验证站点级数据
+        if station_count != metric_count:
+            result["is_valid"] = False
+            result["errors"].append(f"❌ 站点级数据不完整：期望 {metric_count} 条，实际 {station_count} 条")
+
+        # 验证设备级数据
+        expected_device_level = device_count * metric_count
+        if device_level_count != expected_device_level:
+            result["is_valid"] = False
+            result["errors"].append(f"❌ 设备级数据不完整：期望 {expected_device_level} 条，实际 {device_level_count} 条")
+
+        # 查询每个设备的数据完整性
+        cur.execute("""
+            SELECT
+                d.id as device_id,
+                d.name as device_name,
+                COUNT(m.metric_id) as metric_count
+            FROM public.dim_devices d
+            LEFT JOIN public.dim_metric_metadata m ON m.device_id = d.id
+            GROUP BY d.id, d.name
+            ORDER BY d.id
+        """)
+        device_details = []
+        for row in cur.fetchall():
+            device_id, device_name, count = row
+            device_details.append({
+                "device_id": device_id,
+                "device_name": device_name,
+                "metric_count": count,
+                "expected": metric_count,
+                "is_complete": count == metric_count
+            })
+
+            if count != metric_count:
+                result["is_valid"] = False
+                result["errors"].append(f"❌ 设备 {device_id} ({device_name}) 数据不完整：期望 {metric_count} 条，实际 {count} 条")
+
+        result["details"]["device_details"] = device_details
+
+        # 如果所有检查都通过
+        if result["is_valid"]:
+            result["warnings"].append(f"✓ 元数据完整性验证通过：{total_count} 条记录")
+
+    except Exception as e:
+        result["is_valid"] = False
+        result["errors"].append(f"❌ 验证过程出错：{str(e)}")
+
+    return result
 
 
 def _clear_non_backup_tables(cur) -> int:
@@ -318,23 +410,34 @@ def _clear_non_backup_tables(cur) -> int:
     清空不在备份列表中的表
 
     只清空以下表（按依赖顺序从叶子到根）：
+    0. calculation_failures_log, calculation_performance_metrics, completion_audit, completion_failures, staging_rejects, staging_raw（立刻清空）
     1. fact_measurements（所有历史数据，叶子节点）
-    2. completion_runs, completion_steps（审计数据，叶子节点）
-    3. dim_devices（设备维度表，依赖 dim_stations）
-    4. dim_stations（站点维度表，根节点）
-    5. dim_mapping_items（映射表，叶子节点）
+    2. mv_device_running_1s（派生数据，叶子节点）
+    3. metrics_presence_per_second_device（派生数据，叶子节点）
+    4. completion_runs, completion_steps（审计数据，叶子节点）
+    5. （dim_device_capabilities 改为永久配置表，不再清空 - 2025-11-11）
+    6. dim_devices（设备维度表，依赖 dim_stations）
+    7. dim_stations（站点维度表，根节点）
+    8. dim_mapping_items（映射表，叶子节点）
 
-    不清空的21个备份表：
-    - A类手动配置表（10个）：dim_device_capabilities, dim_metric_metadata_override,
-      pump_characteristic_curves, quality_code_dict, calculation_validation_config,
-      metric_capability_policy, metric_anomaly_strategy, device_metric_candidates,
-      dim_metric_metadata, optimization_history
-    - B类配置表（4个）：calculation_parameters, device_rated_params,
-      calculation_method_registry, metric_calculation_order
+    不清空的15个备份表（2025-11-11更新）：
+    - A类手动配置表（6个）：dim_device_capabilities（永久保留，不再清空 - 2025-11-11）,
+      pump_characteristic_curves, calculation_validation_config,
+      metric_capability_policy, metric_anomaly_strategy（永久保留）,
+      optimization_history（永久保留）
+    - B类配置表（5个）：device_rated_params（永久保留）,
+      calculation_method_registry, metric_calculation_order,
+      calculation_parameters, global_default_rated_params
     - C类维度表（1个）：dim_metric_config
-    - D类规则表（6个）：metric_rule_auto_baseline, metric_rule_auto_baseline_shadow,
-      metric_quality_rules, metric_quality_rules_shadow, device_running_thresholds,
-      device_running_thresholds_shadow
+    - D类元数据表（2个）：dim_metric_metadata（永久保留）,
+      dim_device_param_metadata
+    - E类规则表（1个）：device_running_thresholds
+      （device_running_thresholds_shadow 已删除 - 2025-11-11）
+
+    注意：
+    - 标记"永久保留"的表不会被清空
+    - 标记"清空后恢复"的表会被清空，然后从备份恢复
+    - 其他备份表不会被清空，也不需要恢复
 
     返回：清空的总行数
     """
@@ -344,32 +447,68 @@ def _clear_non_backup_tables(cur) -> int:
     backup_tables = {
         # A类：手动配置表
         "dim_device_capabilities",
-        "dim_metric_metadata_override",
+        # "dim_metric_metadata_override",  # 已删除：2025-01-07 架构重构
         "pump_characteristic_curves",
-        "quality_code_dict",
         "calculation_validation_config",
         "metric_capability_policy",
-        "metric_anomaly_strategy",  # 新增：异常判定策略表
-        "device_metric_candidates",  # 新增：设备指标候选表
-        "dim_metric_metadata",  # 新增：指标元数据表
-        "optimization_history",  # 新增：优化历史表（包含RLS状态）
+        "metric_anomaly_strategy",  # 永久配置表，不再清空（2025-11-11）
+        "optimization_history",  # 永久配置表，不再清空（2025-11-11）
         # B类：配置表
-        "calculation_parameters",
-        "device_rated_params",
+        "device_rated_params",  # 永久配置表，不再清空（2025-11-11）
         "calculation_method_registry",
         "metric_calculation_order",
+        "calculation_parameters",  # 恢复：需要备份（2025-11-11）
+        "global_default_rated_params",  # 新增：全局默认额定参数（2025-11-11）
         # C类：维度表
         "dim_metric_config",
-        # D类：规则表
-        "metric_rule_auto_baseline",
-        "metric_rule_auto_baseline_shadow",
-        "metric_quality_rules",
-        "metric_quality_rules_shadow",
+        # D类：元数据表
+        "dim_metric_metadata",  # 永久配置表，不再清空（2025-11-11）
+        "dim_device_param_metadata",  # 新增：设备参数元数据（2025-11-11）
+        # E类：规则表
+        # "metric_rule_auto_baseline",  # 已删除（2025-11-07）
+        # "metric_rule_auto_baseline_shadow",  # 已删除（2025-11-07）
         "device_running_thresholds",
-        "device_running_thresholds_shadow",
+        # "device_running_thresholds_shadow",  # 已删除（2025-11-11）
     }
 
     _act.info(f"[清空表] 开始清空非备份表，备份表数量: {len(backup_tables)}")
+
+    # 第0层：立刻清空（日志/审计/临时表，无外键依赖）
+    # calculation_failures_log: 计算失败日志表
+    cur.execute("DELETE FROM calculation_failures_log")
+    deleted = cur.rowcount
+    total_deleted += deleted
+    _act.info(f"[清空表] calculation_failures_log: {deleted} 行")
+
+    # calculation_performance_metrics: 计算性能指标表
+    cur.execute("DELETE FROM calculation_performance_metrics")
+    deleted = cur.rowcount
+    total_deleted += deleted
+    _act.info(f"[清空表] calculation_performance_metrics: {deleted} 行")
+
+    # completion_audit: 完成审计表
+    cur.execute("DELETE FROM completion_audit")
+    deleted = cur.rowcount
+    total_deleted += deleted
+    _act.info(f"[清空表] completion_audit: {deleted} 行")
+
+    # completion_failures: 完成失败记录表
+    cur.execute("DELETE FROM completion_failures")
+    deleted = cur.rowcount
+    total_deleted += deleted
+    _act.info(f"[清空表] completion_failures: {deleted} 行")
+
+    # staging_rejects: 暂存拒绝表
+    cur.execute("DELETE FROM staging_rejects")
+    deleted = cur.rowcount
+    total_deleted += deleted
+    _act.info(f"[清空表] staging_rejects: {deleted} 行")
+
+    # staging_raw: 暂存原始数据表
+    cur.execute("DELETE FROM staging_raw")
+    deleted = cur.rowcount
+    total_deleted += deleted
+    _act.info(f"[清空表] staging_raw: {deleted} 行")
 
     # 第1层：叶子节点（无外键依赖）
     # fact_measurements: 所有历史数据
@@ -405,50 +544,57 @@ def _clear_non_backup_tables(cur) -> int:
     # 按照依赖顺序删除，避免外键约束冲突
 
     # 2.1 备份表（稍后会从备份恢复）
-    cur.execute("DELETE FROM dim_device_capabilities")
-    deleted = cur.rowcount
-    total_deleted += deleted
-    _act.info(f"[清空表] dim_device_capabilities: {deleted} 行（备份表，稍后恢复）")
+    # dim_device_capabilities 改为永久配置表，不再清空（2025-11-11）
+    # cur.execute("DELETE FROM dim_device_capabilities")
+    # deleted = cur.rowcount
+    # total_deleted += deleted
+    # _act.info(f"[清空表] dim_device_capabilities: {deleted} 行（备份表，稍后恢复）")
 
-    cur.execute("DELETE FROM dim_metric_metadata_override")
-    deleted = cur.rowcount
-    total_deleted += deleted
-    _act.info(f"[清空表] dim_metric_metadata_override: {deleted} 行（备份表，稍后恢复）")
+    # dim_metric_metadata_override 表已删除（2025-01-07 架构重构）
+    # cur.execute("DELETE FROM dim_metric_metadata_override")
+    # deleted = cur.rowcount
+    # total_deleted += deleted
+    # _act.info(f"[清空表] dim_metric_metadata_override: {deleted} 行（备份表，稍后恢复）")
 
-    cur.execute("DELETE FROM device_rated_params")
-    deleted = cur.rowcount
-    total_deleted += deleted
-    _act.info(f"[清空表] device_rated_params: {deleted} 行（备份表，稍后恢复）")
+    # device_rated_params 改为永久配置表，不再清空（2025-11-11）
+    # cur.execute("DELETE FROM device_rated_params")
+    # deleted = cur.rowcount
+    # total_deleted += deleted
+    # _act.info(f"[清空表] device_rated_params: {deleted} 行（备份表，稍后恢复）")
 
-    cur.execute("DELETE FROM calculation_parameters")
-    deleted = cur.rowcount
-    total_deleted += deleted
-    _act.info(f"[清空表] calculation_parameters: {deleted} 行（备份表，稍后恢复）")
+    # 以下表不清空（2025-11-11）：在备份列表中，但不需要清空和恢复
+    # - calculation_parameters：计算参数配置表
+    # - global_default_rated_params：全局默认额定参数表
+    # - dim_metric_metadata：指标元数据表
+    # - dim_device_param_metadata：设备参数元数据表
+    # cur.execute("DELETE FROM calculation_parameters")
+    # deleted = cur.rowcount
+    # total_deleted += deleted
+    # _act.info(f"[清空表] calculation_parameters: {deleted} 行（备份表，稍后恢复）")
 
-    cur.execute("DELETE FROM metric_quality_rules_shadow")
-    deleted = cur.rowcount
-    total_deleted += deleted
-    _act.info(f"[清空表] metric_quality_rules_shadow: {deleted} 行（备份表，稍后恢复）")
+    # metric_rule_auto_baseline_shadow table deleted (2025-11-07)
+    # cur.execute("DELETE FROM metric_rule_auto_baseline_shadow")
+    # deleted = cur.rowcount
+    # total_deleted += deleted
+    # _act.info(f"[清空表] metric_rule_auto_baseline_shadow: {deleted} 行（备份表，稍后恢复）")
 
-    cur.execute("DELETE FROM metric_rule_auto_baseline_shadow")
-    deleted = cur.rowcount
-    total_deleted += deleted
-    _act.info(f"[清空表] metric_rule_auto_baseline_shadow: {deleted} 行（备份表，稍后恢复）")
+    # device_running_thresholds_shadow 表已删除（2025-11-11）
+    # cur.execute("DELETE FROM device_running_thresholds_shadow")
+    # deleted = cur.rowcount
+    # total_deleted += deleted
+    # _act.info(f"[清空表] device_running_thresholds_shadow: {deleted} 行（备份表，稍后恢复）")
 
-    cur.execute("DELETE FROM device_running_thresholds_shadow")
-    deleted = cur.rowcount
-    total_deleted += deleted
-    _act.info(f"[清空表] device_running_thresholds_shadow: {deleted} 行（备份表，稍后恢复）")
+    # metric_anomaly_strategy 改为永久配置表，不再清空（2025-11-11）
+    # cur.execute("DELETE FROM metric_anomaly_strategy")
+    # deleted = cur.rowcount
+    # total_deleted += deleted
+    # _act.info(f"[清空表] metric_anomaly_strategy: {deleted} 行（备份表，稍后恢复）")
 
-    cur.execute("DELETE FROM metric_anomaly_strategy")
-    deleted = cur.rowcount
-    total_deleted += deleted
-    _act.info(f"[清空表] metric_anomaly_strategy: {deleted} 行（备份表，稍后恢复）")
-
-    cur.execute("DELETE FROM optimization_history")
-    deleted = cur.rowcount
-    total_deleted += deleted
-    _act.info(f"[清空表] optimization_history: {deleted} 行（备份表，稍后恢复）")
+    # optimization_history 改为永久配置表，不再清空（2025-11-11）
+    # cur.execute("DELETE FROM optimization_history")
+    # deleted = cur.rowcount
+    # total_deleted += deleted
+    # _act.info(f"[清空表] optimization_history: {deleted} 行（备份表，稍后恢复）")
 
     # 第3层：dim_devices（依赖 dim_stations）
     cur.execute("DELETE FROM dim_devices")
@@ -478,13 +624,11 @@ def _clear_non_backup_tables(cur) -> int:
 
 def _execute_adaptive_sql_scripts(settings: Settings, cur) -> Dict[str, Any]:
     """
-    执行自适应SQL脚本（4个文件）
+    执行自适应SQL脚本（2个文件）
 
     执行顺序：
     1. 01_metric_config_related.sql
     2. 02_device_related.sql
-    3. 03_calculation_parameters.sql
-    4. 04_metadata_override.sql
 
     Returns:
         Dict[str, Any]: 执行结果
@@ -503,9 +647,9 @@ def _execute_adaptive_sql_scripts(settings: Settings, cur) -> Dict[str, Any]:
     }
 
     scripts = [
-        "01_metric_config_related.sql",
-        "02_device_related.sql",
-        "03_calculation_parameters.sql",
+        # "01_metric_config_related.sql",  # 跳过：calculation_method_registry、metric_calculation_order 改为永久配置表（2025-11-11）
+        # "02_device_related.sql",         # 跳过：device_rated_params 改为永久配置表（2025-11-11）
+        # "03_calculation_parameters.sql",  # 跳过：calculation_parameters 改为永久配置表，不再重新生成（2025-11-10）
         # "04_metadata_override.sql"  # 跳过：dim_metric_metadata_override 从备份恢复
     ]
 
@@ -537,25 +681,18 @@ def _clear_rule_tables(cur) -> int:
     """
     清空规则表
 
-    清空以下6个表：
-    - metric_rule_auto_baseline
-    - metric_rule_auto_baseline_shadow
-    - metric_quality_rules
-    - metric_quality_rules_shadow
+    清空以下1个表（基线表和shadow表已删除 2025-11-07/2025-11-11）：
     - device_running_thresholds
-    - device_running_thresholds_shadow
 
     返回：清空的总行数
     """
     total_deleted = 0
 
     rule_tables = [
-        "metric_rule_auto_baseline",
-        "metric_rule_auto_baseline_shadow",
-        "metric_quality_rules",
-        "metric_quality_rules_shadow",
+        # "metric_rule_auto_baseline",  # 已删除（2025-11-07）
+        # "metric_rule_auto_baseline_shadow",  # 已删除（2025-11-07）
         "device_running_thresholds",
-        "device_running_thresholds_shadow",
+        # "device_running_thresholds_shadow",  # 已删除（2025-11-11）
     ]
 
     for table in rule_tables:
@@ -576,20 +713,17 @@ def _generate_rule_tables(settings) -> Dict[str, Any]:
         2. device_running_job.run()（填充 mv_device_running_1s 表）
 
     阶段C（依赖 mv_device_running_1s）：
-        3. run_auto_baseline_b()（影子baseline）
-        4. run_auto_baseline()（生产baseline）
-        5. run_running_thresholds_b()（影子运行阈值）
-        6. compute_metric_quality_rules_shadow()（影子质量规则）
-        7. compute_metric_quality_rules()（生产质量规则）
+        （影子运行阈值功能已删除 - 2025-11-07）
 
+    注意：基线计算步骤已删除（2025-11-07）
     返回：生成摘要
     """
-    from app.services.rules.auto_baseline_b import run_auto_baseline_b
-    from app.services.rules.auto_baseline import run_auto_baseline
-    from app.services.rules.metric_quality_rules_b import compute_metric_quality_rules_shadow
-    from app.services.rules.running_thresholds_b import run_running_thresholds_b
+    # Baseline imports removed (2025-11-07) - feature deleted
+    # from app.services.rules.auto_baseline_b import run_auto_baseline_b
+    # from app.services.rules.auto_baseline import run_auto_baseline
+    # Shadow thresholds import removed (2025-11-07) - feature deleted
+    # from app.services.rules.running_thresholds_b import run_running_thresholds_b
     from app.services.rules.running_thresholds import run_running_thresholds
-    from app.services.rules.metric_quality_rules import compute_metric_quality_rules
     from datetime import datetime, timedelta, timezone
     import yaml
     from pathlib import Path
@@ -849,6 +983,67 @@ def _generate_rule_tables(settings) -> Dict[str, Any]:
         result["device_running"] = {"success": False, "skipped": True, "reason": "disabled_in_config"}
 
     # ========================================================================
+    # 阶段B2：填充 mv_metric_60s_stats 表（依赖 fact_measurements）
+    # ========================================================================
+    _act.info(
+        "[规则生成] ========== 阶段B2：填充 mv_metric_60s_stats 表 ==========",
+        extra={"extra_data": {"event": "phase_b2.start"}}
+    )
+
+    t0_b2 = time.perf_counter()
+    try:
+        _act.info(
+            "[规则生成] B2/1 开始：填充 mv_metric_60s_stats 表",
+            extra={
+                "extra_data": {
+                    "event": "mv_metric_60s_stats.start",
+                    "phase": "B2",
+                    "sequence": "B2/1",
+                    "start_time": start_time.isoformat() if start_time else None,
+                    "end_time": end_time.isoformat() if end_time else None
+                }
+            }
+        )
+
+        with get_conn(settings) as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "CALL public.sp_refresh_mv_metric_60s_stats(%s, %s, %s, %s)",
+                    (start_time, end_time, None, None)  # 全站点、全设备
+                )
+            conn.commit()
+
+        duration_ms_b2 = int((time.perf_counter() - t0_b2) * 1000)
+        result["mv_metric_60s_stats"] = {"success": True, "duration_ms": duration_ms_b2}
+        _act.info(
+            f"[规则生成] B2/1 完成：mv_metric_60s_stats 填充完成 (耗时: {duration_ms_b2}ms)",
+            extra={
+                "extra_data": {
+                    "event": "mv_metric_60s_stats.done",
+                    "phase": "B2",
+                    "sequence": "B2/1",
+                    "duration_ms": duration_ms_b2
+                }
+            }
+        )
+    except Exception as e:
+        duration_ms_b2 = int((time.perf_counter() - t0_b2) * 1000)
+        result["mv_metric_60s_stats"] = {"success": False, "duration_ms": duration_ms_b2, "error": str(e)}
+        _act.error(
+            f"[规则生成] B2/1 失败：mv_metric_60s_stats 填充失败 (耗时: {duration_ms_b2}ms, 错误: {e})",
+            extra={
+                "extra_data": {
+                    "event": "mv_metric_60s_stats.error",
+                    "phase": "B2",
+                    "sequence": "B2/1",
+                    "duration_ms": duration_ms_b2,
+                    "error": str(e)
+                }
+            }
+        )
+        _act.warning("[规则生成] B2/1 失败不中断流程，继续执行")
+
+    # ========================================================================
     # 阶段C：生成其他规则表（依赖 mv_device_running_1s）
     # ========================================================================
     _act.info(
@@ -856,356 +1051,63 @@ def _generate_rule_tables(settings) -> Dict[str, Any]:
         extra={"extra_data": {"event": "phase_c.start"}}
     )
 
-    # C1. 影子baseline
-    if skip_shadow_rules:
-        _act.info(
-            "[规则生成] C1/7 跳过：run_auto_baseline_b (原因: skip_shadow_rules=true)",
-            extra={
-                "extra_data": {
-                    "event": "rule_generation.skipped",
-                    "function": "run_auto_baseline_b",
-                    "type": "shadow",
-                    "phase": "C",
-                    "sequence": "C1/7",
-                    "reason": "skip_shadow_rules=true"
-                }
+    # C1. 影子baseline - 已删除（2025-11-07）
+    # Reason: Quality checking feature deleted, baseline tables no longer used
+    _act.info(
+        "[规则生成] C1/7 跳过：run_auto_baseline_b (原因: 功能已删除)",
+        extra={
+            "extra_data": {
+                "event": "rule_generation.skipped",
+                "function": "run_auto_baseline_b",
+                "type": "shadow",
+                "phase": "C",
+                "sequence": "C1/7",
+                "reason": "feature_deleted_2025-11-07"
             }
-        )
-        result["baseline_shadow"] = {"count": 0, "duration_ms": 0, "skipped": True}
-    else:
-        t0_c1 = time.perf_counter()
-        try:
-            _act.info(
-                "[规则生成] C1/7 开始：run_auto_baseline_b",
-                extra={
-                    "extra_data": {
-                        "event": "rule_generation.start",
-                        "function": "run_auto_baseline_b",
-                        "type": "shadow",
-                        "phase": "C",
-                        "sequence": "C1/7",
-                        "params": {
-                            "lookback_days": 30,
-                            "station_id": None,
-                            "device_id": None,
-                            "method": "stl_residual",
-                            "version": "vB_shadow"
-                        }
-                    }
-                }
-            )
-            res = run_auto_baseline_b(
-                settings,
-                lookback_days=30,
-                station_id=None,
-                device_id=None,
-                method="stl_residual",
-                version="vB_shadow",
-            )
-            count_c1 = res.get("inserted", 0)
-            duration_ms_c1 = int((time.perf_counter() - t0_c1) * 1000)
-            result["baseline_shadow"] = {"count": count_c1, "duration_ms": duration_ms_c1}
-            _act.info(
-                f"[规则生成] C1/7 完成：run_auto_baseline_b (耗时: {duration_ms_c1}ms, 插入: {count_c1}条)",
-                extra={
-                    "extra_data": {
-                        "event": "rule_generation.done",
-                        "function": "run_auto_baseline_b",
-                        "phase": "C",
-                        "sequence": "C1/7",
-                        "duration_ms": duration_ms_c1,
-                        "result": {"inserted": count_c1}
-                    }
-                }
-            )
-        except Exception as e:
-            duration_ms_c1 = int((time.perf_counter() - t0_c1) * 1000)
-            result["baseline_shadow"] = {"count": 0, "duration_ms": duration_ms_c1, "error": str(e)}
-            _act.warning(
-                f"[规则生成] C1/7 失败：run_auto_baseline_b (耗时: {duration_ms_c1}ms, 错误: {e})",
-                extra={
-                    "extra_data": {
-                        "event": "rule_generation.error",
-                        "function": "run_auto_baseline_b",
-                        "phase": "C",
-                        "sequence": "C1/7",
-                        "duration_ms": duration_ms_c1,
-                        "error": str(e)
-                    }
-                }
-            )
+        }
+    )
+    result["baseline_shadow"] = {"count": 0, "duration_ms": 0, "skipped": True, "reason": "feature_deleted"}
 
-    # C2. 生产baseline
-    t0_c2 = time.perf_counter()
-    try:
-        _act.info(
-            "[规则生成] C2/7 开始：run_auto_baseline",
-            extra={
-                "extra_data": {
-                    "event": "rule_generation.start",
-                    "function": "run_auto_baseline",
-                    "type": "production",
-                    "phase": "C",
-                    "sequence": "C2/7",
-                    "params": {
-                        "lookback_days": 30,
-                        "station_id": None,
-                        "device_id": None
-                    }
-                }
+    # C2. 生产baseline - 已删除（2025-11-07）
+    # Reason: Quality checking feature deleted, baseline tables no longer used
+    _act.info(
+        "[规则生成] C2/7 跳过：run_auto_baseline (原因: 功能已删除)",
+        extra={
+            "extra_data": {
+                "event": "rule_generation.skipped",
+                "function": "run_auto_baseline",
+                "type": "production",
+                "phase": "C",
+                "sequence": "C2/7",
+                "reason": "feature_deleted_2025-11-07"
             }
-        )
-        res = run_auto_baseline(
-            settings,
-            lookback_days=30,
-            station_id=None,
-            device_id=None,
-        )
-        count_c2 = res.get("affected", 0) or 0
-        duration_ms_c2 = int((time.perf_counter() - t0_c2) * 1000)
-        result["baseline_prod"] = {"count": count_c2, "duration_ms": duration_ms_c2}
-        _act.info(
-            f"[规则生成] C2/7 完成：run_auto_baseline (耗时: {duration_ms_c2}ms, 插入: {count_c2}条)",
-            extra={
-                "extra_data": {
-                    "event": "rule_generation.done",
-                    "function": "run_auto_baseline",
-                    "phase": "C",
-                    "sequence": "C2/7",
-                    "duration_ms": duration_ms_c2,
-                    "result": {"inserted": count_c2}
-                }
-            }
-        )
-    except Exception as e:
-        duration_ms_c2 = int((time.perf_counter() - t0_c2) * 1000)
-        result["baseline_prod"] = {"count": 0, "duration_ms": duration_ms_c2, "error": str(e)}
-        _act.warning(
-            f"[规则生成] C2/7 失败：run_auto_baseline (耗时: {duration_ms_c2}ms, 错误: {e})",
-            extra={
-                "extra_data": {
-                    "event": "rule_generation.error",
-                    "function": "run_auto_baseline",
-                    "phase": "C",
-                    "sequence": "C2/7",
-                    "duration_ms": duration_ms_c2,
-                    "error": str(e)
-                }
-            }
-        )
+        }
+    )
+    result["baseline_prod"] = {"count": 0, "duration_ms": 0, "skipped": True, "reason": "feature_deleted"}
 
-    # C3. 影子运行阈值
-    if skip_shadow_rules:
-        _act.info(
-            "[规则生成] C3/7 跳过：run_running_thresholds_b (原因: skip_shadow_rules=true)",
-            extra={
-                "extra_data": {
-                    "event": "rule_generation.skipped",
-                    "function": "run_running_thresholds_b",
-                    "type": "shadow",
-                    "phase": "C",
-                    "sequence": "C3/7",
-                    "reason": "skip_shadow_rules=true"
-                }
+    # C3. 影子运行阈值 - 已删除 (2025-11-07)
+    _act.info(
+        "[规则生成] C3/7 跳过：影子运行阈值计算 (原因: 功能已删除)",
+        extra={
+            "extra_data": {
+                "event": "rule_generation.skipped",
+                "function": "run_running_thresholds_b",
+                "type": "shadow",
+                "phase": "C",
+                "sequence": "C3/7",
+                "reason": "feature_deleted"
             }
-        )
-        result["running_thresholds_shadow"] = {"count": 0, "duration_ms": 0, "skipped": True}
-    else:
-        t0_c3 = time.perf_counter()
-        try:
-            _act.info(
-                "[规则生成] C3/7 开始：run_running_thresholds_b",
-                extra={
-                    "extra_data": {
-                        "event": "rule_generation.start",
-                        "function": "run_running_thresholds_b",
-                        "type": "shadow",
-                        "phase": "C",
-                        "sequence": "C3/7",
-                        "params": {
-                            "start": win_start,
-                            "end": win_end,
-                            "station_id": None,
-                            "device_id": None,
-                            "method": "gmm"
-                        }
-                    }
-                }
-            )
-            res = run_running_thresholds_b(
-                settings,
-                start=win_start,
-                end=win_end,
-                station_id=None,
-                device_id=None,
-                method="gmm",
-            )
-            count_c3 = res.get("inserted", 0) if isinstance(res, dict) else 0
-            duration_ms_c3 = int((time.perf_counter() - t0_c3) * 1000)
-            result["running_thresholds_shadow"] = {"count": count_c3, "duration_ms": duration_ms_c3}
-            _act.info(
-                f"[规则生成] C3/7 完成：run_running_thresholds_b (耗时: {duration_ms_c3}ms, 插入: {count_c3}条)",
-                extra={
-                    "extra_data": {
-                        "event": "rule_generation.done",
-                        "function": "run_running_thresholds_b",
-                        "phase": "C",
-                        "sequence": "C3/7",
-                        "duration_ms": duration_ms_c3,
-                        "result": {"inserted": count_c3}
-                    }
-                }
-            )
-        except Exception as e:
-            duration_ms_c3 = int((time.perf_counter() - t0_c3) * 1000)
-            result["running_thresholds_shadow"] = {"count": 0, "duration_ms": duration_ms_c3, "error": str(e)}
-            _act.warning(
-                f"[规则生成] C3/7 失败：run_running_thresholds_b (耗时: {duration_ms_c3}ms, 错误: {e})",
-                extra={
-                    "extra_data": {
-                        "event": "rule_generation.error",
-                        "function": "run_running_thresholds_b",
-                        "phase": "C",
-                        "sequence": "C3/7",
-                        "duration_ms": duration_ms_c3,
-                        "error": str(e)
-                    }
-                }
-            )
+        }
+    )
+    result["running_thresholds_shadow"] = {"count": 0, "duration_ms": 0, "skipped": True, "reason": "feature_deleted"}
 
-    # C4. 影子质量规则
-    if skip_shadow_rules:
-        _act.info(
-            "[规则生成] C4/7 跳过：compute_metric_quality_rules_shadow (原因: skip_shadow_rules=true)",
-            extra={
-                "extra_data": {
-                    "event": "rule_generation.skipped",
-                    "function": "compute_metric_quality_rules_shadow",
-                    "type": "shadow",
-                    "phase": "C",
-                    "sequence": "C4/7",
-                    "reason": "skip_shadow_rules=true"
-                }
-            }
-        )
-        result["quality_rules_shadow"] = {"count": 0, "duration_ms": 0, "skipped": True}
-    else:
-        t0_c4 = time.perf_counter()
-        try:
-            _act.info(
-                "[规则生成] C4/7 开始：compute_metric_quality_rules_shadow",
-                extra={
-                    "extra_data": {
-                        "event": "rule_generation.start",
-                        "function": "compute_metric_quality_rules_shadow",
-                        "type": "shadow",
-                        "phase": "C",
-                        "sequence": "C4/7",
-                        "params": {
-                            "station_id": None,
-                            "device_id": None,
-                            "method": "stl_residual",
-                            "version": "vB_shadow"
-                        }
-                    }
-                }
-            )
-            res = compute_metric_quality_rules_shadow(
-                settings,
-                station_id=None,
-                device_id=None,
-                method="stl_residual",
-                version="vB_shadow",
-            )
-            count_c4 = res.get("inserted", 0)
-            duration_ms_c4 = int((time.perf_counter() - t0_c4) * 1000)
-            result["quality_rules_shadow"] = {"count": count_c4, "duration_ms": duration_ms_c4}
-            _act.info(
-                f"[规则生成] C4/7 完成：compute_metric_quality_rules_shadow (耗时: {duration_ms_c4}ms, 插入: {count_c4}条)",
-                extra={
-                    "extra_data": {
-                        "event": "rule_generation.done",
-                        "function": "compute_metric_quality_rules_shadow",
-                        "phase": "C",
-                        "sequence": "C4/7",
-                        "duration_ms": duration_ms_c4,
-                        "result": {"inserted": count_c4}
-                    }
-                }
-            )
-        except Exception as e:
-            duration_ms_c4 = int((time.perf_counter() - t0_c4) * 1000)
-            result["quality_rules_shadow"] = {"count": 0, "duration_ms": duration_ms_c4, "error": str(e)}
-            _act.warning(
-                f"[规则生成] C4/7 失败：compute_metric_quality_rules_shadow (耗时: {duration_ms_c4}ms, 错误: {e})",
-                extra={
-                    "extra_data": {
-                        "event": "rule_generation.error",
-                        "function": "compute_metric_quality_rules_shadow",
-                        "phase": "C",
-                        "sequence": "C4/7",
-                        "duration_ms": duration_ms_c4,
-                        "error": str(e)
-                    }
-                }
-            )
+    # C4. 影子质量规则 - 已删除（表不存在）
+    _act.info("[规则生成] C4/7 跳过：质量规则（影子）- 表已删除")
+    result["quality_rules_shadow"] = {"count": 0, "duration_ms": 0, "skipped": True, "reason": "table_deleted"}
 
-    # C5. 生产质量规则
-    t0_c5 = time.perf_counter()
-    try:
-        _act.info(
-            "[规则生成] C5/7 开始：compute_metric_quality_rules",
-            extra={
-                "extra_data": {
-                    "event": "rule_generation.start",
-                    "function": "compute_metric_quality_rules",
-                    "type": "production",
-                    "phase": "C",
-                    "sequence": "C5/7",
-                    "params": {
-                        "station_id": None,
-                        "device_id": None
-                    }
-                }
-            }
-        )
-        res = compute_metric_quality_rules(
-            settings,
-            station_id=None,
-            device_id=None,
-        )
-        count_c5 = res.get("inserted", 0)
-        duration_ms_c5 = int((time.perf_counter() - t0_c5) * 1000)
-        result["quality_rules_prod"] = {"count": count_c5, "duration_ms": duration_ms_c5}
-        _act.info(
-            f"[规则生成] C5/7 完成：compute_metric_quality_rules (耗时: {duration_ms_c5}ms, 插入: {count_c5}条)",
-            extra={
-                "extra_data": {
-                    "event": "rule_generation.done",
-                    "function": "compute_metric_quality_rules",
-                    "phase": "C",
-                    "sequence": "C5/7",
-                    "duration_ms": duration_ms_c5,
-                    "result": {"inserted": count_c5}
-                }
-            }
-        )
-    except Exception as e:
-        duration_ms_c5 = int((time.perf_counter() - t0_c5) * 1000)
-        result["quality_rules_prod"] = {"count": 0, "duration_ms": duration_ms_c5, "error": str(e)}
-        _act.warning(
-            f"[规则生成] C5/7 失败：compute_metric_quality_rules (耗时: {duration_ms_c5}ms, 错误: {e})",
-            extra={
-                "extra_data": {
-                    "event": "rule_generation.error",
-                    "function": "compute_metric_quality_rules",
-                    "phase": "C",
-                    "sequence": "C5/7",
-                    "duration_ms": duration_ms_c5,
-                    "error": str(e)
-                }
-            }
-        )
+    # C5. 生产质量规则 - 已删除（表不存在）
+    _act.info("[规则生成] C5/7 跳过：质量规则（生产）- 表已删除")
+    result["quality_rules_prod"] = {"count": 0, "duration_ms": 0, "skipped": True, "reason": "table_deleted"}
 
     # =====================================================================
     # 新增：验证 device_running_thresholds 表的完整性
@@ -1329,36 +1231,40 @@ def prepare_dim(settings: Settings, mapping_path: Path, stage: int | None = None
                 if execute_stage1:
                     _act.info("[prepare-dim] 阶段1：维度表重建")
 
-                    # 1.1 备份21个表（无条件执行，与配置选项无关）
-                    _act.info("[prepare-dim] [1/5] 备份21个表...")
+                    # 1.0 跳过元数据表验证（因为 dim_devices 表会在后续步骤中重建）
+                    # 注意：元数据表验证依赖 dim_devices 表，但该表会在步骤1.2中被清空，在步骤1.3中重建
+                    # 因此，验证步骤移到步骤1.3之后执行
+                    _act.info("[prepare-dim] [0/5] 跳过元数据表验证（将在重建维度表后执行）...")
 
-                    # 定义需要备份的21个表
+                    # 1.1 备份15个表（无条件执行，与配置选项无关）
+                    _act.info("[prepare-dim] [1/4] 备份15个表...")
+
+                    # 定义需要备份的16个表
                     tables_to_backup = [
-                        # A类：手动配置表（10个）
+                        # A类：手动配置表（7个）
                         "dim_device_capabilities",
-                        "dim_metric_metadata_override",
+                        # "dim_metric_metadata_override",  # 已删除：2025-01-07 架构重构
                         "pump_characteristic_curves",
-                        "quality_code_dict",
                         "calculation_validation_config",
                         "metric_capability_policy",
                         "metric_anomaly_strategy",  # 新增：异常判定策略表
-                        "device_metric_candidates",  # 新增：设备指标候选表
-                        "dim_metric_metadata",  # 新增：指标元数据表
                         "optimization_history",  # 新增：优化历史表（包含RLS状态）
-                        # B类：配置表（4个）
-                        "calculation_parameters",
+                        # B类：配置表（5个）
                         "device_rated_params",
                         "calculation_method_registry",
                         "metric_calculation_order",
+                        "calculation_parameters",  # 恢复：需要备份（2025-11-11）
+                        "global_default_rated_params",  # 新增：全局默认额定参数（2025-11-11）
                         # C类：维度表（1个）
                         "dim_metric_config",
-                        # D类：规则表（6个）
-                        "metric_rule_auto_baseline",
-                        "metric_rule_auto_baseline_shadow",
-                        "metric_quality_rules",
-                        "metric_quality_rules_shadow",
+                        # D类：元数据表（2个）
+                        "dim_metric_metadata",  # 恢复：需要备份（2025-11-11）
+                        "dim_device_param_metadata",  # 新增：设备参数元数据（2025-11-11）
+                        # E类：规则表（1个，基线表和shadow表已删除 2025-11-07/2025-11-11）
+                        # "metric_rule_auto_baseline",  # 已删除（2025-11-07）
+                        # "metric_rule_auto_baseline_shadow",  # 已删除（2025-11-07）
                         "device_running_thresholds",
-                        "device_running_thresholds_shadow",
+                        # "device_running_thresholds_shadow",  # 已删除（2025-11-11）
                     ]
 
                     backup_manager = BackupManager()
@@ -1381,12 +1287,12 @@ def prepare_dim(settings: Settings, mapping_path: Path, stage: int | None = None
                             _act.warning(f"  - {table_name}: 备份失败 - {result['message']}")
 
                     # 1.2 清空非备份表
-                    _act.info("[prepare-dim] [2/5] 清空非备份表...")
+                    _act.info("[prepare-dim] [2/4] 清空非备份表...")
                     total_deleted = _clear_non_backup_tables(cur)
                     _act.info(f"[prepare-dim] ✓ 清空完成：共删除 {total_deleted} 行")
 
                     # 1.3 重建维度表
-                    _act.info("[prepare-dim] [3/5] 重建维度表...")
+                    _act.info("[prepare-dim] [3/4] 重建维度表...")
 
                     # 序列对齐，避免历史脏数据导致的 PK 冲突
                     _ensure_sequences(cur)
@@ -1499,101 +1405,92 @@ def prepare_dim(settings: Settings, mapping_path: Path, stage: int | None = None
                     result["devices_count"] = devices_count
                     result["metrics_count"] = metrics_count
 
-                    # 1.4 执行自适应SQL脚本（4个文件）
-                    _act.info("[prepare-dim] [4/6] 执行自适应SQL脚本...")
-                    adaptive_result = _execute_adaptive_sql_scripts(settings, cur)
+                    # 1.3.5 验证元数据表完整性（在重建维度表后执行）
+                    _act.info("[prepare-dim] [3.5/5] 验证元数据表完整性...")
+                    validation_result = _validate_metadata_completeness(cur)
 
-                    if adaptive_result["status"] == "ok":
-                        _act.info(f"[prepare-dim] ✓ 自适应SQL脚本执行完成：成功 {len(adaptive_result['scripts_executed'])} 个")
-                        for script_name in adaptive_result["scripts_executed"]:
-                            _act.info(f"  - {script_name}: 执行成功")
+                    if not validation_result["is_valid"]:
+                        _act.warning("=" * 80)
+                        _act.warning("⚠️ 元数据表完整性验证失败（非致命错误）")
+                        _act.warning("=" * 80)
+
+                        # 打印所有错误
+                        _act.warning("")
+                        _act.warning("错误详情：")
+                        for i, error in enumerate(validation_result["errors"], 1):
+                            _act.warning(f"  {i}. {error}")
+
+                        # 打印当前状态
+                        details = validation_result.get("details", {})
+                        if details:
+                            _act.warning("")
+                            _act.warning("当前数据状态：")
+                            _act.warning(f"  ├─ 总记录数：{details.get('total_count', 0)} / {details.get('expected_count', 0)} (期望)")
+                            _act.warning(f"  ├─ 全局级：{details.get('global_count', 0)} / {details.get('metric_count', 0)} (期望)")
+                            _act.warning(f"  ├─ 站点级：{details.get('station_count', 0)} / {details.get('metric_count', 0)} (期望)")
+                            _act.warning(f"  └─ 设备级：{details.get('device_count', 0)} / {details.get('device_total', 0) * details.get('metric_count', 0)} (期望)")
+
+                        _act.warning("")
+                        _act.warning("说明：元数据表验证失败不会阻止流程继续执行，但可能影响计算结果。")
+                        _act.warning("建议：执行迁移脚本修复元数据表：scripts/sql/migrations/100_migrate_metadata_to_three_tier.sql")
+                        _act.warning("=" * 80)
                     else:
-                        _act.error(f"[prepare-dim] ✗ 自适应SQL脚本执行失败：失败 {len(adaptive_result['scripts_failed'])} 个")
-                        for script_name, error_msg in adaptive_result["errors"].items():
-                            _act.error(f"  - {script_name}: {error_msg}")
-                        raise RuntimeError("自适应SQL脚本执行失败")
+                        _act.info("✓ 元数据表完整性验证通过")
+                        details = validation_result.get("details", {})
+                        _act.info(f"  ├─ 总记录数：{details.get('total_count', 0)} 条")
+                        _act.info(f"  ├─ 全局级：{details.get('global_count', 0)} 条")
+                        _act.info(f"  ├─ 站点级：{details.get('station_count', 0)} 条")
+                        _act.info(f"  └─ 设备级：{details.get('device_count', 0)} 条（{details.get('device_total', 0)} 个设备）")
 
-                    # 1.5 恢复手动配置表（从备份，9个表）
-                    _act.info("[prepare-dim] [5/6] 恢复手动配置表...")
+                        # 打印每个设备的状态（简化版）
+                        device_details = details.get("device_details", [])
+                        if device_details and len(device_details) <= 10:
+                            _act.info("  设备详情：")
+                            for device in device_details:
+                                _act.info(f"    ✓ 设备 {device['device_id']} ({device['device_name']}): {device['metric_count']} 条")
 
-                    # 定义需要恢复的手动配置表（不包括自适应SQL脚本生成的表）
-                    manual_config_tables = [
-                        "dim_metric_metadata_override",
-                        "pump_characteristic_curves",
-                        "quality_code_dict",
-                        "calculation_validation_config",
-                        "metric_capability_policy",
-                        "metric_anomaly_strategy",  # 新增：异常判定策略表
-                        "device_metric_candidates",  # 新增：设备指标候选表
-                        "dim_metric_metadata",  # 新增：指标元数据表
-                        "optimization_history",  # 新增：优化历史表（包含RLS状态）
-                        "device_running_thresholds_shadow",  # 新增：影子阈值表
+                    # 1.4 执行自适应SQL脚本（条件执行，避免覆盖现有配置）
+                    _act.info("[prepare-dim] [4/4] 检查配置表状态...")
+
+                    # 检查配置表是否为空
+                    tables_to_check = [
+                        "calculation_method_registry",
+                        "metric_calculation_order",
+                        "device_rated_params",
+                        "dim_device_capabilities"
                     ]
 
-                    restore_ok_count = 0
-                    restore_error_count = 0
-                    restore_partial_count = 0
+                    all_empty = True
+                    for table in tables_to_check:
+                        cur.execute(f"SELECT COUNT(*) FROM {table}")
+                        count = cur.fetchone()[0]
+                        if count > 0:
+                            _act.info(f"[prepare-dim] 检测到 {table} 表已有 {count} 条数据")
+                            all_empty = False
+                            break
 
-                    for table_name in manual_config_tables:
-                        # 特殊处理 optimization_history：过滤无效的外键
-                        if table_name == "optimization_history":
-                            _act.info(f"  - {table_name}: 开始恢复（特殊处理：过滤无效外键）...")
+                    if all_empty:
+                        # 所有配置表都为空，执行自适应SQL脚本作为降级方案
+                        _act.info("[prepare-dim] 配置表为空，执行自适应SQL脚本作为降级方案...")
+                        adaptive_result = _execute_adaptive_sql_scripts(settings, cur)
 
-                            # 先恢复到临时表
-                            cur.execute("DROP TABLE IF EXISTS optimization_history_temp")
-                            cur.execute("""
-                                CREATE TEMP TABLE optimization_history_temp (LIKE optimization_history INCLUDING ALL)
-                            """)
-
-                            # 恢复到临时表
-                            restore_result = backup_manager.restore_table(cur, table_name, target_table="optimization_history_temp")
-
-                            if restore_result["status"] == "ok":
-                                # 统计临时表中的记录数
-                                cur.execute("SELECT COUNT(*) FROM optimization_history_temp")
-                                total_records = cur.fetchone()[0]
-
-                                # 统计有效记录数（device_id 和 station_id 都存在）
-                                cur.execute("""
-                                    SELECT COUNT(*) FROM optimization_history_temp
-                                    WHERE device_id IN (SELECT id FROM dim_devices)
-                                      AND station_id IN (SELECT id FROM dim_stations)
-                                """)
-                                valid_records = cur.fetchone()[0]
-
-                                invalid_records = total_records - valid_records
-
-                                # 只插入有效记录
-                                cur.execute("""
-                                    INSERT INTO optimization_history
-                                    SELECT * FROM optimization_history_temp
-                                    WHERE device_id IN (SELECT id FROM dim_devices)
-                                      AND station_id IN (SELECT id FROM dim_stations)
-                                """)
-
-                                # 清理临时表
-                                cur.execute("DROP TABLE IF EXISTS optimization_history_temp")
-
-                                if invalid_records > 0:
-                                    _act.warning(f"  - {table_name}: 部分恢复成功，版本 v{restore_result['version']}，有效记录 {valid_records}/{total_records}，跳过 {invalid_records} 条无效记录")
-                                    restore_partial_count += 1
-                                else:
-                                    _act.info(f"  - {table_name}: 恢复成功，版本 v{restore_result['version']}，{valid_records} 条记录")
-                                    restore_ok_count += 1
-                            else:
-                                _act.warning(f"  - {table_name}: 恢复失败 - {restore_result['message']}")
-                                restore_error_count += 1
+                        if adaptive_result["status"] == "ok":
+                            _act.info(f"[prepare-dim] ✓ 自适应SQL脚本执行完成：成功 {len(adaptive_result['scripts_executed'])} 个")
+                            for script_name in adaptive_result["scripts_executed"]:
+                                _act.info(f"  - {script_name}: 执行成功")
                         else:
-                            # 正常恢复其他表
-                            restore_result = backup_manager.restore_table(cur, table_name)
-                            if restore_result["status"] == "ok":
-                                _act.info(f"  - {table_name}: 恢复成功，版本 v{restore_result['version']}")
-                                restore_ok_count += 1
-                            else:
-                                _act.warning(f"  - {table_name}: 恢复失败 - {restore_result['message']}")
-                                restore_error_count += 1
+                            _act.error(f"[prepare-dim] ✗ 自适应SQL脚本执行失败：失败 {len(adaptive_result['scripts_failed'])} 个")
+                            for script_name, error_msg in adaptive_result["errors"].items():
+                                _act.error(f"  - {script_name}: {error_msg}")
+                            raise RuntimeError("自适应SQL脚本执行失败")
+                    else:
+                        # 配置表已有数据，跳过脚本执行，保护现有配置
+                        _act.info("[prepare-dim] 配置表已有数据，跳过自适应SQL脚本执行（保护现有配置）")
+                        _act.info("[prepare-dim] ✓ 配置表检查完成，保留现有配置")
 
-                    _act.info(f"[prepare-dim] ✓ 恢复完成：成功 {restore_ok_count} 个，部分成功 {restore_partial_count} 个，失败 {restore_error_count} 个")
+                    # 注：不再恢复手动配置表（2025-11-11）
+                    # 原因：这些表已改为永久配置表，不再清空，因此不需要恢复
+                    # 删除的表：pump_characteristic_curves, calculation_validation_config, metric_capability_policy
 
                     conn.commit()
                     _act.info("[prepare-dim] 阶段1完成")
@@ -1605,7 +1502,7 @@ def prepare_dim(settings: Settings, mapping_path: Path, stage: int | None = None
                     _act.info("[prepare-dim] 阶段2：规则生成")
 
                     # 前置检查：验证 fact_measurements 表是否有数据
-                    _act.info("[prepare-dim] [0/3] 前置检查：验证 fact_measurements 表...")
+                    _act.info("[prepare-dim] [0/5] 前置检查：验证 fact_measurements 表...")
                     cur.execute("SELECT COUNT(*) FROM fact_measurements")
                     fact_count = cur.fetchone()[0]
                     if fact_count == 0:
@@ -1615,17 +1512,9 @@ def prepare_dim(settings: Settings, mapping_path: Path, stage: int | None = None
                         _act.info(f"[prepare-dim] ✓ fact_measurements 表有 {fact_count} 条数据，可以生成规则表")
 
                     # 2.1 清空规则表
-                    _act.info("[prepare-dim] [1/3] 清空规则表...")
+                    _act.info("[prepare-dim] [1/5] 清空规则表...")
                     _clear_rule_tables(cur)
                     _act.info("[prepare-dim] ✓ 清空完成：6个规则表已清空")
-
-                    conn.commit()
-
-                    # 2.2 计算并更新元数据（基于实际数据）
-                    _act.info("[prepare-dim] [2/4] 计算并更新元数据...")
-                    metadata_result = _update_metadata_from_facts(cur)
-                    _act.info(f"[prepare-dim] ✓ 元数据更新完成：更新 {metadata_result['updated_count']} 个指标")
-                    result["metadata_update"] = metadata_result
 
                     conn.commit()
 

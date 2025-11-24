@@ -1,0 +1,128 @@
+{
+  "summary": {},
+  "details": {
+    "pump_flow_rate": {
+      "1": {
+        "success": true,
+        "results_count": 1020,
+        "duration": 0.6181244850158691,
+        "error": null
+      },
+      "2": {
+        "success": true,
+        "results_count": 1020,
+        "duration": 0.5812766551971436,
+        "error": null
+      },
+      "3": {
+        "success": true,
+        "results_count": 1020,
+        "duration": 0.5675230026245117,
+        "error": null
+      },
+      "4": {
+        "success": true,
+        "results_count": 1020,
+        "duration": 0.5745303630828857,
+        "error": null
+      },
+      "5": {
+        "success": true,
+        "results_count": 1020,
+        "duration": 0.5715179443359375,
+        "error": null
+      },
+      "6": {
+        "success": true,
+        "results_count": 1020,
+        "duration": 0.5755207538604736,
+        "error": null
+      }
+    },
+    "pump_inlet_pressure": {
+      "1": {
+        "success": false,
+        "results_count": 0,
+        "duration": 0.16861653327941895,
+        "error": "没有找到合适的计算方法，所有方法的依赖或条件都不满足\nTraceback (most recent call last):\n  File \"D:\\Augment\\diwuban\\app\\services\\calculation\\metrics\\pump_inlet_pressure\\__init__.py\", line 42, in calculate_pump_inlet_pressure\n    result = _pipeline_instance.execute(\n        station_id=task.station_id,\n    ...<3 lines>...\n        task_id=task.task_id\n    )\n  File \"D:\\Augment\\diwuban\\app\\services\\calculation\\metrics\\pump_inlet_pressure\\pipeline.py\", line 164, in execute\n    selected_method = selector.select_method(filtered_data)\n  File \"D:\\Augment\\diwuban\\app\\services\\calculation\\metrics\\pump_inlet_pressure\\method_selector.py\", line 163, in select_method\n    raise ValueError(error_msg)\nValueError: 没有找到合适的计算方法，所有方法的依赖或条件都不满足\n"
+      },
+      "2": {
+        "success": true,
+        "results_count": 1020,
+        "duration": 0.25198793411254883,
+        "error": null
+      },
+      "3": {
+        "success": true,
+        "results_count": 1020,
+        "duration": 0.24718403816223145,
+        "error": null
+      },
+      "4": {
+        "success": true,
+        "results_count": 1020,
+        "duration": 0.25308680534362793,
+        "error": null
+      },
+      "5": {
+        "success": true,
+        "results_count": 1016,
+        "duration": 0.2485973834991455,
+        "error": null
+      },
+      "6": {
+        "success": true,
+        "results_count": 202,
+        "duration": 0.18071770668029785,
+        "error": null
+      }
+    },
+    "pump_head": {
+      "1": {
+        "success": true,
+        "results_count": 0,
+        "duration": 0.3376588821411133,
+        "error": null
+      },
+      "2": {
+        "success": true,
+        "results_count": 2042,
+        "duration": 0.3075218200683594,
+        "error": null
+      },
+      "3": {
+        "success": true,
+        "results_count": 2042,
+        "duration": 0.2979745864868164,
+        "error": null
+      },
+      "4": {
+        "success": true,
+        "results_count": 2042,
+        "duration": 0.2998800277709961,
+        "error": null
+      },
+      "5": {
+        "success": true,
+        "results_count": 2034,
+        "duration": 0.2930755615234375,
+        "error": null
+      },
+      "6": {
+        "success": true,
+        "results_count": 404,
+        "duration": 0.2072618007659912,
+        "error": null
+      }
+    }
+  },
+  "errors": [
+    {
+      "metric": "pump_inlet_pressure",
+      "device": 1,
+      "error": "没有找到合适的计算方法，所有方法的依赖或条件都不满足\nTraceback (most recent call last):\n  File \"D:\\Augment\\diwuban\\app\\services\\calculation\\metrics\\pump_inlet_pressure\\__init__.py\", line 42, in calculate_pump_inlet_pressure\n    result = _pipeline_instance.execute(\n        station_id=task.station_id,\n    ...<3 lines>...\n        task_id=task.task_id\n    )\n  File \"D:\\Augment\\diwuban\\app\\services\\calculation\\metrics\\pump_inlet_pressure\\pipeline.py\", line 164, in execute\n    selected_method = selector.select_method(filtered_data)\n  File \"D:\\Augment\\diwuban\\app\\services\\calculation\\metrics\\pump_inlet_pressure\\method_selector.py\", line 163, in select_method\n    raise ValueError(error_msg)\nValueError: 没有找到合适的计算方法，所有方法的依赖或条件都不满足\n"
+    }
+  ],
+  "performance": {},
+  "verification": {}
+}

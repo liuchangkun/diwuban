@@ -130,16 +130,18 @@ def run_running_thresholds(
                 except Exception:
                     pass
 
-                # 执行前补齐设备行（幂等）
+                # 执行前补齐设备行（幂等，仅 pump 类型设备 - 2025-11-11）
                 if ensure_rows:
-                    _act.info("[数据库-执行] [设备行补齐]")
+                    _act.info("[数据库-执行] [设备行补齐（仅 pump 设备）]")
                     cur.execute(
                         """
                         INSERT INTO public.device_running_thresholds(device_id)
                         SELECT DISTINCT fm.device_id
                         FROM public.fact_measurements fm
+                        JOIN public.dim_devices d ON d.id = fm.device_id
                         WHERE (%s::bigint IS NULL OR fm.station_id=%s::bigint)
                           AND (%s::bigint IS NULL OR fm.device_id=%s::bigint)
+                          AND d.type = 'pump'  -- 仅处理 pump 类型设备
                         ON CONFLICT (device_id) DO NOTHING
                         """,
                         (station_id, station_id, device_id, device_id),

@@ -1,0 +1,898 @@
+{
+  "pump_flow_rate": {
+    "success_count": 36,
+    "failure_count": 0,
+    "total_points": 501681,
+    "duration_seconds": 383.9084198474884,
+    "tasks": [
+      {
+        "device_id": 4,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 3,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 2,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 1,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 4,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 5,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 6,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 2,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 1,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 3,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 5,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 6,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 2,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 1,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 5,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 3,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 4,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 6,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 2,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 1,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 3,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 4,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 1,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 5,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 6,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 2,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 3,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 1,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 5,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 2,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 6,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 4,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 3,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 4,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 5,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 6,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      }
+    ]
+  },
+  "pump_inlet_pressure": {
+    "success_count": 36,
+    "failure_count": 0,
+    "total_points": 167228,
+    "duration_seconds": 34.67864155769348,
+    "tasks": [
+      {
+        "device_id": 1,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 3,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 5,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 5,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 3,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 6,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 1,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 6,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 3,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 5,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 2,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 3,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 4,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 5,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 6,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 1,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 2,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 2,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 4,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 5,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 4,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 1,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 3,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 2,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 1,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 5,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 3,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 4,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 2,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 2,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 4,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 1,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 6,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 4,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 6,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 6,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      }
+    ]
+  },
+  "pump_head": {
+    "success_count": 36,
+    "failure_count": 0,
+    "total_points": 334263,
+    "duration_seconds": 47.14682126045227,
+    "tasks": [
+      {
+        "device_id": 1,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 1,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 6,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 5,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 3,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 3,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 5,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 6,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 3,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 5,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 2,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 3,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 4,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 5,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 6,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 1,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 1,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 2,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 4,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 4,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 5,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 2,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 1,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 2,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 3,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 5,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 2,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 3,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 4,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 1,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 2,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 4,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 6,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 4,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 6,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 6,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      }
+    ]
+  },
+  "pump_efficiency": {
+    "success_count": 36,
+    "failure_count": 0,
+    "total_points": 167017,
+    "duration_seconds": 32.680880546569824,
+    "tasks": [
+      {
+        "device_id": 3,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 1,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 5,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 3,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 1,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 6,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 6,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 5,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 3,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 5,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 2,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 3,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 4,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 5,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 6,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 1,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 2,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 2,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 4,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 4,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 5,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 2,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 2,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 1,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 3,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 1,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 5,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 6,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 4,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 4,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 3,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 2,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 1,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 4,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 6,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      },
+      {
+        "device_id": 6,
+        "success": true,
+        "error_message": null,
+        "points_calculated": 0
+      }
+    ]
+  }
+}

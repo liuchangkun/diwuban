@@ -6,13 +6,13 @@ from __future__ import annotations
 职责（最小可用）：
 - 设备集合解析（默认=全部泵类设备，排除 main_pipeline，且阈值已配置）
 - 时间窗解析（未传参=全量时间），按“周/日”切片，跨段以 grace_hold_secs 秒 overlap 承接前态
-- 借助数据库函数 fn_running_state_1s 逐秒判定；单条 INSERT…SELECT 批量 UPSERT 到 fact_measurements（device_running=0/1）
+- 借助数据库函数 fn_running_state_1s 逐秒判定；调用存储过程 sp_refresh_mv_running_phase 批量写入 mv_device_running_1s
 - 追踪层写入 completion_runs/steps（记录 thresholds_snapshot 与段级统计），避免逐秒审计爆量
-- 性能：仅值变化更新（IS DISTINCT FROM）、段级提交、小并发（编排层控制）
+- 性能：仅值变化更新、段级提交、小并发（编排层控制）
 
 注意：
 - 全部时间均为 timestamptz（UTC）；fn_running_state_1s 为闭区间 [start, end]
-- 事实层仅落 0/1；最小段长等防抖在只读层处理
+- mv_device_running_1s 表存储运行状态和phase信息
 """
 
 from dataclasses import dataclass

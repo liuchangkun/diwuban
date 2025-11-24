@@ -192,34 +192,30 @@ def clear_database(settings: Settings) -> None:
                 # 每个 schema 分别收集可清空的表
                 preserve_by_schema = {
                     "public": {
-                        # 保留表白名单：不清空关键配置表（public）
-                        # 规则表（6个）
+                        # 保留表白名单：不清空关键配置表（public）（2025-11-11更新）
+                        # 规则表（1个）
                         "device_running_thresholds",
-                        "device_running_thresholds_shadow",
-                        "metric_quality_rules",
-                        "metric_quality_rules_shadow",
-                        "metric_rule_auto_baseline",
-                        "metric_rule_auto_baseline_shadow",
                         # 维度表（3个）
                         "dim_metric_config",
                         "dim_stations",
                         "dim_devices",
-                        # 配置表（7个）
+                        # 手动配置表（7个）
                         "dim_device_capabilities",
-                        "dim_metric_metadata_override",  # 指标元数据覆盖表
-                        "metric_capability_policy",
-                        "quality_code_dict",
-                        "device_rated_params",
-                        "device_metric_candidates",
                         "pump_characteristic_curves",  # 泵特性曲线表
-                        # 计算表（4个）
-                        "calculation_method_registry",
-                        "calculation_parameters",
                         "calculation_validation_config",
-                        "metric_calculation_order",  # 指标计算顺序表
-                        # 审计表（2个）
-                        "completion_runs",
-                        "completion_steps",
+                        "metric_capability_policy",
+                        "metric_anomaly_strategy",  # 新增：异常判定策略表（2025-11-11）
+                        "device_metric_candidates",
+                        "optimization_history",  # 新增：优化历史表（2025-11-11）
+                        # 配置表（5个）
+                        "device_rated_params",
+                        "calculation_method_registry",
+                        "metric_calculation_order",
+                        "calculation_parameters",
+                        "global_default_rated_params",  # 新增：全局默认额定参数（2025-11-11）
+                        # 元数据表（2个）
+                        "dim_metric_metadata",  # 新增：指标元数据表（2025-11-11）
+                        "dim_device_param_metadata",  # 新增：设备参数元数据表（2025-11-11）
                     }
                 }
 

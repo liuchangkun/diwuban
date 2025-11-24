@@ -23,32 +23,27 @@ Calculators - 计算函数模块
 from __future__ import annotations
 
 import logging
-from typing import Dict, Tuple, Optional, Any
+from typing import Any, Dict, Tuple
 
 import numpy as np
 
 logger = logging.getLogger(__name__)
 from app.services.calculation.domain import CalculationContext, MethodDescriptor
-
+from app.services.calculation.methods.eff_curve_v1 import calculate_pump_efficiency_eff_curve_v1
+from app.services.calculation.methods.eff_simple_v1 import calculate_eff_simple_v1
 from app.services.calculation.methods.head_coef_v1 import calculate_head_coef_v1
 from app.services.calculation.methods.pin_coef_v1 import calculate_pin_coef_v1
-from app.services.calculation.methods.eff_simple_v1 import calculate_eff_simple_v1
-from app.services.calculation.methods.eff_curve_v1 import calculate_pump_efficiency_eff_curve_v1
 from app.services.calculation.methods.pump_inlet_pressure import (
     calculate_pump_inlet_pressure_method_a,
-    calculate_pump_inlet_pressure_method_b
+    calculate_pump_inlet_pressure_method_b,
 )
-
-
 
 # =====================================================
 # pump_flow_rate - 泵流量计算函数
 # =====================================================
 
-def calculate_pump_flow_rate_method_a(
-    data: Dict[str, np.ndarray],
-    params: Dict[str, float]
-) -> np.ndarray:
+
+def calculate_pump_flow_rate_method_a(data: Dict[str, np.ndarray], params: Dict[str, float]) -> np.ndarray:
     """
     Method A: distribute the station flow to each pump according to the power-frequency weight.
 
@@ -57,7 +52,10 @@ def calculate_pump_flow_rate_method_a(
 
     Args:
         data: expects main_pipeline_flow_rate, pump_active_power, pump_frequency
-        params: optional tuning parameters alpha, beta, f_thr, p_thr
+        params: optional tuning parameters alpha, beta
+
+    Note:
+        数据已在 DataFilter 阶段过滤（running=1），无需硬编码阈值过滤
 
     Returns:
         Numpy array with the estimated flow for the current pump.
@@ -67,13 +65,13 @@ def calculate_pump_flow_rate_method_a(
         extra={
             "extra_data": {
                 "method": "power_frequency_weight",
-                "has_share": '__pump_flow_rate_share' in data,
+                "has_share": "__pump_flow_rate_share" in data,
             }
-        }
+        },
     )
 
-    Q_total = np.asarray(data['main_pipeline_flow_rate'], dtype=float)
-    share = data.get('__pump_flow_rate_share')
+    Q_total = np.asarray(data["main_pipeline_flow_rate"], dtype=float)
+    share = data.get("__pump_flow_rate_share")
 
     result = np.full_like(Q_total, np.nan, dtype=float)
 
@@ -90,48 +88,42 @@ def calculate_pump_flow_rate_method_a(
                     "total_points": len(result),
                     "valid_points": int(np.sum(mask)),
                 }
-            }
+            },
         )
         return result
 
-    logger.warning(
-        "[计算-警告] [缺少分摊系数]",
-        extra={"extra_data": {"missing_key": "__pump_flow_rate_share"}}
-    )
+    logger.warning("[计算-警告] [缺少分摊系数]", extra={"extra_data": {"missing_key": "__pump_flow_rate_share"}})
     return result
 
 
-def calculate_pump_head_method_main(
-    data: Dict[str, np.ndarray],
-    params: Dict[str, float]
-) -> np.ndarray:
+def calculate_pump_head_method_main(data: Dict[str, np.ndarray], params: Dict[str, float]) -> np.ndarray:
     """
     Method MAIN: estimate pump head from outlet/inlet pressures.
 
     H = (P_out - P_in) * 1e6 / (rho * g)
     """
-    out_arr = np.asarray(data.get('pump_outlet_pressure'), dtype=float)
+    out_arr = np.asarray(data.get("pump_outlet_pressure"), dtype=float)
     if out_arr.size == 0:
         return np.array([], dtype=float)
 
-    inlet = data.get('pump_inlet_pressure')
+    inlet = data.get("pump_inlet_pressure")
     inlet_arr = np.asarray(inlet, dtype=float) if inlet is not None else np.full_like(out_arr, np.nan)
 
     if np.all(np.isnan(inlet_arr)):
-        alt = data.get('main_pipeline_inlet_pressure')
+        alt = data.get("main_pipeline_inlet_pressure")
         if alt is not None:
             inlet_arr = np.asarray(alt, dtype=float)
     if np.all(np.isnan(inlet_arr)):
-        level = data.get('pool_liquid_level')
+        level = data.get("pool_liquid_level")
         if level is not None:
             level_arr = np.asarray(level, dtype=float)
             mask = ~np.isnan(level_arr)
             if np.any(mask):
                 # 物理常数必须从数据库读取
                 try:
-                    P_atm = float(params['P_atm'])
-                    rho = float(params['rho'])
-                    g = float(params['g'])
+                    P_atm = float(params["P_atm"])
+                    rho = float(params["rho"])
+                    g = float(params["g"])
                 except KeyError as e:
                     raise ValueError(f"pump_head_method_main 缺少必需的物理常数参数: {e}")
                 inlet_arr = np.full_like(level_arr, np.nan, dtype=float)
@@ -141,8 +133,8 @@ def calculate_pump_head_method_main(
 
     # 物理常数必须从数据库读取
     try:
-        rho = float(params['rho'])
-        g = float(params['g'])
+        rho = float(params["rho"])
+        g = float(params["g"])
     except KeyError as e:
         raise ValueError(f"pump_head_method_main 缺少必需的物理常数参数: {e}")
     result = np.full_like(out_arr, np.nan, dtype=float)
@@ -155,10 +147,8 @@ def calculate_pump_head_method_main(
 # calculate_main_pipeline_inlet_pressure_method_b 已移至第866行（完整版本）
 # 此处删除重复定义（manual_fix_2.4）
 
-def calculate_pump_flow_rate_method_b(
-    data: Dict[str, np.ndarray],
-    params: Dict[str, float]
-) -> np.ndarray:
+
+def calculate_pump_flow_rate_method_b(data: Dict[str, np.ndarray], params: Dict[str, float]) -> np.ndarray:
     """
     方案B：累计量求导
 
@@ -176,7 +166,7 @@ def calculate_pump_flow_rate_method_b(
     Returns:
         计算得到的泵流量数组
     """
-    V = data['pump_cumulative_flow']
+    V = data["pump_cumulative_flow"]
 
     # 计算差分（求导）
     Q = np.diff(V, prepend=V[0])
@@ -187,10 +177,7 @@ def calculate_pump_flow_rate_method_b(
     return Q
 
 
-def calculate_pump_flow_rate_method_c(
-    data: Dict[str, np.ndarray],
-    params: Dict[str, float]
-) -> np.ndarray:
+def calculate_pump_flow_rate_method_c(data: Dict[str, np.ndarray], params: Dict[str, float]) -> np.ndarray:
     """
     方案C：单泵运行直接取总管流量
 
@@ -207,14 +194,11 @@ def calculate_pump_flow_rate_method_c(
     Returns:
         计算得到的泵流量数组
     """
-    Q_total = data['main_pipeline_flow_rate']
+    Q_total = data["main_pipeline_flow_rate"]
     return Q_total.copy()
 
 
-def calculate_pump_flow_rate_method_d(
-    data: Dict[str, np.ndarray],
-    params: Dict[str, float]
-) -> np.ndarray:
+def calculate_pump_flow_rate_method_d(data: Dict[str, np.ndarray], params: Dict[str, float]) -> np.ndarray:
     """
     方案D：仅功率分摊
 
@@ -223,29 +207,25 @@ def calculate_pump_flow_rate_method_d(
 
     Args:
         data: 包含 main_pipeline_flow_rate, pump_active_power
-        params: 包含 p_thr
+        params: 包含 alpha（功率指数）
+
+    Note:
+        数据已在 DataFilter 阶段过滤（running=1），无需硬编码阈值过滤
 
     Returns:
         计算得到的泵流量数组
     """
-    Q_total = data['main_pipeline_flow_rate']
-    P_i = data['pump_active_power']
+    Q_total = data["main_pipeline_flow_rate"]
+    P_i = data["pump_active_power"]
 
-    p_thr = params.get('p_thr', 0.5)
-
-    # 过滤掉功率过低的数据点
-    mask = P_i >= p_thr
-
-    Q_i = np.zeros_like(Q_total)
-    Q_i[mask] = Q_total[mask] * P_i[mask]
+    # 注意：数据已经过 DataFilter 过滤（running=1），只包含运行状态的设备
+    # 无需再使用硬编码阈值过滤，直接计算
+    Q_i = Q_total * P_i
 
     return Q_i
 
 
-def calculate_pump_flow_rate_method_e(
-    data: Dict[str, np.ndarray],
-    params: Dict[str, float]
-) -> np.ndarray:
+def calculate_pump_flow_rate_method_e(data: Dict[str, np.ndarray], params: Dict[str, float]) -> np.ndarray:
     """
     方案E：仅频率分摊
 
@@ -254,29 +234,25 @@ def calculate_pump_flow_rate_method_e(
 
     Args:
         data: 包含 main_pipeline_flow_rate, pump_frequency
-        params: 包含 f_thr
+        params: 包含 beta（频率指数）
+
+    Note:
+        数据已在 DataFilter 阶段过滤（running=1），无需硬编码阈值过滤
 
     Returns:
         计算得到的泵流量数组
     """
-    Q_total = data['main_pipeline_flow_rate']
-    f_i = data['pump_frequency']
+    Q_total = data["main_pipeline_flow_rate"]
+    f_i = data["pump_frequency"]
 
-    f_thr = params.get('f_thr', 3.0)
-
-    # 过滤掉频率过低的数据点
-    mask = f_i >= f_thr
-
-    Q_i = np.zeros_like(Q_total)
-    Q_i[mask] = Q_total[mask] * f_i[mask]
+    # 注意：数据已经过 DataFilter 过滤（running=1），只包含运行状态的设备
+    # 无需再使用硬编码阈值过滤，直接计算
+    Q_i = Q_total * f_i
 
     return Q_i
 
 
-def calculate_pump_flow_rate_method_f(
-    data: Dict[str, np.ndarray],
-    params: Dict[str, float]
-) -> np.ndarray:
+def calculate_pump_flow_rate_method_f(data: Dict[str, np.ndarray], params: Dict[str, float]) -> np.ndarray:
     """
     方案F：数据驱动回归融合
 
@@ -292,15 +268,15 @@ def calculate_pump_flow_rate_method_f(
     Returns:
         计算得到的泵流量数组
     """
-    P = data['pump_active_power']
-    f = data['pump_frequency']
-    P_in = data['pump_inlet_pressure']
+    P = data["pump_active_power"]
+    f = data["pump_frequency"]
+    P_in = data["pump_inlet_pressure"]
 
     # 简单的线性回归模型（实际应该使用训练好的模型）
-    a0 = params.get('a0', 0.0)
-    a1 = params.get('a1', 1.0)
-    a2 = params.get('a2', 1.0)
-    a3 = params.get('a3', 0.0)
+    a0 = params.get("a0", 0.0)
+    a1 = params.get("a1", 1.0)
+    a2 = params.get("a2", 1.0)
+    a3 = params.get("a3", 0.0)
 
     Q = a0 + a1 * P + a2 * f + a3 * P_in
 
@@ -318,10 +294,8 @@ def calculate_pump_flow_rate_method_f(
 # pump_outlet_pressure - 泵出口压力计算函数
 # =====================================================
 
-def calculate_pump_outlet_pressure_method_a(
-    data: Dict[str, np.ndarray],
-    params: Dict[str, float]
-) -> np.ndarray:
+
+def calculate_pump_outlet_pressure_method_a(data: Dict[str, np.ndarray], params: Dict[str, float]) -> np.ndarray:
     """
     方案A：直接读取
 
@@ -335,17 +309,14 @@ def calculate_pump_outlet_pressure_method_a(
     Returns:
         pump_outlet_pressure数组，如果data中没有则返回空数组
     """
-    if 'pump_outlet_pressure' in data:
-        P_out = data['pump_outlet_pressure']
+    if "pump_outlet_pressure" in data:
+        P_out = data["pump_outlet_pressure"]
         if P_out is not None and len(P_out) > 0:
             return P_out.copy()
     return np.array([], dtype=float)
 
 
-def calculate_pump_outlet_pressure_method_b(
-    data: Dict[str, np.ndarray],
-    params: Dict[str, float]
-) -> np.ndarray:
+def calculate_pump_outlet_pressure_method_b(data: Dict[str, np.ndarray], params: Dict[str, float]) -> np.ndarray:
     """
     方案B：以总管出口压力代替
 
@@ -359,14 +330,11 @@ def calculate_pump_outlet_pressure_method_b(
     Returns:
         计算得到的泵出口压力数组
     """
-    P_main_out = data['main_pipeline_outlet_pressure']
+    P_main_out = data["main_pipeline_outlet_pressure"]
     return P_main_out.copy()
 
 
-def calculate_pump_outlet_pressure_method_c(
-    data: Dict[str, np.ndarray],
-    params: Dict[str, float]
-) -> np.ndarray:
+def calculate_pump_outlet_pressure_method_c(data: Dict[str, np.ndarray], params: Dict[str, float]) -> np.ndarray:
     """
     方案C：由进口压力与扬程回推
 
@@ -387,13 +355,13 @@ def calculate_pump_outlet_pressure_method_c(
     Returns:
         计算得到的泵出口压力数组
     """
-    H = data['pump_head']                 # m
-    P_in = data['pump_inlet_pressure']    # MPa
+    H = data["pump_head"]  # m
+    P_in = data["pump_inlet_pressure"]  # MPa
 
     # 物理常数必须从数据库读取
     try:
-        rho = float(params['rho'])
-        g = float(params['g'])
+        rho = float(params["rho"])
+        g = float(params["g"])
     except KeyError as e:
         raise ValueError(f"pump_outlet_pressure_method_a 缺少必需的物理常数参数: {e}")
 
@@ -408,10 +376,7 @@ def calculate_pump_outlet_pressure_method_c(
     return P_out
 
 
-def calculate_pump_outlet_pressure_method_d(
-    data: Dict[str, np.ndarray],
-    params: Dict[str, float]
-) -> np.ndarray:
+def calculate_pump_outlet_pressure_method_d(data: Dict[str, np.ndarray], params: Dict[str, float]) -> np.ndarray:
     """
     方案D：泵组层面近似
 
@@ -425,7 +390,7 @@ def calculate_pump_outlet_pressure_method_d(
     Returns:
         计算得到的泵出口压力数组
     """
-    P_group_out = data['pump_group_outlet_pressure']
+    P_group_out = data["pump_group_outlet_pressure"]
     return P_group_out.copy()
 
 
@@ -433,10 +398,8 @@ def calculate_pump_outlet_pressure_method_d(
 # pump_efficiency - 泵效率计算函数
 # =====================================================
 
-def calculate_pump_efficiency_method_main(
-    data: Dict[str, np.ndarray],
-    params: Dict[str, float]
-) -> np.ndarray:
+
+def calculate_pump_efficiency_method_main(data: Dict[str, np.ndarray], params: Dict[str, float]) -> np.ndarray:
     """Deprecated: replaced by EFF_SIMPLE_V1. Stub retained for backward import safety."""
     raise NotImplementedError("pump_efficiency_method_main has been replaced by EFF_SIMPLE_V1")
 
@@ -445,10 +408,8 @@ def calculate_pump_efficiency_method_main(
 # pump_speed - 泵转速计算函数
 # =====================================================
 
-def calculate_pump_speed_method_a(
-    data: Dict[str, np.ndarray],
-    params: Dict[str, float]
-) -> np.ndarray:
+
+def calculate_pump_speed_method_a(data: Dict[str, np.ndarray], params: Dict[str, float]) -> np.ndarray:
     """
     方法A：频率比例法（基于额定转速）
 
@@ -468,9 +429,9 @@ def calculate_pump_speed_method_a(
     Returns:
         计算得到的实际转速数组（rpm）
     """
-    f = data['pump_frequency']  # Hz
-    f_ref = params.get('f_ref', 50.0)  # Hz
-    n_ref = params.get('n_ref', 1500.0)  # rpm
+    f = data["pump_frequency"]  # Hz
+    f_ref = params.get("f_ref", 50.0)  # Hz
+    n_ref = params.get("n_ref", 1500.0)  # rpm
 
     # 创建有效数据掩码
     valid_mask = ~np.isnan(f) & (f > 0)
@@ -482,10 +443,7 @@ def calculate_pump_speed_method_a(
     return n
 
 
-def calculate_pump_speed_method_b(
-    data: Dict[str, np.ndarray],
-    params: Dict[str, float]
-) -> np.ndarray:
+def calculate_pump_speed_method_b(data: Dict[str, np.ndarray], params: Dict[str, float]) -> np.ndarray:
     """
     方法B：绝对转速法（基于电机学原理）
 
@@ -506,10 +464,10 @@ def calculate_pump_speed_method_b(
     Returns:
         计算得到的转速数组（rpm）
     """
-    f = data['pump_frequency']  # Hz
+    f = data["pump_frequency"]  # Hz
     # 支持两种参数名：poles_pair（数据库标准）和 pole_pairs（向后兼容）
-    pole_pairs = params.get('poles_pair', params.get('pole_pairs', 2))  # 极对数
-    slip = params.get('slip', 0.02)  # 滑差
+    pole_pairs = params.get("poles_pair", params.get("pole_pairs", 2))  # 极对数
+    slip = params.get("slip", 0.02)  # 滑差
 
     # 创建有效数据掩码
     valid_mask = ~np.isnan(f) & (f > 0)
@@ -522,10 +480,7 @@ def calculate_pump_speed_method_b(
     return n
 
 
-def calculate_pump_speed_method_c(
-    data: Dict[str, np.ndarray],
-    params: Dict[str, float]
-) -> np.ndarray:
+def calculate_pump_speed_method_c(data: Dict[str, np.ndarray], params: Dict[str, float]) -> np.ndarray:
     """
     方法C：标定关系法
 
@@ -545,9 +500,9 @@ def calculate_pump_speed_method_c(
     Returns:
         计算得到的转速数组（rpm）
     """
-    f = data['pump_frequency']  # Hz
-    a = params.get('calibration_a', 30.0)  # 斜率
-    b = params.get('calibration_b', 0.0)  # 截距
+    f = data["pump_frequency"]  # Hz
+    a = params.get("calibration_a", 30.0)  # 斜率
+    b = params.get("calibration_b", 0.0)  # 截距
 
     # 创建有效数据掩码
     valid_mask = ~np.isnan(f) & (f > 0)
@@ -563,10 +518,8 @@ def calculate_pump_speed_method_c(
 # pump_torque - 泵扭矩计算函数
 # =====================================================
 
-def calculate_pump_torque_method_a(
-    data: Dict[str, np.ndarray],
-    params: Dict[str, float]
-) -> np.ndarray:
+
+def calculate_pump_torque_method_a(data: Dict[str, np.ndarray], params: Dict[str, float]) -> np.ndarray:
     """
     方法A：水力功率与转速法（推荐）
 
@@ -592,14 +545,14 @@ def calculate_pump_torque_method_a(
     Returns:
         计算得到的扭矩数组（N·m）
     """
-    Q_m3h = data['pump_flow_rate']  # m³/h
-    H = data['pump_head']  # m
-    n = data['pump_speed']  # rpm
+    Q_m3h = data["pump_flow_rate"]  # m³/h
+    H = data["pump_head"]  # m
+    n = data["pump_speed"]  # rpm
 
     # 物理常数必须从数据库读取
     try:
-        rho = float(params['rho'])
-        g = float(params['g'])
+        rho = float(params["rho"])
+        g = float(params["g"])
     except KeyError as e:
         raise ValueError(f"pump_torque_method_a 缺少必需的物理常数参数: {e}")
 
@@ -632,10 +585,7 @@ def calculate_pump_torque_method_a(
     return T
 
 
-def calculate_pump_torque_method_b(
-    data: Dict[str, np.ndarray],
-    params: Dict[str, float]
-) -> np.ndarray:
+def calculate_pump_torque_method_b(data: Dict[str, np.ndarray], params: Dict[str, float]) -> np.ndarray:
     """
     方法B：电功率与频率法
 
@@ -659,12 +609,12 @@ def calculate_pump_torque_method_b(
     Returns:
         计算得到的扭矩数组（N·m）
     """
-    P_in = data['pump_active_power']  # kW
-    f = data['pump_frequency']  # Hz
+    P_in = data["pump_active_power"]  # kW
+    f = data["pump_frequency"]  # Hz
 
     # 支持两种参数名：poles_pair（数据库标准）和 pole_pairs（向后兼容）
-    pole_pairs = params.get('poles_pair', params.get('pole_pairs', 2))  # 极对数
-    slip = params.get('slip', 0.02)  # 滑差
+    pole_pairs = params.get("poles_pair", params.get("pole_pairs", 2))  # 极对数
+    slip = params.get("slip", 0.02)  # 滑差
 
     # 检查数组长度一致性
     arrays = [P_in, f]
@@ -698,9 +648,9 @@ def calculate_pump_torque_method_b(
 # main_pipeline_outlet_pressure - 总管出口压力计算函数
 # =====================================================
 
+
 def calculate_main_pipeline_outlet_pressure_method_a(
-    data: Dict[str, np.ndarray],
-    params: Dict[str, float]
+    data: Dict[str, np.ndarray], params: Dict[str, float]
 ) -> np.ndarray:
     """
     方法A：从单泵出口压力推算（设备级方法）
@@ -720,13 +670,12 @@ def calculate_main_pipeline_outlet_pressure_method_a(
     Returns:
         计算得到的总管出口压力数组（MPa）
     """
-    P_pump_out = data['pump_outlet_pressure']  # MPa
+    P_pump_out = data["pump_outlet_pressure"]  # MPa
     return P_pump_out.copy()
 
 
 def calculate_main_pipeline_outlet_pressure_method_b(
-    data: Dict[str, np.ndarray],
-    params: Dict[str, float]
+    data: Dict[str, np.ndarray], params: Dict[str, float]
 ) -> np.ndarray:
     """
     方法B：从泵进口压力和扬程推算（设备级方法）
@@ -753,13 +702,13 @@ def calculate_main_pipeline_outlet_pressure_method_b(
     Returns:
         计算得到的总管出口压力数组（MPa）
     """
-    P_in = data['pump_inlet_pressure']  # MPa
-    H = data['pump_head']  # m
+    P_in = data["pump_inlet_pressure"]  # MPa
+    H = data["pump_head"]  # m
 
     # 物理常数必须从数据库读取
     try:
-        rho = float(params['rho'])
-        g = float(params['g'])
+        rho = float(params["rho"])
+        g = float(params["g"])
     except KeyError as e:
         raise ValueError(f"pump_outlet_pressure_method_c 缺少必需的物理常数参数: {e}")
 
@@ -774,8 +723,7 @@ def calculate_main_pipeline_outlet_pressure_method_b(
 
 
 def calculate_main_pipeline_outlet_pressure_method_c(
-    data: Dict[str, np.ndarray],
-    params: Dict[str, float]
+    data: Dict[str, np.ndarray], params: Dict[str, float]
 ) -> np.ndarray:
     """
     方法C：从多泵出口压力聚合（泵站级方法）
@@ -799,12 +747,12 @@ def calculate_main_pipeline_outlet_pressure_method_c(
     Returns:
         计算得到的总管出口压力数组（MPa）
     """
-    aggregation_method = params.get('aggregation_method', 'max')
+    aggregation_method = params.get("aggregation_method", "max")
 
     # 检查数据格式
-    if 'pump_outlet_pressure' in data:
+    if "pump_outlet_pressure" in data:
         # 格式1：单个键，值为2D数组或多个1D数组的列表
-        pressure_data = data['pump_outlet_pressure']
+        pressure_data = data["pump_outlet_pressure"]
 
         if isinstance(pressure_data, np.ndarray):
             if pressure_data.ndim == 1:
@@ -812,10 +760,10 @@ def calculate_main_pipeline_outlet_pressure_method_c(
                 return pressure_data.copy()
             elif pressure_data.ndim == 2:
                 # 多设备数据 (n_devices × n_timepoints)
-                if aggregation_method == 'max':
+                if aggregation_method == "max":
                     # 沿设备维度取最大值，忽略NaN
                     return np.nanmax(pressure_data, axis=0)
-                elif aggregation_method == 'mean':
+                elif aggregation_method == "mean":
                     return np.nanmean(pressure_data, axis=0)
                 else:
                     raise ValueError(f"不支持的聚合方法: {aggregation_method}")
@@ -823,16 +771,16 @@ def calculate_main_pipeline_outlet_pressure_method_c(
             # 列表形式的多设备数据
             pressure_arrays = [np.asarray(p) for p in pressure_data]
             stacked = np.stack(pressure_arrays, axis=0)
-            if aggregation_method == 'max':
+            if aggregation_method == "max":
                 return np.nanmax(stacked, axis=0)
-            elif aggregation_method == 'mean':
+            elif aggregation_method == "mean":
                 return np.nanmean(stacked, axis=0)
             else:
                 raise ValueError(f"不支持的聚合方法: {aggregation_method}")
     else:
         # 格式2：多个键，每个键对应一个设备
         # 例如：{'device_1_pump_outlet_pressure': array, 'device_2_pump_outlet_pressure': array}
-        pressure_keys = [k for k in data.keys() if 'pump_outlet_pressure' in k]
+        pressure_keys = [k for k in data.keys() if "pump_outlet_pressure" in k]
 
         if not pressure_keys:
             raise ValueError("数据中未找到pump_outlet_pressure相关字段")
@@ -845,9 +793,9 @@ def calculate_main_pipeline_outlet_pressure_method_c(
         pressure_arrays = [data[k] for k in pressure_keys]
         stacked = np.stack(pressure_arrays, axis=0)
 
-        if aggregation_method == 'max':
+        if aggregation_method == "max":
             return np.nanmax(stacked, axis=0)
-        elif aggregation_method == 'mean':
+        elif aggregation_method == "mean":
             return np.nanmean(stacked, axis=0)
         else:
             raise ValueError(f"不支持的聚合方法: {aggregation_method}")
@@ -859,9 +807,9 @@ def calculate_main_pipeline_outlet_pressure_method_c(
 # main_pipeline_inlet_pressure - 总管进口压力计算函数
 # =====================================================
 
+
 def calculate_main_pipeline_inlet_pressure_method_a(
-    data: Dict[str, np.ndarray],
-    params: Dict[str, float]
+    data: Dict[str, np.ndarray], params: Dict[str, float]
 ) -> np.ndarray:
     """
     方法A：从单泵进口压力推算（设备级方法）
@@ -881,13 +829,12 @@ def calculate_main_pipeline_inlet_pressure_method_a(
     Returns:
         计算得到的总管进口压力数组（MPa）
     """
-    P_pump_in = data['pump_inlet_pressure']  # MPa
+    P_pump_in = data["pump_inlet_pressure"]  # MPa
     return P_pump_in.copy()
 
 
 def calculate_main_pipeline_inlet_pressure_method_b(
-    data: Dict[str, np.ndarray],
-    params: Dict[str, float]
+    data: Dict[str, np.ndarray], params: Dict[str, float]
 ) -> np.ndarray:
     """
     方法B：从水池液位推算（泵站级方法）
@@ -913,13 +860,13 @@ def calculate_main_pipeline_inlet_pressure_method_b(
     Returns:
         计算得到的总管进口压力数组（MPa）
     """
-    L = data['pool_liquid_level']  # m
+    L = data["pool_liquid_level"]  # m
 
     # 物理常数必须从数据库读取
     try:
-        P_atm = float(params['P_atm'])
-        rho = float(params['rho'])
-        g = float(params['g'])
+        P_atm = float(params["P_atm"])
+        rho = float(params["rho"])
+        g = float(params["g"])
     except KeyError as e:
         raise ValueError(f"main_pipeline_inlet_pressure_method_b 缺少必需的物理常数参数: {e}")
 
@@ -934,8 +881,7 @@ def calculate_main_pipeline_inlet_pressure_method_b(
 
 
 def calculate_main_pipeline_inlet_pressure_method_c(
-    data: Dict[str, np.ndarray],
-    params: Dict[str, float]
+    data: Dict[str, np.ndarray], params: Dict[str, float]
 ) -> np.ndarray:
     """
     方法C：从多泵进口压力聚合（泵站级方法）
@@ -960,12 +906,12 @@ def calculate_main_pipeline_inlet_pressure_method_c(
     Returns:
         计算得到的总管进口压力数组（MPa）
     """
-    aggregation_method = params.get('aggregation_method', 'mean')
+    aggregation_method = params.get("aggregation_method", "mean")
 
     # 检查数据格式
-    if 'pump_inlet_pressure' in data:
+    if "pump_inlet_pressure" in data:
         # 格式1：单个键，值为2D数组或多个1D数组的列表
-        pressure_data = data['pump_inlet_pressure']
+        pressure_data = data["pump_inlet_pressure"]
 
         if isinstance(pressure_data, np.ndarray):
             if pressure_data.ndim == 1:
@@ -973,10 +919,10 @@ def calculate_main_pipeline_inlet_pressure_method_c(
                 return pressure_data.copy()
             elif pressure_data.ndim == 2:
                 # 多设备数据 (n_devices × n_timepoints)
-                if aggregation_method == 'mean':
+                if aggregation_method == "mean":
                     # 沿设备维度取平均值，忽略NaN
                     return np.nanmean(pressure_data, axis=0)
-                elif aggregation_method == 'max':
+                elif aggregation_method == "max":
                     return np.nanmax(pressure_data, axis=0)
                 else:
                     raise ValueError(f"不支持的聚合方法: {aggregation_method}")
@@ -984,16 +930,16 @@ def calculate_main_pipeline_inlet_pressure_method_c(
             # 列表形式的多设备数据
             pressure_arrays = [np.asarray(p) for p in pressure_data]
             stacked = np.stack(pressure_arrays, axis=0)
-            if aggregation_method == 'mean':
+            if aggregation_method == "mean":
                 return np.nanmean(stacked, axis=0)
-            elif aggregation_method == 'max':
+            elif aggregation_method == "max":
                 return np.nanmax(stacked, axis=0)
             else:
                 raise ValueError(f"不支持的聚合方法: {aggregation_method}")
     else:
         # 格式2：多个键，每个键对应一个设备
         # 例如：{'device_1_pump_inlet_pressure': array, 'device_2_pump_inlet_pressure': array}
-        pressure_keys = [k for k in data.keys() if 'pump_inlet_pressure' in k]
+        pressure_keys = [k for k in data.keys() if "pump_inlet_pressure" in k]
 
         if not pressure_keys:
             raise ValueError("数据中未找到pump_inlet_pressure相关字段")
@@ -1006,9 +952,9 @@ def calculate_main_pipeline_inlet_pressure_method_c(
         pressure_arrays = [data[k] for k in pressure_keys]
         stacked = np.stack(pressure_arrays, axis=0)
 
-        if aggregation_method == 'mean':
+        if aggregation_method == "mean":
             return np.nanmean(stacked, axis=0)
-        elif aggregation_method == 'max':
+        elif aggregation_method == "max":
             return np.nanmax(stacked, axis=0)
         else:
             raise ValueError(f"不支持的聚合方法: {aggregation_method}")
@@ -1020,10 +966,8 @@ def calculate_main_pipeline_inlet_pressure_method_c(
 # pump_cumulative_flow - 泵累计流量计算函数
 # =====================================================
 
-def calculate_pump_cumulative_flow_method_a(
-    data: Dict[str, np.ndarray],
-    params: Dict[str, float]
-) -> np.ndarray:
+
+def calculate_pump_cumulative_flow_method_a(data: Dict[str, np.ndarray], params: Dict[str, float]) -> np.ndarray:
     """
     方法A：从瞬时流量积分（向量化实现）
 
@@ -1046,10 +990,10 @@ def calculate_pump_cumulative_flow_method_a(
     Returns:
         计算得到的累计流量数组（m³）
     """
-    Q = data['pump_flow_rate']  # m³/h
+    Q = data["pump_flow_rate"]  # m³/h
 
-    initial_value = params.get('initial_value', 0.0)  # m³
-    time_interval = params.get('time_interval', 1.0)  # 秒
+    initial_value = params.get("initial_value", 0.0)  # m³
+    time_interval = params.get("time_interval", 1.0)  # 秒
 
     # 创建有效数据掩码
     valid_mask = ~np.isnan(Q) & (Q >= 0)
@@ -1069,10 +1013,7 @@ def calculate_pump_cumulative_flow_method_a(
     return V
 
 
-def calculate_pump_cumulative_flow_method_b(
-    data: Dict[str, np.ndarray],
-    params: Dict[str, float]
-) -> np.ndarray:
+def calculate_pump_cumulative_flow_method_b(data: Dict[str, np.ndarray], params: Dict[str, float]) -> np.ndarray:
     """
     方法B：从总管累计流量按比例分摊
 
@@ -1092,9 +1033,9 @@ def calculate_pump_cumulative_flow_method_b(
     Returns:
         计算得到的累计流量数组（m³）
     """
-    V_main = data['main_pipeline_cumulative_flow']  # m³
-    Q_pump = data['pump_flow_rate']  # m³/h
-    Q_main = data['main_pipeline_flow_rate']  # m³/h
+    V_main = data["main_pipeline_cumulative_flow"]  # m³
+    Q_pump = data["pump_flow_rate"]  # m³/h
+    Q_main = data["main_pipeline_flow_rate"]  # m³/h
 
     # 创建有效数据掩码
     valid_mask = ~np.isnan(V_main) & ~np.isnan(Q_pump) & ~np.isnan(Q_main) & (Q_main > 0)
@@ -1111,42 +1052,42 @@ def calculate_pump_cumulative_flow_method_b(
 # =====================================================
 
 CALCULATOR_REGISTRY = {
-    'pump_flow_rate_method_a': calculate_pump_flow_rate_method_a,
-    'pump_flow_rate_method_b': calculate_pump_flow_rate_method_b,
-    'pump_flow_rate_method_c': calculate_pump_flow_rate_method_c,
-    'pump_flow_rate_method_d': calculate_pump_flow_rate_method_d,
-    'pump_flow_rate_method_e': calculate_pump_flow_rate_method_e,
-    'pump_flow_rate_method_f': calculate_pump_flow_rate_method_f,
-    'pump_head_method_main': calculate_pump_head_method_main,
+    "pump_flow_rate_method_a": calculate_pump_flow_rate_method_a,
+    "pump_flow_rate_method_b": calculate_pump_flow_rate_method_b,
+    "pump_flow_rate_method_c": calculate_pump_flow_rate_method_c,
+    "pump_flow_rate_method_d": calculate_pump_flow_rate_method_d,
+    "pump_flow_rate_method_e": calculate_pump_flow_rate_method_e,
+    "pump_flow_rate_method_f": calculate_pump_flow_rate_method_f,
+    "pump_head_method_main": calculate_pump_head_method_main,
     # replaced: 'pump_head_method_main' → new HEAD_COEF_V1
-    'HEAD_COEF_V1': calculate_head_coef_v1,
+    "HEAD_COEF_V1": calculate_head_coef_v1,
     # pump_inlet_pressure (2个) - 新增 (manual_fix_1.1)
-    'pump_inlet_pressure_method_a': calculate_pump_inlet_pressure_method_a,
-    'pump_inlet_pressure_method_b': calculate_pump_inlet_pressure_method_b,
-    'pump_outlet_pressure_method_a': calculate_pump_outlet_pressure_method_a,
-    'pump_outlet_pressure_method_b': calculate_pump_outlet_pressure_method_b,
-    'pump_outlet_pressure_method_c': calculate_pump_outlet_pressure_method_c,
-    'pump_outlet_pressure_method_d': calculate_pump_outlet_pressure_method_d,
+    "pump_inlet_pressure_method_a": calculate_pump_inlet_pressure_method_a,
+    "pump_inlet_pressure_method_b": calculate_pump_inlet_pressure_method_b,
+    "pump_outlet_pressure_method_a": calculate_pump_outlet_pressure_method_a,
+    "pump_outlet_pressure_method_b": calculate_pump_outlet_pressure_method_b,
+    "pump_outlet_pressure_method_c": calculate_pump_outlet_pressure_method_c,
+    "pump_outlet_pressure_method_d": calculate_pump_outlet_pressure_method_d,
     # replaced: 'pump_efficiency_method_main' → new EFF_SIMPLE_V1
-    'EFF_SIMPLE_V1': calculate_eff_simple_v1,
+    "EFF_SIMPLE_V1": calculate_eff_simple_v1,
     # pump_efficiency (2个) - 新增 EFF_CURVE_V1 (manual_fix_3.3)
-    'EFF_CURVE_V1': calculate_pump_efficiency_eff_curve_v1,
-    'pump_speed_method_a': calculate_pump_speed_method_a,
-    'pump_speed_method_b': calculate_pump_speed_method_b,
-    'pump_speed_method_c': calculate_pump_speed_method_c,
-    'pump_torque_method_a': calculate_pump_torque_method_a,
-    'pump_torque_method_b': calculate_pump_torque_method_b,
+    "EFF_CURVE_V1": calculate_pump_efficiency_eff_curve_v1,
+    "pump_speed_method_a": calculate_pump_speed_method_a,
+    "pump_speed_method_b": calculate_pump_speed_method_b,
+    "pump_speed_method_c": calculate_pump_speed_method_c,
+    "pump_torque_method_a": calculate_pump_torque_method_a,
+    "pump_torque_method_b": calculate_pump_torque_method_b,
     # main_pipeline_inlet_pressure (4个) - 新增 method_a 和 method_c (manual_fix_2.3)
-    'main_pipeline_inlet_pressure_method_a': calculate_main_pipeline_inlet_pressure_method_a,
-    'main_pipeline_inlet_pressure_method_b': calculate_main_pipeline_inlet_pressure_method_b,
-    'main_pipeline_inlet_pressure_method_c': calculate_main_pipeline_inlet_pressure_method_c,
-    'main_pipeline_outlet_pressure_method_a': calculate_main_pipeline_outlet_pressure_method_a,
-    'main_pipeline_outlet_pressure_method_b': calculate_main_pipeline_outlet_pressure_method_b,
-    'main_pipeline_outlet_pressure_method_c': calculate_main_pipeline_outlet_pressure_method_c,
+    "main_pipeline_inlet_pressure_method_a": calculate_main_pipeline_inlet_pressure_method_a,
+    "main_pipeline_inlet_pressure_method_b": calculate_main_pipeline_inlet_pressure_method_b,
+    "main_pipeline_inlet_pressure_method_c": calculate_main_pipeline_inlet_pressure_method_c,
+    "main_pipeline_outlet_pressure_method_a": calculate_main_pipeline_outlet_pressure_method_a,
+    "main_pipeline_outlet_pressure_method_b": calculate_main_pipeline_outlet_pressure_method_b,
+    "main_pipeline_outlet_pressure_method_c": calculate_main_pipeline_outlet_pressure_method_c,
     # replaced: inlet_pressure methods → new PIN_COEF_V1
-    'PIN_COEF_V1': calculate_pin_coef_v1,
-    'pump_cumulative_flow_method_a': calculate_pump_cumulative_flow_method_a,
-    'pump_cumulative_flow_method_b': calculate_pump_cumulative_flow_method_b,
+    "PIN_COEF_V1": calculate_pin_coef_v1,
+    "pump_cumulative_flow_method_a": calculate_pump_cumulative_flow_method_a,
+    "pump_cumulative_flow_method_b": calculate_pump_cumulative_flow_method_b,
 }
 
 
@@ -1178,7 +1119,9 @@ def get_calculator_unified(method_id: str):
     """
     base_fn = get_calculator(method_id)
 
-    def _wrapped(ctx: CalculationContext, method: MethodDescriptor, data: Dict[str, np.ndarray]) -> Tuple[np.ndarray, Dict[str, Any]]:
+    def _wrapped(
+        ctx: CalculationContext, method: MethodDescriptor, data: Dict[str, np.ndarray]
+    ) -> Tuple[np.ndarray, Dict[str, Any]]:
         # 参数来源优先 method.params，其次为空字典（后续由参数管理装配）
         params = getattr(method, "params", {}) or {}
         values = base_fn(data, params)
@@ -1186,5 +1129,3 @@ def get_calculator_unified(method_id: str):
         return values, meta
 
     return _wrapped
-
-

@@ -54,13 +54,14 @@ BEGIN
     RAISE NOTICE '[时间参数学习] 当前版本使用默认值策略（未来可从历史数据学习）';
 
     -- =====================================================================
-    -- 步骤3：为所有设备设置时间参数
+    -- 步骤3：为所有设备设置时间参数（仅 pump 类型设备）
     -- =====================================================================
     WITH device_list AS (
         SELECT id as device_id
         FROM dim_devices
         WHERE (p_station_id IS NULL OR station_id = p_station_id)
           AND (p_device_id IS NULL OR id = p_device_id)
+          AND type = 'pump'  -- 仅处理 pump 类型设备
     )
     UPDATE device_running_thresholds t
     SET 
@@ -71,55 +72,6 @@ BEGIN
         updated_at = NOW(),
         updated_by = 'sp_refresh_device_running_thresholds_timing'
     WHERE t.device_id IN (SELECT device_id FROM device_list)
-      AND (t.grace_hold_secs = 0 OR t.min_run_secs = 0 OR t.min_stop_secs = 0 OR t.smoothing_secs = 0);
-
-    GET DIAGNOSTICS v_updated_devices = ROW_COUNT;
-
-    RAISE NOTICE '[时间参数学习] 完成 - 更新设备数: %', v_updated_devices;
-
-    -- =====================================================================
-    -- 步骤4：回退机制 - 使用同类型设备中位数（如果有）
-    -- =====================================================================
-    WITH device_type_medians AS (
-        SELECT 
-            d.type,
-            PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY t.grace_hold_secs) AS median_grace_hold,
-            PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY t.min_run_secs) AS median_min_run,
-            PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY t.min_stop_secs) AS median_min_stop,
-            PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY t.smoothing_secs) AS median_smoothing
-        FROM device_running_thresholds t
-        JOIN dim_devices d ON d.id = t.device_id
-        WHERE t.grace_hold_secs > 0 AND t.min_run_secs > 0 AND t.min_stop_secs > 0 AND t.smoothing_secs > 0
-        GROUP BY d.type
-        HAVING COUNT(*) >= 2  -- 至少2个设备才计算中位数
-    )
-    UPDATE device_running_thresholds t
-    SET 
-        grace_hold_secs = COALESCE(
-            CASE WHEN t.grace_hold_secs = 0 THEN NULL ELSE t.grace_hold_secs END,
-            m.median_grace_hold::INT,
-            v_default_grace_hold
-        ),
-        min_run_secs = COALESCE(
-            CASE WHEN t.min_run_secs = 0 THEN NULL ELSE t.min_run_secs END,
-            m.median_min_run::INT,
-            v_default_min_run
-        ),
-        min_stop_secs = COALESCE(
-            CASE WHEN t.min_stop_secs = 0 THEN NULL ELSE t.min_stop_secs END,
-            m.median_min_stop::INT,
-            v_default_min_stop
-        ),
-        smoothing_secs = COALESCE(
-            CASE WHEN t.smoothing_secs = 0 THEN NULL ELSE t.smoothing_secs END,
-            m.median_smoothing::INT,
-            v_default_smoothing
-        ),
-        updated_at = NOW(),
-        updated_by = 'sp_refresh_device_running_thresholds_timing_fallback'
-    FROM dim_devices d
-    LEFT JOIN device_type_medians m ON m.type = d.type
-    WHERE t.device_id = d.id
       AND (t.grace_hold_secs = 0 OR t.min_run_secs = 0 OR t.min_stop_secs = 0 OR t.smoothing_secs = 0);
 
     GET DIAGNOSTICS v_updated_devices = ROW_COUNT;

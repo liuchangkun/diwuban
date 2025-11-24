@@ -7,11 +7,11 @@ from __future__ import annotations
 - 读取阈值快照与 grace_hold_secs
 - 解析设备所属站点、默认设备集合（全部泵，排除总管，且已配置阈值）
 - 计算设备全量时间窗（最早/最晚 ts_bucket）
-- 基于数据库函数 fn_running_state_1s 生成逐秒状态，并批量 UPSERT 到 fact_measurements
+- 基于数据库函数 fn_running_state_1s 生成逐秒状态，并批量 UPSERT 到 mv_device_running_1s
 - 写入前确保周分区存在
 
 注意：
-- 写入采用“仅值变化更新”以降低 WAL 与表膨胀：WHERE fact_measurements.value IS DISTINCT FROM EXCLUDED.value
+- 写入采用“仅值变化更新”以降低 WAL 与表膨胀
 - 所有时间均使用 timestamptz（UTC 秒对齐）
 """
 
@@ -30,24 +30,6 @@ class SliceStats:
     run_secs: int
     stop_secs: int
     hold_secs: int
-
-
-def get_device_running_metric_id(cur) -> int:
-    _act.info("[数据库-查询] [设备运行指标ID查询]")
-    sql = "SELECT id FROM public.dim_metric_config WHERE metric_key='device_running'"
-
-    cur.execute(sql)
-    row = cur.fetchone()
-    if not row:
-        _act.error("[数据库-错误] [设备运行指标未找到]")
-        raise RuntimeError("未找到 dim_metric_config.metric_key='device_running'")
-
-    metric_id = int(row[0])
-    _act.info(
-        "[数据库-查询] [设备运行指标ID已获取]",
-        extra={"extra_data": {"metric_id": metric_id}},
-    )
-    return metric_id
 
 
 def get_station_id(cur, device_id: int) -> int:
@@ -171,56 +153,6 @@ def aggregate_counts_by_day(
         }
         for r in rows
     ]
-
-
-def upsert_device_running_slice(
-    conn,
-    station_id: int,
-    device_id: int,
-    metric_id: int,
-    start_ts: datetime,
-    end_ts: datetime,
-) -> int:
-    """将一个时间段内的逐秒运行判定写入 fact_measurements。
-
-    返回：数据库驱动的 rowcount（注意：包含 INSERT/UPDATE 影响行数，可能与总秒数不同）。
-    """
-    ensure_fact_weekly_partitions(conn, start_ts, end_ts)
-
-    sql = """
-        INSERT INTO public.fact_measurements(id, station_id, device_id, metric_id, ts_raw, ts_bucket, value, source_hint)
-        SELECT (
-          CASE WHEN pg_get_serial_sequence('public.fact_measurements','id') IS NOT NULL THEN
-            nextval(pg_get_serial_sequence('public.fact_measurements','id'))
-          ELSE
-            abs(('x' || substr(md5(
-              %(station_id)s::text || '-' || %(device_id)s::text || '-' || %(metric_id)s::text || '-' || s.ts_bucket::text
-            ), 1, 16))::bit(64)::bigint)
-          END
-        ), %(station_id)s, %(device_id)s, %(metric_id)s,
-               s.ts_bucket, s.ts_bucket,
-               CASE WHEN s.is_running THEN 1 ELSE 0 END,
-               'derived:device_running'
-        FROM public.fn_running_state_1s(%(station_id)s, %(device_id)s, %(start)s, %(end)s) AS s
-        ON CONFLICT (station_id, device_id, metric_id, ts_bucket)
-        DO UPDATE SET value = EXCLUDED.value, source_hint = EXCLUDED.source_hint, ts_raw = EXCLUDED.ts_raw
-        WHERE public.fact_measurements.value IS DISTINCT FROM EXCLUDED.value
-        """
-    params = {
-        "station_id": station_id,
-        "device_id": device_id,
-        "metric_id": metric_id,
-        "start": start_ts,
-        "end": end_ts,
-    }
-
-    t0 = time.perf_counter()
-    with conn.cursor() as cur:
-        cur.execute(sql, params)
-        affected = cur.rowcount if cur.rowcount is not None else 0
-    total_ms = (time.perf_counter() - t0) * 1000
-    return int(affected or 0)
-
 
 
 def upsert_mv_running_phase_slice(

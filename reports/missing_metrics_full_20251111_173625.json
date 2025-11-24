@@ -1,0 +1,250 @@
+{
+  "plan": {
+    "start": "2025-10-23T10:48:00+08:00",
+    "end": "2025-10-23T10:49:00+08:00",
+    "window_hours": 1,
+    "devices": [
+      [
+        1,
+        2
+      ]
+    ],
+    "metrics": null,
+    "concurrency": 1,
+    "filter_running": true,
+    "filter_quality": true,
+    "dry_run": false
+  },
+  "summary": {
+    "devices": 1,
+    "windows": 1,
+    "metrics": "dynamic (from metrics_presence_per_second_device)",
+    "use_presence_table": true,
+    "concurrency": 1,
+    "filter_running": true,
+    "filter_quality": true,
+    "dry_run": false,
+    "window_hours": 1,
+    "duration_sec": 0.819,
+    "success_tasks": 1,
+    "failed_tasks": 0
+  },
+  "per_metric_success_tasks": {
+    "pump_outlet_pressure": 1,
+    "pump_flow_rate": 1,
+    "pump_speed": 1,
+    "pump_inlet_pressure": 1,
+    "pump_cumulative_flow": 1,
+    "pump_head": 1,
+    "pump_efficiency": 1,
+    "pump_torque": 1
+  },
+  "per_metric_failed_tasks": {
+    "main_pipeline_flow_rate": 1,
+    "pump_frequency": 1,
+    "pump_active_power": 1,
+    "pool_liquid_level": 1
+  },
+  "per_metric_written_points": {},
+  "per_metric_method_hits": {},
+  "failure_reason_counts": {
+    "no_method": 4
+  },
+  "per_metric_failure_reasons": {
+    "main_pipeline_flow_rate": {
+      "no_method": 1
+    },
+    "pump_frequency": {
+      "no_method": 1
+    },
+    "pump_active_power": {
+      "no_method": 1
+    },
+    "pool_liquid_level": {
+      "no_method": 1
+    }
+  },
+  "performance_summary": {
+    "total_load_time_sec": 0.0,
+    "total_calc_time_sec": 0.0,
+    "total_write_time_sec": 0.0,
+    "per_metric_time_sec": {
+      "main_pipeline_flow_rate": 0.0,
+      "pool_liquid_level": 0.0,
+      "pump_active_power": 0.0,
+      "pump_cumulative_flow": 0.033,
+      "pump_efficiency": 0.029,
+      "pump_flow_rate": 0.27,
+      "pump_frequency": 0.0,
+      "pump_head": 0.03,
+      "pump_inlet_pressure": 0.034,
+      "pump_outlet_pressure": 0.045,
+      "pump_speed": 0.032,
+      "pump_torque": 0.03
+    }
+  },
+  "results": [
+    {
+      "station_id": 1,
+      "device_id": 2,
+      "start": "2025-10-23T10:48:00+08:00",
+      "end": "2025-10-23T10:49:00+08:00",
+      "success": true,
+      "result": {
+        "success": true,
+        "metrics_calculated": [
+          "pump_outlet_pressure",
+          "pump_flow_rate",
+          "pump_speed",
+          "pump_inlet_pressure",
+          "pump_cumulative_flow",
+          "pump_head",
+          "pump_efficiency",
+          "pump_torque"
+        ],
+        "metrics_failed": [
+          "main_pipeline_flow_rate",
+          "pump_frequency",
+          "pump_active_power",
+          "pool_liquid_level"
+        ],
+        "total_points": 480,
+        "valid_points": 480,
+        "written_points": 480,
+        "errors": [
+          "main_pipeline_flow_rate: 没有可用的计算方法",
+          "pump_frequency: 没有可用的计算方法",
+          "pump_active_power: 没有可用的计算方法",
+          "pool_liquid_level: 没有可用的计算方法"
+        ],
+        "performance_stats": {
+          "total_time": 0.7962796688079834,
+          "load_data_time": 0.2055220603942871,
+          "calculation_time": 0.5876924991607666,
+          "write_time": 0.13199615478515625,
+          "metric_times": {
+            "main_pipeline_flow_rate": 0,
+            "pump_frequency": 0,
+            "pump_active_power": 0,
+            "pool_liquid_level": 0,
+            "pump_outlet_pressure": 0.04483461380004883,
+            "pump_flow_rate": 0.26996302604675293,
+            "pump_speed": 0.03161883354187012,
+            "pump_inlet_pressure": 0.03413724899291992,
+            "pump_cumulative_flow": 0.03310680389404297,
+            "pump_head": 0.03034806251525879,
+            "pump_efficiency": 0.028533935546875,
+            "pump_torque": 0.029567241668701172
+          },
+          "throughput": 602.8032848289993
+        },
+        "calculation_order": [
+          "main_pipeline_flow_rate",
+          "pump_frequency",
+          "pump_active_power",
+          "pool_liquid_level",
+          "pump_outlet_pressure",
+          "pump_flow_rate",
+          "pump_speed",
+          "pump_inlet_pressure",
+          "pump_cumulative_flow",
+          "pump_head",
+          "pump_efficiency",
+          "pump_torque"
+        ],
+        "circular_groups": {},
+        "stats": {
+          "|1|2|pump_outlet_pressure|2025-10-23T10:48:00+08:00|2025-10-23T10:49:00+08:00": {
+            "total_points": 60,
+            "valid_points": 60,
+            "written_points": 60,
+            "calc_duration_ms": 44,
+            "validate_duration_ms": 0,
+            "write_duration_ms": 22,
+            "method_id": "pump_outlet_pressure_method_b",
+            "path_type": "acyclic",
+            "finished": true
+          },
+          "|1|2|pump_flow_rate|2025-10-23T10:48:00+08:00|2025-10-23T10:49:00+08:00": {
+            "total_points": 60,
+            "valid_points": 60,
+            "written_points": 60,
+            "calc_duration_ms": 269,
+            "validate_duration_ms": 0,
+            "write_duration_ms": 19,
+            "method_id": "pump_flow_rate_method_a",
+            "path_type": "acyclic",
+            "finished": true
+          },
+          "|1|2|pump_speed|2025-10-23T10:48:00+08:00|2025-10-23T10:49:00+08:00": {
+            "total_points": 60,
+            "valid_points": 60,
+            "written_points": 60,
+            "calc_duration_ms": 31,
+            "validate_duration_ms": 0,
+            "write_duration_ms": 15,
+            "method_id": "pump_speed_method_a",
+            "path_type": "acyclic",
+            "finished": true
+          },
+          "|1|2|pump_inlet_pressure|2025-10-23T10:48:00+08:00|2025-10-23T10:49:00+08:00": {
+            "total_points": 60,
+            "valid_points": 60,
+            "written_points": 60,
+            "calc_duration_ms": 34,
+            "validate_duration_ms": 0,
+            "write_duration_ms": 16,
+            "method_id": "pump_inlet_pressure_method_b",
+            "path_type": "acyclic",
+            "finished": true
+          },
+          "|1|2|pump_cumulative_flow|2025-10-23T10:48:00+08:00|2025-10-23T10:49:00+08:00": {
+            "total_points": 60,
+            "valid_points": 60,
+            "written_points": 60,
+            "calc_duration_ms": 33,
+            "validate_duration_ms": 0,
+            "write_duration_ms": 14,
+            "method_id": "pump_cumulative_flow_method_a",
+            "path_type": "acyclic",
+            "finished": true
+          },
+          "|1|2|pump_head|2025-10-23T10:48:00+08:00|2025-10-23T10:49:00+08:00": {
+            "total_points": 60,
+            "valid_points": 60,
+            "written_points": 60,
+            "calc_duration_ms": 30,
+            "validate_duration_ms": 0,
+            "write_duration_ms": 15,
+            "method_id": "HEAD_COEF_V1",
+            "path_type": "acyclic",
+            "finished": true
+          },
+          "|1|2|pump_efficiency|2025-10-23T10:48:00+08:00|2025-10-23T10:49:00+08:00": {
+            "total_points": 60,
+            "valid_points": 60,
+            "written_points": 60,
+            "calc_duration_ms": 28,
+            "validate_duration_ms": 0,
+            "write_duration_ms": 13,
+            "method_id": "EFF_SIMPLE_V1",
+            "path_type": "acyclic",
+            "finished": true
+          },
+          "|1|2|pump_torque|2025-10-23T10:48:00+08:00|2025-10-23T10:49:00+08:00": {
+            "total_points": 60,
+            "valid_points": 60,
+            "written_points": 60,
+            "calc_duration_ms": 29,
+            "validate_duration_ms": 0,
+            "write_duration_ms": 15,
+            "method_id": "pump_torque_method_a",
+            "path_type": "acyclic",
+            "finished": true
+          }
+        }
+      }
+    }
+  ],
+  "timestamp": "2025-11-11T17:36:25.339270+08:00"
+}

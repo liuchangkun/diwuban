@@ -175,19 +175,6 @@ ON UPDATE CASCADE ON DELETE CASCADE;
 \echo '✅ metric_anomaly_strategy.device_id 外键已添加'
 \echo '✅ metric_anomaly_strategy.station_id 外键已添加'
 
-\echo ''
-\echo '2.4 为 device_metric_candidates 添加外键'
-\echo '    业务分类：设备指标候选配置'
-\echo '    影响功能：指标候选管理'
-\echo '    失联后果：无法获取候选指标配置'
-
-ALTER TABLE device_metric_candidates
-ADD CONSTRAINT device_metric_candidates_device_id_fkey
-FOREIGN KEY (device_id) REFERENCES dim_devices(id)
-ON UPDATE CASCADE ON DELETE CASCADE;
-
-\echo '✅ device_metric_candidates.device_id 外键已添加'
-
 -- ============================================
 -- 第三步：验证外键约束
 -- ============================================

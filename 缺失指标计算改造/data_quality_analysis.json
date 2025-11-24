@@ -1,0 +1,642 @@
+{
+  "pump_flow_rate": {
+    "metric_key": "pump_flow_rate",
+    "devices": {
+      "1": {
+        "device_id": 1,
+        "total_records": 83573,
+        "valid_records": 83573,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 99.52,
+        "min_value": 0.0,
+        "max_value": 2658.39627741813,
+        "avg_value": 452.0817306707044,
+        "stddev_value": 771.2969900819953
+      },
+      "2": {
+        "device_id": 2,
+        "total_records": 83573,
+        "valid_records": 83573,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 99.52,
+        "min_value": 0.0,
+        "max_value": 2253.01185319892,
+        "avg_value": 797.1887873836941,
+        "stddev_value": 837.8092772640247
+      },
+      "3": {
+        "device_id": 3,
+        "total_records": 83602,
+        "valid_records": 83602,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 99.55,
+        "min_value": 0.0,
+        "max_value": 1680.77655587919,
+        "avg_value": 73.16970290513935,
+        "stddev_value": 287.42948835623463
+      },
+      "4": {
+        "device_id": 4,
+        "total_records": 83634,
+        "valid_records": 83634,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 99.59,
+        "min_value": 0.0,
+        "max_value": 2752.74641360191,
+        "avg_value": 913.179380243041,
+        "stddev_value": 801.4453603632361
+      },
+      "5": {
+        "device_id": 5,
+        "total_records": 83634,
+        "valid_records": 83634,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 99.59,
+        "min_value": 0.0,
+        "max_value": 588.813630879372,
+        "avg_value": 0.1552349643858336,
+        "stddev_value": 6.967606844770549
+      },
+      "6": {
+        "device_id": 6,
+        "total_records": 83665,
+        "valid_records": 83665,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 99.63,
+        "min_value": 0.0,
+        "max_value": 3012.34881769743,
+        "avg_value": 875.7085659033808,
+        "stddev_value": 894.0314316372376
+      }
+    },
+    "total_records": 501681,
+    "total_expected": 503862,
+    "overall_coverage": 99.57
+  },
+  "pump_inlet_pressure": {
+    "metric_key": "pump_inlet_pressure",
+    "devices": {
+      "1": {
+        "device_id": 1,
+        "total_records": 25626,
+        "valid_records": 25626,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 30.52,
+        "min_value": 0.110355305457769,
+        "max_value": 0.11564270899932,
+        "avg_value": 0.1122068266816793,
+        "stddev_value": 0.0009236925436434541
+      },
+      "2": {
+        "device_id": 2,
+        "total_records": 42240,
+        "valid_records": 42240,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 50.3,
+        "min_value": 0.111400994228854,
+        "max_value": 0.116232733996523,
+        "avg_value": 0.11318229983391702,
+        "stddev_value": 0.000947602113557539
+      },
+      "3": {
+        "device_id": 3,
+        "total_records": 5547,
+        "valid_records": 5547,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 6.61,
+        "min_value": 0.111363719797029,
+        "max_value": 0.115101293611016,
+        "avg_value": 0.11356341825173488,
+        "stddev_value": 0.0011175902011348498
+      },
+      "4": {
+        "device_id": 4,
+        "total_records": 48829,
+        "valid_records": 48829,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 58.15,
+        "min_value": 0.111461028194389,
+        "max_value": 0.113812965134177,
+        "avg_value": 0.1130367891069017,
+        "stddev_value": 0.00035954887911254796
+      },
+      "5": {
+        "device_id": 5,
+        "total_records": 133,
+        "valid_records": 133,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 0.16,
+        "min_value": 0.113645036285334,
+        "max_value": 0.113789821011358,
+        "avg_value": 0.11373607067476318,
+        "stddev_value": 4.144590090301557e-05
+      },
+      "6": {
+        "device_id": 6,
+        "total_records": 44853,
+        "valid_records": 44853,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 53.41,
+        "min_value": 0.109470273706253,
+        "max_value": 0.115175773864314,
+        "avg_value": 0.11264927021670922,
+        "stddev_value": 0.0012444074223351472
+      }
+    },
+    "total_records": 167228,
+    "total_expected": 503862,
+    "overall_coverage": 33.19
+  },
+  "main_pipeline_inlet_pressure": {
+    "metric_key": "main_pipeline_inlet_pressure",
+    "devices": {
+      "1": {
+        "device_id": 1,
+        "total_records": 0,
+        "valid_records": 0,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 0.0,
+        "min_value": null,
+        "max_value": null,
+        "avg_value": null,
+        "stddev_value": null
+      },
+      "2": {
+        "device_id": 2,
+        "total_records": 0,
+        "valid_records": 0,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 0.0,
+        "min_value": null,
+        "max_value": null,
+        "avg_value": null,
+        "stddev_value": null
+      },
+      "3": {
+        "device_id": 3,
+        "total_records": 0,
+        "valid_records": 0,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 0.0,
+        "min_value": null,
+        "max_value": null,
+        "avg_value": null,
+        "stddev_value": null
+      },
+      "4": {
+        "device_id": 4,
+        "total_records": 0,
+        "valid_records": 0,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 0.0,
+        "min_value": null,
+        "max_value": null,
+        "avg_value": null,
+        "stddev_value": null
+      },
+      "5": {
+        "device_id": 5,
+        "total_records": 0,
+        "valid_records": 0,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 0.0,
+        "min_value": null,
+        "max_value": null,
+        "avg_value": null,
+        "stddev_value": null
+      },
+      "6": {
+        "device_id": 6,
+        "total_records": 0,
+        "valid_records": 0,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 0.0,
+        "min_value": null,
+        "max_value": null,
+        "avg_value": null,
+        "stddev_value": null
+      }
+    },
+    "total_records": 0,
+    "total_expected": 503862,
+    "overall_coverage": 0.0
+  },
+  "pump_head": {
+    "metric_key": "pump_head",
+    "devices": {
+      "1": {
+        "device_id": 1,
+        "total_records": 25626,
+        "valid_records": 25626,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 30.52,
+        "min_value": 9.34368690582344,
+        "max_value": 33.9862904386076,
+        "avg_value": 30.63104440211711,
+        "stddev_value": 2.0224646514706057
+      },
+      "2": {
+        "device_id": 2,
+        "total_records": 42240,
+        "valid_records": 42240,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 50.3,
+        "min_value": 9.39969713875769,
+        "max_value": 32.7732565131625,
+        "avg_value": 31.242793886676747,
+        "stddev_value": 1.2173007396725934
+      },
+      "3": {
+        "device_id": 3,
+        "total_records": 5547,
+        "valid_records": 5547,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 6.61,
+        "min_value": 14.403924461561,
+        "max_value": 32.0792532631609,
+        "avg_value": 30.46874423415044,
+        "stddev_value": 1.533853409357232
+      },
+      "4": {
+        "device_id": 4,
+        "total_records": 48829,
+        "valid_records": 48829,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 58.15,
+        "min_value": 9.34361933244567,
+        "max_value": 32.9380870112481,
+        "avg_value": 31.20975968601382,
+        "stddev_value": 1.1037706686477802
+      },
+      "5": {
+        "device_id": 5,
+        "total_records": 133,
+        "valid_records": 133,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 0.16,
+        "min_value": 10.7291438919052,
+        "max_value": 28.4384228553843,
+        "avg_value": 19.65614441321691,
+        "stddev_value": 6.727647729876787
+      },
+      "6": {
+        "device_id": 6,
+        "total_records": 44853,
+        "valid_records": 44853,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 53.41,
+        "min_value": 12.0283592183038,
+        "max_value": 33.9699204165226,
+        "avg_value": 30.688680515530574,
+        "stddev_value": 1.3284668082764317
+      }
+    },
+    "total_records": 167228,
+    "total_expected": 503862,
+    "overall_coverage": 33.19
+  },
+  "pump_efficiency": {
+    "metric_key": "pump_efficiency",
+    "devices": {
+      "1": {
+        "device_id": 1,
+        "total_records": 25626,
+        "valid_records": 25626,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 30.52,
+        "min_value": 0.3,
+        "max_value": 0.821200361795766,
+        "avg_value": 0.54392469512629,
+        "stddev_value": 0.09384809078531364
+      },
+      "2": {
+        "device_id": 2,
+        "total_records": 42240,
+        "valid_records": 42240,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 50.3,
+        "min_value": 0.3,
+        "max_value": 0.735436369144207,
+        "avg_value": 0.604947932796081,
+        "stddev_value": 0.03746448010310935
+      },
+      "3": {
+        "device_id": 3,
+        "total_records": 5547,
+        "valid_records": 5547,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 6.61,
+        "min_value": 0.3,
+        "max_value": 0.613038915297475,
+        "avg_value": 0.5472764791459057,
+        "stddev_value": 0.05881713142582903
+      },
+      "4": {
+        "device_id": 4,
+        "total_records": 48829,
+        "valid_records": 48829,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 58.15,
+        "min_value": 0.3,
+        "max_value": 0.712264006789701,
+        "avg_value": 0.5948309426177961,
+        "stddev_value": 0.039923097252884086
+      },
+      "5": {
+        "device_id": 5,
+        "total_records": 133,
+        "valid_records": 133,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 0.16,
+        "min_value": 0.3,
+        "max_value": 0.3,
+        "avg_value": 0.3,
+        "stddev_value": 0.0
+      },
+      "6": {
+        "device_id": 6,
+        "total_records": 44853,
+        "valid_records": 44853,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 53.41,
+        "min_value": 0.3,
+        "max_value": 0.673189771006267,
+        "avg_value": 0.562328243366529,
+        "stddev_value": 0.06754820778194644
+      }
+    },
+    "total_records": 167228,
+    "total_expected": 503862,
+    "overall_coverage": 33.19
+  },
+  "pump_speed": {
+    "metric_key": "pump_speed",
+    "devices": {
+      "1": {
+        "device_id": 1,
+        "total_records": 83610,
+        "valid_records": 83610,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 99.56,
+        "min_value": 0.0,
+        "max_value": 1500.0,
+        "avg_value": 421.88158516874057,
+        "stddev_value": 637.5325999113206
+      },
+      "2": {
+        "device_id": 2,
+        "total_records": 83610,
+        "valid_records": 83610,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 99.56,
+        "min_value": 0.0,
+        "max_value": 1453.125,
+        "avg_value": 702.286327118658,
+        "stddev_value": 697.200338201799
+      },
+      "3": {
+        "device_id": 3,
+        "total_records": 83641,
+        "valid_records": 83641,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 99.6,
+        "min_value": 0.0,
+        "max_value": 1408.4202,
+        "avg_value": 87.02509062580553,
+        "stddev_value": 327.461336668821
+      },
+      "4": {
+        "device_id": 4,
+        "total_records": 83671,
+        "valid_records": 83671,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 99.64,
+        "min_value": 0.0,
+        "max_value": 1472.2221,
+        "avg_value": 805.8922759605646,
+        "stddev_value": 681.2098522542501
+      },
+      "5": {
+        "device_id": 5,
+        "total_records": 83671,
+        "valid_records": 83671,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 99.64,
+        "min_value": 0.0,
+        "max_value": 1220.9202,
+        "avg_value": 0.7988412064681909,
+        "stddev_value": 24.352832437036042
+      },
+      "6": {
+        "device_id": 6,
+        "total_records": 83702,
+        "valid_records": 83702,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 99.67,
+        "min_value": 0.0,
+        "max_value": 1473.9582,
+        "avg_value": 754.1072494863683,
+        "stddev_value": 702.844402420553
+      }
+    },
+    "total_records": 501905,
+    "total_expected": 503862,
+    "overall_coverage": 99.61
+  },
+  "pump_shaft_power": {
+    "metric_key": "pump_shaft_power",
+    "devices": {
+      "1": {
+        "device_id": 1,
+        "total_records": 9348,
+        "valid_records": 9348,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 11.13,
+        "min_value": 0.179291797400269,
+        "max_value": 221.963245181533,
+        "avg_value": 128.8617598483423,
+        "stddev_value": 51.03551680589666
+      },
+      "2": {
+        "device_id": 2,
+        "total_records": 18638,
+        "valid_records": 18638,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 22.19,
+        "min_value": 0.179291797400269,
+        "max_value": 224.114746750336,
+        "avg_value": 195.7825255334251,
+        "stddev_value": 32.39453052157907
+      },
+      "3": {
+        "device_id": 3,
+        "total_records": 4856,
+        "valid_records": 4856,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 5.78,
+        "min_value": 0.358583594800538,
+        "max_value": 219.81174361273,
+        "avg_value": 176.593448465054,
+        "stddev_value": 44.74539221408024
+      },
+      "4": {
+        "device_id": 4,
+        "total_records": 3930,
+        "valid_records": 3930,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 4.68,
+        "min_value": 0.358583594800538,
+        "max_value": 223.756163155536,
+        "avg_value": 144.55280268892076,
+        "stddev_value": 51.80966453235953
+      },
+      "5": {
+        "device_id": 5,
+        "total_records": 134,
+        "valid_records": 134,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 0.16,
+        "min_value": 0.179291797400269,
+        "max_value": 99.5069475571493,
+        "avg_value": 19.616395833472705,
+        "stddev_value": 23.839500853068557
+      },
+      "6": {
+        "device_id": 6,
+        "total_records": 10761,
+        "valid_records": 10761,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 12.81,
+        "min_value": 0.896458987001345,
+        "max_value": 224.114746750336,
+        "avg_value": 152.64488098884235,
+        "stddev_value": 46.84262522695278
+      }
+    },
+    "total_records": 47667,
+    "total_expected": 503862,
+    "overall_coverage": 9.46
+  },
+  "pump_torque": {
+    "metric_key": "pump_torque",
+    "devices": {
+      "1": {
+        "device_id": 1,
+        "total_records": 25625,
+        "valid_records": 25625,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 30.51,
+        "min_value": 55.766401218483,
+        "max_value": 2698.86122501831,
+        "avg_value": 1459.2211877215323,
+        "stddev_value": 497.30514375622175
+      },
+      "2": {
+        "device_id": 2,
+        "total_records": 42240,
+        "valid_records": 42240,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 50.3,
+        "min_value": 104.04691352532,
+        "max_value": 2640.19139334737,
+        "avg_value": 1495.8170272056273,
+        "stddev_value": 271.32194643585996
+      },
+      "3": {
+        "device_id": 3,
+        "total_records": 5547,
+        "valid_records": 5547,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 6.61,
+        "min_value": 44.9872658008192,
+        "max_value": 3626.9279765478,
+        "avg_value": 1185.4719104977942,
+        "stddev_value": 266.603554260077
+      },
+      "4": {
+        "device_id": 4,
+        "total_records": 48829,
+        "valid_records": 48829,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 58.15,
+        "min_value": 55.624784780118,
+        "max_value": 7040.50916565924,
+        "avg_value": 1532.3314009831386,
+        "stddev_value": 222.9497174610322
+      },
+      "5": {
+        "device_id": 5,
+        "total_records": 133,
+        "valid_records": 133,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 0.16,
+        "min_value": 54.3507051347039,
+        "max_value": 2030.91578153188,
+        "avg_value": 305.17233936526446,
+        "stddev_value": 285.23168136017136
+      },
+      "6": {
+        "device_id": 6,
+        "total_records": 44853,
+        "valid_records": 44853,
+        "invalid_records": 0,
+        "expected_records": 83977,
+        "coverage_pct": 53.41,
+        "min_value": 51.4845194574067,
+        "max_value": 2707.88770870917,
+        "avg_value": 1610.1471650806172,
+        "stddev_value": 390.05164403632125
+      }
+    },
+    "total_records": 167227,
+    "total_expected": 503862,
+    "overall_coverage": 33.19
+  }
+}

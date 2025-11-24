@@ -22,8 +22,8 @@ pool:
 # 超时设置（毫秒）
 timeouts:
   connect_timeout_ms: 5000      # 连接超时：建立连接的最大等待时间
-  statement_timeout_ms: 30000   # 语句超时：单个SQL执行的最大时间
-  query_timeout_ms: 60000       # 查询超时：复杂查询的最大执行时间
+  statement_timeout_ms: 60000   # 语句超时：单个SQL执行的最大时间（1分钟）
+  query_timeout_ms: 120000      # 查询超时：复杂查询的最大执行时间（2分钟，必须大于statement_timeout）
   connection_acquire_timeout_ms: 10000   # 获取连接超时：从连接池获取连接的最大等待时间
   connection_validation_timeout_ms: 1000 # 连接验证超时：验证连接健康状态的最大时间
   pool_shutdown_timeout_ms: 30000        # 连接池关闭超时：关闭连接池的最大等待时间
