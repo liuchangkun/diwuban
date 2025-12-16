@@ -21,24 +21,28 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from app.adapters.db.pool import get_connection
-from app.services.characteristic_curves.models import FitResult
+from app.services.characteristic_curves.core.data_structures import FitResult
+from app.services.characteristic_curves.shared.curve_point_generator import CurvePointGenerator
 
 
 class ResultStorage:
     """结果存储管理器
-    
+
     使用 get_connection() 上下文管理器获取数据库连接，
     实现三表分离设计的原子性写入。
     """
 
     def __init__(self):
         """初始化存储管理器"""
-        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self._logger = logging.getLogger(
+            f"{__name__}.{self.__class__.__name__}")
+        self._point_generator = CurvePointGenerator(n_sampling_points=20)
         self._logger.info(
             "[存储] 初始化",
             extra={"extra_data": {
                 "组件": "ResultStorage",
-                "连接方式": "get_connection()上下文管理器"
+                "连接方式": "get_connection()上下文管理器",
+                "curve_points生成器": "已集成"
             }}
         )
 
@@ -47,22 +51,86 @@ class ResultStorage:
         device_id: int,
         curve_type: str,
         fit_result: FitResult,
-        version: Optional[str] = None
+        version: Optional[str] = None,
+        skip_quality_gate: bool = False
     ) -> str:
         """保存拟合结果（三表原子写入）
-        
+
         Args:
             device_id: 设备ID
             curve_type: 曲线类型
             fit_result: 拟合结果对象
             version: 版本号（可选，不指定则自动生成）
-            
+            skip_quality_gate: 是否跳过质量门禁检查（默认False）
+
         Returns:
             str: 版本号
+
+        Raises:
+            ValueError: 拟合质量不达标时抛出
         """
         start_time = time.time()
         version = version or datetime.now().strftime('%Y%m%d_%H%M%S')
-        
+
+        # ========== 质量门禁检查 ==========
+        if not skip_quality_gate:
+            # R² 质量检查
+            min_r_squared = 0.5
+            if fit_result.r_squared < min_r_squared:
+                self._logger.warning(
+                    f"[质量门禁] R²={fit_result.r_squared:.4f} < {min_r_squared}，"
+                    f"拟合质量不达标",
+                    extra={"extra_data": {
+                        "设备ID": device_id,
+                        "曲线类型": curve_type,
+                        "R²": fit_result.r_squared,
+                        "阈值": min_r_squared
+                    }}
+                )
+                raise ValueError(
+                    f"质量门禁拒绝: R²={fit_result.r_squared:.4f} < {min_r_squared}, "
+                    f"device_id={device_id}, curve_type={curve_type}. "
+                    f"请检查数据质量或调整拟合方法。"
+                )
+
+            # MAPE 质量检查
+            max_mape = 50.0
+            if fit_result.mape > max_mape:
+                self._logger.warning(
+                    f"[质量门禁] MAPE={fit_result.mape:.2f}% > {max_mape}%，"
+                    f"拟合误差过大",
+                    extra={"extra_data": {
+                        "设备ID": device_id,
+                        "曲线类型": curve_type,
+                        "MAPE": fit_result.mape,
+                        "阈值": max_mape
+                    }}
+                )
+                raise ValueError(
+                    f"质量门禁拒绝: MAPE={fit_result.mape:.2f}% > {max_mape}%, "
+                    f"device_id={device_id}, curve_type={curve_type}. "
+                    f"请检查数据质量或调整拟合方法。"
+                )
+
+        # 生成曲线特征点
+        curve_points = None
+        try:
+            curve_points = self._point_generator.generate(
+                curve_type=curve_type,
+                coefficients=fit_result.coefficients,
+                method_name=fit_result.method_name,
+                rated_params=fit_result.metadata.get(
+                    'rated_params') if fit_result.metadata else None
+            )
+        except Exception as e:
+            self._logger.warning(
+                "[存储] curve_points生成失败,将跳过此字段",
+                extra={"extra_data": {
+                    "错误类型": type(e).__name__,
+                    "错误信息": str(e)
+                }}
+            )
+
         self._logger.info(
             "[存储] 开始保存",
             extra={"extra_data": {
@@ -74,7 +142,7 @@ class ResultStorage:
                 "数据点数": fit_result.data_points
             }}
         )
-        
+
         try:
             with get_connection() as conn:
                 with conn.cursor() as cursor:
@@ -84,19 +152,21 @@ class ResultStorage:
                         INSERT INTO curve_fit_results
                         (device_id, curve_type, version, method_name,
                          data_start_time, data_end_time, data_point_count,
-                         normalization_params, created_at, status)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                         curve_points, normalization_params, created_at, status)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         RETURNING id
                     """
                     cursor.execute(insert_result_sql, (
                         device_id, curve_type, version, fit_result.method_name,
                         time_range.get('start'), time_range.get('end'),
                         fit_result.data_points,
-                        json.dumps(fit_result.normalization_params) if fit_result.normalization_params else None,
+                        json.dumps(curve_points) if curve_points else None,
+                        json.dumps(
+                            fit_result.normalization_params) if fit_result.normalization_params else None,
                         datetime.now(), 'active'
                     ))
                     result_id = cursor.fetchone()[0]
-                    
+
                     # ========== 步骤2: 插入参数表 curve_fit_params ==========
                     insert_params_sql = """
                         INSERT INTO curve_fit_params
@@ -109,15 +179,17 @@ class ResultStorage:
                             cursor.execute(insert_params_sql, (
                                 result_id, 'fit', param_key, float(param_value)
                             ))
-                    
+
                     # 插入方法参数（从metadata中提取）
-                    method_params = fit_result.metadata.get('method_params', {})
+                    method_params = fit_result.metadata.get(
+                        'method_params', {})
                     for param_key, param_value in method_params.items():
                         if isinstance(param_value, (int, float)):
                             cursor.execute(insert_params_sql, (
-                                result_id, 'method', param_key, float(param_value)
+                                result_id, 'method', param_key, float(
+                                    param_value)
                             ))
-                    
+
                     # ========== 步骤3: 插入指标表 curve_fit_metrics ==========
                     insert_metrics_sql = """
                         INSERT INTO curve_fit_metrics
@@ -131,10 +203,10 @@ class ResultStorage:
                         fit_result.mae,
                         fit_result.mape
                     ))
-                    
+
                     # ========== 提交事务 ==========
                     conn.commit()
-                    
+
                     duration = (time.time() - start_time) * 1000
                     self._logger.info(
                         "[存储] 三表写入成功",
@@ -144,11 +216,12 @@ class ResultStorage:
                             "版本号": version,
                             "主表ID": result_id,
                             "参数数量": len(fit_result.coefficients),
+                            "curve_points": "已生成" if curve_points else "未生成",
                             "耗时ms": round(duration, 2)
                         }}
                     )
                     return version
-                    
+
         except Exception as e:
             self._logger.error(
                 "[存储] 三表写入失败",
@@ -253,9 +326,11 @@ class ResultStorage:
                 # 构建时间范围
                 time_range = {}
                 if row[5]:  # data_start_time
-                    time_range['start'] = row[5].isoformat() if hasattr(row[5], 'isoformat') else str(row[5])
+                    time_range['start'] = row[5].isoformat() if hasattr(
+                        row[5], 'isoformat') else str(row[5])
                 if row[6]:  # data_end_time
-                    time_range['end'] = row[6].isoformat() if hasattr(row[6], 'isoformat') else str(row[6])
+                    time_range['end'] = row[6].isoformat() if hasattr(
+                        row[6], 'isoformat') else str(row[6])
 
                 # 构建FitResult
                 fit_result = FitResult(
@@ -269,7 +344,8 @@ class ResultStorage:
                     mape=row[14] or 0.0,
                     data_points=row[7] or 0,
                     time_range=time_range,
-                    normalization_params=row[8] if isinstance(row[8], dict) else {},
+                    normalization_params=row[8] if isinstance(
+                        row[8], dict) else {},
                     created_at=row[9] if row[9] else datetime.now(),
                     metadata={'method_params': method_params}
                 )
@@ -372,7 +448,8 @@ class ResultStorage:
                         WHERE device_id = %s AND curve_type = %s AND version = %s
                         RETURNING id
                     """
-                    cursor.execute(update_sql, (device_id, curve_type, version))
+                    cursor.execute(
+                        update_sql, (device_id, curve_type, version))
                 else:
                     # 硬删除：物理删除（级联删除params和metrics）
                     delete_sql = """
@@ -380,7 +457,8 @@ class ResultStorage:
                         WHERE device_id = %s AND curve_type = %s AND version = %s
                         RETURNING id
                     """
-                    cursor.execute(delete_sql, (device_id, curve_type, version))
+                    cursor.execute(
+                        delete_sql, (device_id, curve_type, version))
 
                 result = cursor.fetchone()
                 conn.commit()
@@ -431,4 +509,3 @@ class ResultStorage:
 
                 row = cursor.fetchone()
                 return row[0] if row else None
-

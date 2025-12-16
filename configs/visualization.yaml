@@ -143,6 +143,12 @@ file_naming:
   residuals: "{device_id}_{curve_type}_{version}_residuals.png"
   # 置信区间图
   confidence: "{device_id}_{curve_type}_{version}_confidence.png"
+  # 敏感性分析图
+  sensitivity: "{device_id}_{curve_type}_{version}_sensitivity.png"
+  # 版本对比图
+  version_comparison: "{device_id}_{curve_type}_{version}_version_comparison.png"
+  # 运行工况密度图
+  density: "{device_id}_{curve_type}_{version}_density.png"
   # 对比图
   comparison: "{device_id}_{curve_type}_{version}_comparison.png"
   # 泵组合成曲线

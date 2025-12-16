@@ -1,6 +1,6 @@
 # 导入配置（允许运行时 CLI 覆盖；否则依据 YAML）
 mode: auto                  # auto|direct|staging（默认 auto）
-workers: 6                  # 并发线程/任务数
+workers: 6                  # 并发线程/任务数（增加到6进一步提高导入速度）
 commit_interval: 1000000    # 提交批大小（行）
 p95_window: 20              # 计算 P95 的滑动窗口批次数
 

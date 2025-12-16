@@ -24,7 +24,7 @@ from app.services.characteristic_curves.shared import ResultStorage
 
 class ConstraintLearner:
     """约束学习器 - 从历史成功拟合中学习约束参数
-    
+
     支持的学习方法：
     - 3sigma: 3σ原则，适用于正态分布数据
     - quantile: 分位数方法，适用于非正态分布
@@ -37,15 +37,16 @@ class ConstraintLearner:
         method: str = "3sigma"
     ):
         """初始化约束学习器
-        
+
         Args:
             storage: 结果存储器（可选，默认创建新实例）
             method: 学习方法 ('3sigma', 'quantile', 'rated_based')
         """
         self._storage = storage or ResultStorage()
         self._method = method
-        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-        
+        self._logger = logging.getLogger(
+            f"{__name__}.{self.__class__.__name__}")
+
         self._logger.info(
             "[约束学习] 初始化",
             extra={"extra_data": {"组件": "ConstraintLearner", "学习方法": method}}
@@ -58,12 +59,12 @@ class ConstraintLearner:
         min_samples: int = 20
     ) -> Dict[str, Any]:
         """从历史成功拟合中学习约束参数
-        
+
         Args:
             device_id: 设备ID
             curve_type: 曲线类型 ('qh', 'qp', 'qeta')
             min_samples: 最小样本数
-            
+
         Returns:
             Dict: {
                 'learned_params': Dict,  # 学习到的参数范围
@@ -73,8 +74,9 @@ class ConstraintLearner:
             }
         """
         # 获取历史拟合结果
-        history = self._get_successful_fits(device_id, curve_type, min_samples * 2)
-        
+        history = self._get_successful_fits(
+            device_id, curve_type, min_samples * 2)
+
         if len(history) < min_samples:
             self._logger.warning(
                 f"[约束学习] 样本不足: {len(history)} < {min_samples}",
@@ -87,7 +89,7 @@ class ConstraintLearner:
                 'method': self._method,
                 'error': f'样本不足: {len(history)} < {min_samples}'
             }
-        
+
         # 根据方法学习参数
         if self._method == "3sigma":
             learned_params = self._learn_3sigma(history)
@@ -97,17 +99,17 @@ class ConstraintLearner:
             learned_params = self._learn_rated_based(history, device_id)
         else:
             learned_params = self._learn_3sigma(history)
-        
+
         # 计算置信度
         confidence = min(1.0, len(history) / (min_samples * 5))
-        
+
         result = {
             'learned_params': learned_params,
             'confidence': confidence,
             'sample_count': len(history),
             'method': self._method
         }
-        
+
         self._logger.info(
             "[约束学习] 学习完成",
             extra={"extra_data": {
@@ -118,7 +120,7 @@ class ConstraintLearner:
                 "参数数": len(learned_params)
             }}
         )
-        
+
         return result
 
     def _get_successful_fits(
@@ -201,7 +203,7 @@ class ConstraintLearner:
     def _learn_3sigma(self, history: List[Dict[str, Any]]) -> Dict[str, Any]:
         """使用3σ原则学习参数范围"""
         params = {}
-        
+
         # 收集所有系数
         all_coefficients = {}
         for fit in history:
@@ -211,7 +213,7 @@ class ConstraintLearner:
                     all_coefficients[key] = []
                 if isinstance(value, (int, float)):
                     all_coefficients[key].append(value)
-        
+
         # 计算每个系数的范围
         for key, values in all_coefficients.items():
             if len(values) >= 3:
@@ -221,7 +223,7 @@ class ConstraintLearner:
                 params[f'{key}_min'] = float(mean - 3 * std)
                 params[f'{key}_max'] = float(mean + 3 * std)
                 params[f'{key}_mean'] = float(mean)
-        
+
         return params
 
     def _learn_quantile(
@@ -247,8 +249,10 @@ class ConstraintLearner:
         for key, values in all_coefficients.items():
             if len(values) >= 3:
                 arr = np.array(values)
-                params[f'{key}_min'] = float(np.percentile(arr, lower_quantile * 100))
-                params[f'{key}_max'] = float(np.percentile(arr, upper_quantile * 100))
+                params[f'{key}_min'] = float(
+                    np.percentile(arr, lower_quantile * 100))
+                params[f'{key}_max'] = float(
+                    np.percentile(arr, upper_quantile * 100))
                 params[f'{key}_median'] = float(np.median(arr))
 
         return params
@@ -262,8 +266,66 @@ class ConstraintLearner:
         # 首先使用3sigma作为基础
         params = self._learn_3sigma(history)
 
-        # TODO: 从设备参数表获取额定值，调整参数范围
-        # 例如：H0_max 应该小于 1.2 * rated_head
+        # 从设备参数表获取额定值，调整参数范围
+        try:
+            from app.adapters.db import get_connection
+
+            sql = """
+                SELECT param_key, value_numeric
+                FROM device_rated_params
+                WHERE device_id = %s
+                  AND param_key IN ('rated_flow', 'rated_head', 'rated_power')
+                  AND (effective_to IS NULL OR effective_to > NOW())
+            """
+
+            device_params = {}
+            with get_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(sql, (device_id,))
+                    rows = cur.fetchall()
+                    for row in rows:
+                        device_params[row[0]] = float(
+                            row[1]) if row[1] else None
+
+            # 如果成功获取额定值，使用它们约束参数范围
+            if device_params:
+                rated_head = device_params.get('rated_head')
+                rated_flow = device_params.get('rated_flow')
+
+                if rated_head:
+                    # H0(关死点扬程)应该在 0.7~1.3倍额定扬程之间
+                    if 'H0_max' in params:
+                        params['H0_max'] = min(
+                            params['H0_max'], rated_head * 1.3)
+                    if 'H0_min' in params:
+                        params['H0_min'] = max(
+                            params['H0_min'], rated_head * 0.7)
+
+                if rated_flow:
+                    # Q_max应该不超过1.5倍额定流量
+                    if 'Q_max' in params:
+                        params['Q_max'] = min(
+                            params['Q_max'], rated_flow * 1.5)
+
+                self._logger.info(
+                    "[约束学习] 已使用额定参数调整范围",
+                    extra={"extra_data": {
+                        "设备ID": device_id,
+                        "额定扬程": rated_head,
+                        "额定流量": rated_flow
+                    }}
+                )
+            else:
+                self._logger.warning(
+                    "[约束学习] 未找到额定参数，仅使用3sigma范围",
+                    extra={"extra_data": {"设备ID": device_id}}
+                )
+
+        except Exception as e:
+            self._logger.warning(
+                f"[约束学习] 获取额定参数失败: {e}，仅使用3sigma范围",
+                extra={"extra_data": {"设备ID": device_id}}
+            )
 
         return params
 
@@ -290,4 +352,3 @@ class ConstraintLearner:
         if value not in ('3sigma', 'quantile', 'rated_based'):
             raise ValueError(f"不支持的学习方法: {value}")
         self._method = value
-

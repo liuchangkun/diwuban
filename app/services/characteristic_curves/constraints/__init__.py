@@ -60,6 +60,12 @@ from app.services.characteristic_curves.constraints.constraint_factory import (
     ConstraintFactory,
     get_constraint_factory,
 )
+from app.services.characteristic_curves.constraints.constraint_calculator import (
+    ConstraintCalculator,
+)
+from app.services.characteristic_curves.constraints.constraint_optimizer import (
+    ConstraintOptimizer,
+)
 
 __all__ = [
     # 基类和数据结构
@@ -83,5 +89,7 @@ __all__ = [
     # 已有模块
     "ConstraintLearner",
     "ConstraintParameterManager",
+    # P0新增
+    "ConstraintCalculator",
+    "ConstraintOptimizer",
 ]
-

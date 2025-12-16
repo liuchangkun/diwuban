@@ -18,7 +18,7 @@ from typing import Any, Dict, Optional
 import numpy as np
 import pandas as pd
 
-from app.services.characteristic_curves.models import MethodResult, ValidationResult
+from app.services.characteristic_curves.core.data_structures import MethodResult, ValidationResult
 
 # ==================== 配置常量 ====================
 # 数据点数量要求（权威定义见02_架构设计/03_术语和规范.md）

@@ -14,7 +14,8 @@ project_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(project_root))
 
 from app.services.characteristic_curves.pipeline.curve_fitting_pipeline import CurveFittingPipeline
-from app.services.characteristic_curves.shared import ResultStorage, ResultOutput
+from app.services.characteristic_curves.shared import ResultStorage
+from app.services.characteristic_curves.output import ResultOutput  # 使用output/下的正确版本
 from app.adapters.db import init_database, get_connection
 from app.core.config.loader_new import load_settings
 import pandas as pd
@@ -218,14 +219,14 @@ def test_s1_vfd_single():
 
             results[curve_type] = result
 
-            print(f"✅ {curve_type.upper()} 曲线拟合成功")
+            print(f"[OK] {curve_type.upper()} 曲线拟合成功")
             print(f"   - 成功: {result.success}")
             print(f"   - R²: {result.r_squared:.4f}")
             print(f"   - 方法: {result.method_id}")
             print(f"   - 质量等级: {result.quality_grade}")
 
         except Exception as e:
-            print(f"❌ {curve_type.upper()} 曲线拟合失败: {e}")
+            print(f"[FAIL] {curve_type.upper()} 曲线拟合失败: {e}")
             import traceback
             traceback.print_exc()
             results[curve_type] = None

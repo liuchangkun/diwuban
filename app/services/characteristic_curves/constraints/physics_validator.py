@@ -33,6 +33,7 @@ class ValidationResult:
         overall_passed: 总体是否通过
         monotonicity_passed: 单调性是否通过
         boundary_passed: 边界是否通过
+        physics_passed: 物理约束是否通过（同overall_passed）
         physics_score: 物理得分 (0-100)
         monotonicity_details: 单调性验证详情
         boundary_details: 边界验证详情
@@ -43,9 +44,14 @@ class ValidationResult:
     monotonicity_passed: bool
     boundary_passed: bool
     physics_score: float
+    physics_passed: bool = True  # 物理约束是否通过
     monotonicity_details: Dict[str, Any] = field(default_factory=dict)
     boundary_details: Dict[str, Any] = field(default_factory=dict)
     suggestions: List[str] = field(default_factory=list)
+
+    def __post_init__(self):
+        # 默认physics_passed与overall_passed一致
+        self.physics_passed = self.overall_passed
 
     def to_dict(self) -> Dict[str, Any]:
         """转换为字典"""
@@ -53,6 +59,7 @@ class ValidationResult:
             "overall_passed": self.overall_passed,
             "monotonicity_passed": self.monotonicity_passed,
             "boundary_passed": self.boundary_passed,
+            "physics_passed": self.physics_passed,
             "physics_score": self.physics_score,
             "monotonicity_details": self.monotonicity_details,
             "boundary_details": self.boundary_details,
@@ -74,30 +81,53 @@ class PhysicsValidator:
 
     def __init__(self) -> None:
         """初始化物理验证器"""
-        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self._logger = logging.getLogger(
+            f"{__name__}.{self.__class__.__name__}")
         self._monotonicity = MonotonicityConstraint()
         self._boundary = BoundaryConstraint()
 
     def validate(
         self,
-        curve_type: str,
-        x_values: np.ndarray,
-        y_values: np.ndarray,
+        curve_type: str = None,
+        x_values: np.ndarray = None,
+        y_values: np.ndarray = None,
         device_params: Optional[Dict[str, float]] = None,
         tolerance: float = 0.01,
+        # 新增参数：支持直接传入FitResult
+        device_id: Optional[int] = None,
+        fit_result: Optional[Any] = None,
     ) -> ValidationResult:
         """执行完整物理验证
 
+        支持两种调用方式：
+        1. 传统方式：传入curve_type, x_values, y_values
+        2. 新方式：传入device_id, curve_type, fit_result, device_params
+
         Args:
             curve_type: 曲线类型
-            x_values: X轴值
-            y_values: Y轴值（拟合值）
+            x_values: X轴值（传统方式）
+            y_values: Y轴值/拟合值（传统方式）
             device_params: 设备额定参数
             tolerance: 容差
+            device_id: 设备ID（新方式）
+            fit_result: 拟合结果对象（新方式）
 
         Returns:
             ValidationResult: 综合验证结果
         """
+        # 如果传入了fit_result，从中提取数据
+        if fit_result is not None:
+            x_values = fit_result.x_values
+            y_values = fit_result.y_fitted
+            if curve_type is None:
+                curve_type = fit_result.curve_type
+
+        # 验证必需参数
+        if curve_type is None or x_values is None or y_values is None:
+            raise ValueError(
+                "必须提供 curve_type, x_values, y_values 或传入完整的 fit_result"
+            )
+
         device_params = device_params or {}
 
         # 单调性验证
@@ -119,7 +149,8 @@ class PhysicsValidator:
 
         # 综合结果
         overall_passed = mono_result.is_valid and bound_result.is_valid
-        physics_score = self._calculate_physics_score(mono_result, bound_result)
+        physics_score = self._calculate_physics_score(
+            mono_result, bound_result)
         suggestions = self._generate_suggestions(mono_result, bound_result)
 
         return ValidationResult(
@@ -185,4 +216,3 @@ class PhysicsValidator:
             "max_deviation": max_dev,
             "mean_deviation": float(np.mean(deviation)),
         }
-

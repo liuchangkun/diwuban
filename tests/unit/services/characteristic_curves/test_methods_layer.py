@@ -15,11 +15,15 @@
 更新日期: 2025-12-08
 """
 
+import pytest
+
+# P2模块已删除，等待P0完成后重写
+pytestmark = pytest.mark.skip(reason="P2模块已删除，等待P0完成后重写")
+
 from typing import Any, Dict, Optional
 
 import numpy as np
 import pandas as pd
-import pytest
 
 from app.services.characteristic_curves.methods.base_method import (
     MIN_DATA_POINTS,

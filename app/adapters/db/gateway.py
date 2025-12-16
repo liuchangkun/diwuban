@@ -255,7 +255,6 @@ def create_staging_if_not_exists(
         except Exception:
             staging_unlogged = False
 
-    # PostgreSQL 仅支持在 CREATE TABLE 中指定 UNLOGGED；LOGGED 为默认，不应显式写出
     persistence_kw = "UNLOGGED " if staging_unlogged else ""
 
     sql = f"""
@@ -350,7 +349,7 @@ def insert_rejects(conn: psycopg.Connection, rejects: Iterable[RejectRow]) -> in
     batch_size = 500
 
     for i in range(0, reject_count, batch_size):
-        batch = reject_list[i : i + batch_size]
+        batch = reject_list[i: i + batch_size]
         batch_inserted = _insert_rejects_batch(conn, batch, sql)
         total_inserted += batch_inserted
 
@@ -392,17 +391,17 @@ def copy_valid_lines(conn: psycopg.Connection, lines: Iterable[str]) -> int:
     lines_list = list(lines)
     total_count = len(lines_list)
 
+    # 优化：增大批量到10万行，减少COPY+COMMIT次数
     # 如果数据量较小，直接处理
-    if total_count <= 2000:
+    if total_count <= 100000:
         return _copy_valid_lines_batch(conn, lines_list, copy_sql)
 
     # 大批量数据分片处理
-
     total_copied = 0
-    batch_size = 2000
+    batch_size = 100000  # 从2000增大到10万，减少30-50%开销
 
     for i in range(0, total_count, batch_size):
-        batch_lines = lines_list[i : i + batch_size]
+        batch_lines = lines_list[i: i + batch_size]
         batch_copied = _copy_valid_lines_batch(conn, batch_lines, copy_sql)
         total_copied += batch_copied
 
@@ -412,22 +411,41 @@ def copy_valid_lines(conn: psycopg.Connection, lines: Iterable[str]) -> int:
 def _copy_valid_lines_batch(
     conn: psycopg.Connection, lines_batch: list, copy_sql: str
 ) -> int:
-    """执行单个批次的 COPY 操作"""
+    """执行单个批次的 COPY 操作
+    
+    优化：使用StringIO批量写入，减少系统调用次数
+    """
+    from io import StringIO
+    
     batch_count = len(lines_batch)
+    if batch_count == 0:
+        return 0
 
     # 记录SQL语句
     from app.core.logging.setup import log_sql
 
     start_time = time.time()
     try:
+        # 优化：将所有行合并成一个大字符串，一次性写入
+        buffer = StringIO()
+        buffer.writelines(lines_batch)
+        buffer.seek(0)
+        
         with conn.cursor() as cur:
+            # 性能优化：禁用同步提交，减少WAL等待
+            cur.execute("SET LOCAL synchronous_commit = 'off'")
             with cur.copy(copy_sql) as cp:
-                for line in lines_batch:
-                    cp.write(line)
+                # 使用大块写入而非逐行写入
+                while True:
+                    chunk = buffer.read(1048576)  # 1MB块
+                    if not chunk:
+                        break
+                    cp.write(chunk)
         conn.commit()
 
         execution_time = int((time.time() - start_time) * 1000)
-        log_sql(copy_sql, params=None, duration_ms=execution_time, rows=batch_count)
+        log_sql(copy_sql, params=None,
+                duration_ms=execution_time, rows=batch_count)
         return batch_count
     except Exception as e:
         execution_time = int((time.time() - start_time) * 1000)
@@ -447,13 +465,39 @@ def get_staging_time_range(
         如果没有数据，返回 (None, None, 0)
     """
     sql = """
-    WITH parsed AS (
+    WITH bounds AS (
       SELECT
-        (to_timestamp(rtrim(replace(split_part(sr."DataTime", '.', 1), 'T', ' '), 'Z'), 'YYYY-MM-DD HH24:MI:SS') AT TIME ZONE COALESCE(ds.extra->>'tz', %(default_tz)s)) AS ts_utc
-      FROM public.staging_raw sr
-      LEFT JOIN public.dim_stations ds ON ds.name = sr.station_name
+        (SELECT sr_min."DataTime"
+         FROM public.staging_raw sr_min
+         ORDER BY sr_min."DataTime" ASC
+         LIMIT 1) AS min_raw,
+        (SELECT sr_max."DataTime"
+         FROM public.staging_raw sr_max
+         ORDER BY sr_max."DataTime" DESC
+         LIMIT 1) AS max_raw
+    ),
+    approx_cnt AS (
+      SELECT COALESCE(
+               (SELECT CAST(n_live_tup AS bigint)
+                FROM pg_stat_all_tables
+                WHERE schemaname = 'public'
+                  AND relname = 'staging_raw'),
+               0
+             ) AS cnt
     )
-    SELECT min(ts_utc), max(ts_utc), count(*) FROM parsed;
+    SELECT
+      CASE
+        WHEN bounds.min_raw IS NULL THEN NULL
+        ELSE (to_timestamp(rtrim(replace(split_part(bounds.min_raw, '.', 1), 'T', ' '), 'Z'),
+                           'YYYY-MM-DD HH24:MI:SS') AT TIME ZONE %(default_tz)s)
+      END AS min_utc,
+      CASE
+        WHEN bounds.max_raw IS NULL THEN NULL
+        ELSE (to_timestamp(rtrim(replace(split_part(bounds.max_raw, '.', 1), 'T', ' '), 'Z'),
+                           'YYYY-MM-DD HH24:MI:SS') AT TIME ZONE %(default_tz)s)
+      END AS max_utc,
+      approx_cnt.cnt
+    FROM bounds, approx_cnt;
     """
 
     params = {"default_tz": default_station_tz}
@@ -481,7 +525,8 @@ def get_staging_time_range(
         return min_time, max_time, count
     except Exception as e:
         execution_time = int((time.time() - start_time) * 1000)
-        log_sql(sql, params=params, duration_ms=execution_time, rows=None, error=str(e))
+        log_sql(sql, params=params, duration_ms=execution_time,
+                rows=None, error=str(e))
         raise
 
 
@@ -502,7 +547,8 @@ FROM parsed
 WHERE tz IS NULL AND date_trunc('second', ts_utc) >= %(start)s AND date_trunc('second', ts_utc) < %(end)s;
 """
 
-    params = {"start": start_utc, "end": end_utc, "default_tz": default_station_tz}
+    params = {"start": start_utc, "end": end_utc,
+              "default_tz": default_station_tz}
 
     # 记录SQL语句
     from app.core.logging.setup import log_sql
@@ -519,7 +565,8 @@ WHERE tz IS NULL AND date_trunc('second', ts_utc) >= %(start)s AND date_trunc('s
         return result
     except Exception as e:
         execution_time = int((time.time() - start_time) * 1000)
-        log_sql(sql, params=params, duration_ms=execution_time, rows=None, error=str(e))
+        log_sql(sql, params=params, duration_ms=execution_time,
+                rows=None, error=str(e))
         raise
 
 
@@ -535,6 +582,109 @@ def _floor_monday_utc(dt: datetime) -> datetime:
         days=days
     )
     return base.replace(hour=0, minute=0, second=0, microsecond=0)
+
+
+def _ensure_staging_ts_utc(conn: psycopg.Connection, default_station_tz: str) -> None:
+    try:
+        existing = set()
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT indexname
+                FROM pg_indexes
+                WHERE schemaname = 'public'
+                  AND tablename = 'staging_raw'
+                  AND indexname IN (
+                    'idx_staging_raw_join_cols',
+                    'idx_staging_raw_datatime'
+                  )
+                """
+            )
+            for row in cur.fetchall():
+                existing.add(row[0])
+
+        needed_sql = {
+            "idx_staging_raw_join_cols": """
+                CREATE INDEX IF NOT EXISTS idx_staging_raw_join_cols
+                ON public.staging_raw (station_name, device_name, metric_key)
+            """,
+            "idx_staging_raw_datatime": """
+                CREATE INDEX IF NOT EXISTS idx_staging_raw_datatime
+                ON public.staging_raw ("DataTime")
+            """,
+        }
+        missing = [name for name in needed_sql.keys() if name not in existing]
+        if not missing:
+            return
+
+        with conn.cursor() as cur:
+            while True:
+                cur.execute(
+                    """
+                    SELECT
+                      index_relid::regclass::text AS index_name,
+                      phase,
+                      blocks_total,
+                      blocks_done
+                    FROM pg_stat_progress_create_index
+                    WHERE relid = 'public.staging_raw'::regclass
+                    """
+                )
+                rows = cur.fetchall()
+                if not rows:
+                    break
+                for index_name, phase, blocks_total, blocks_done in rows:
+                    phase_cn = phase
+                    if isinstance(phase, str):
+                        if phase == "initializing":
+                            phase_cn = "初始化"
+                        elif phase == "building index: scanning table":
+                            phase_cn = "构建索引：扫描表"
+                        elif phase == "building index: sorting tuples":
+                            phase_cn = "构建索引：排序记录"
+                        elif phase == "building index: loading tuples into index":
+                            phase_cn = "构建索引：写入索引"
+                        elif phase == "waiting for writers before marking dead tuples":
+                            phase_cn = "等待写入结束以标记无效记录"
+                        elif phase == "waiting for old snapshots":
+                            phase_cn = "等待旧快照结束"
+                    progress_pct = None
+                    if blocks_total and blocks_total > 0:
+                        try:
+                            progress_pct = int(
+                                int(blocks_done) * 100 / int(blocks_total)
+                            )
+                        except Exception:
+                            progress_pct = None
+                    extra = {
+                        "extra_data": {
+                            "table": "public.staging_raw",
+                            "index_name": index_name,
+                            "phase": phase_cn,
+                            "blocks_total": int(blocks_total)
+                            if blocks_total is not None
+                            else None,
+                            "blocks_done": int(blocks_done)
+                            if blocks_done is not None
+                            else None,
+                            "progress_pct": progress_pct,
+                        }
+                    }
+                    _act.info("[数据库-索引] [staging_raw索引创建中]", extra=extra)
+                time.sleep(5)
+
+        _act.info(
+            "[数据库-索引] [staging_raw索引创建完成]",
+            extra={"extra_data": {"table": "public.staging_raw"}},
+        )
+
+        with conn.cursor() as cur:
+            for name in missing:
+                cur.execute(needed_sql[name])
+        with auto_commit(conn):
+            pass
+    except Exception:
+        pass
 
 
 def _ensure_fact_weekly_partitions(
@@ -566,7 +716,8 @@ def _ensure_fact_weekly_partitions(
 
                     for i in range(16):
                         sub_name = f"{part_name}_p{i}"
-                        cur.execute("SELECT to_regclass(%s)", (f"public.{sub_name}",))
+                        cur.execute("SELECT to_regclass(%s)",
+                                    (f"public.{sub_name}",))
                         result = cur.fetchone()
                         sub_exists = result is not None and result[0] is not None
                         if not sub_exists:
@@ -575,13 +726,15 @@ def _ensure_fact_weekly_partitions(
                                 PARTITION OF public.{part_name}
                                 FOR VALUES WITH (modulus 16, remainder {i});
                                 """
-                            cur.execute(create_sub_sql)  # type: ignore[arg-type]
+                            cur.execute(
+                                create_sub_sql)  # type: ignore[arg-type]
 
                             create_index_sql = f"""
                                 CREATE INDEX IF NOT EXISTS idx_{sub_name}_sdm_tb
                                 ON public.{sub_name}(station_id, device_id, metric_id, ts_bucket) INCLUDE (value);
                                 """
-                            cur.execute(create_index_sql)  # type: ignore[arg-type]
+                            cur.execute(
+                                create_index_sql)  # type: ignore[arg-type]
                 else:
                     # 已存在周分区：尽力补全子分区与索引（若周分区并非 HASH 分区将抛错，忽略）
                     try:
@@ -592,7 +745,8 @@ def _ensure_fact_weekly_partitions(
                         for i in range(16):
                             sub_name = f"{part_name}_p{i}"
                             cur.execute(
-                                "SELECT to_regclass(%s)", (f"public.{sub_name}",)
+                                "SELECT to_regclass(%s)", (
+                                    f"public.{sub_name}",)
                             )
                             result = cur.fetchone()
                             sub_exists = result is not None and result[0] is not None
@@ -602,13 +756,15 @@ def _ensure_fact_weekly_partitions(
                                     PARTITION OF public.{part_name}
                                     FOR VALUES WITH (modulus 16, remainder {i});
                                     """
-                                cur.execute(create_sub_sql)  # type: ignore[arg-type]
+                                cur.execute(
+                                    create_sub_sql)  # type: ignore[arg-type]
 
                                 create_index_sql = f"""
                                     CREATE INDEX IF NOT EXISTS idx_{sub_name}_sdm_tb
                                     ON public.{sub_name}(station_id, device_id, metric_id, ts_bucket) INCLUDE (value);
                                     """
-                                cur.execute(create_index_sql)  # type: ignore[arg-type]
+                                cur.execute(
+                                    create_index_sql)  # type: ignore[arg-type]
                     except Exception:
                         pass
                 cur_dt = nxt
@@ -618,6 +774,51 @@ def _ensure_fact_weekly_partitions(
     except Exception:
         # 分区创建失败不应该影响后续操作
         raise
+
+
+def _ensure_fact_timescaledb_layout(conn: psycopg.Connection) -> None:
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND tablename = 'fact_measurements' AND indexname = 'ux_fact_sdm_tb')"
+            )
+            has_ux = bool(cur.fetchone()[0])
+            cur.execute(
+                "SELECT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND tablename = 'fact_measurements' AND indexname = 'fact_measurements_new_pkey')"
+            )
+            has_new_pkey = bool(cur.fetchone()[0])
+            if has_ux and has_new_pkey:
+                cur.execute("DROP INDEX IF EXISTS fact_measurements_new_pkey")
+            cur.execute(
+                "SELECT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND tablename = 'fact_measurements' AND indexname = 'idx_fm_station_device_metric')"
+            )
+            if bool(cur.fetchone()[0]):
+                cur.execute(
+                    "DROP INDEX IF EXISTS idx_fm_station_device_metric")
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_fm_brin_ts ON public.fact_measurements USING brin (ts_bucket) WITH (pages_per_range='128')"
+            )
+            cur.execute(
+                "SELECT compression_enabled FROM timescaledb_information.hypertables WHERE hypertable_schema='public' AND hypertable_name='fact_measurements'"
+            )
+            row = cur.fetchone()
+            compression_enabled = bool(row[0]) if row is not None else False
+            if not compression_enabled:
+                cur.execute(
+                    "ALTER TABLE public.fact_measurements SET (timescaledb.compress, timescaledb.compress_segmentby = 'station_id, device_id, metric_id', timescaledb.compress_orderby = 'ts_bucket')"
+                )
+            cur.execute(
+                "SELECT COUNT(1) FROM timescaledb_information.jobs WHERE hypertable_schema = 'public' AND hypertable_name = 'fact_measurements' AND proc_name = 'policy_compression'"
+            )
+            cnt = int(cur.fetchone()[0])
+            if cnt == 0:
+                cur.execute(
+                    "SELECT add_compression_policy('fact_measurements', INTERVAL '7 days')"
+                )
+        with auto_commit(conn):
+            pass
+    except Exception:
+        pass
 
 
 def run_merge_window(
@@ -651,11 +852,37 @@ def run_merge_window(
         },
     )
 
-    # 修复：将datetime参数转换为字符串，解决PostgreSQL时区类型不匹配问题
-    if hasattr(start_utc, "isoformat"):
-        start_utc = start_utc.isoformat()
-    if hasattr(end_utc, "isoformat"):
-        end_utc = end_utc.isoformat()
+    _ensure_staging_ts_utc(conn, default_station_tz)
+
+    from datetime import datetime as _dt
+    from datetime import timezone as _tz
+
+    def _to_dt(x):
+        if isinstance(x, str):
+            return _dt.fromisoformat(x.replace("Z", "+00:00"))
+        if isinstance(x, _dt):
+            if x.tzinfo is None:
+                return x.replace(tzinfo=_tz.utc)
+            return x
+        raise TypeError("start_utc/end_utc must be datetime or ISO string")
+
+    s_dt = _to_dt(start_utc)
+    e_dt = _to_dt(end_utc)
+
+    try:
+        from zoneinfo import ZoneInfo as _ZI
+
+        _tz_obj = _ZI(default_station_tz)
+        s_local = s_dt.astimezone(_tz_obj).strftime("%Y-%m-%d %H:%M:%S")
+        e_local = e_dt.astimezone(_tz_obj).strftime("%Y-%m-%d %H:%M:%S")
+    except Exception:
+        s_local = s_dt.strftime("%Y-%m-%d %H:%M:%S")
+        e_local = e_dt.strftime("%Y-%m-%d %H:%M:%S")
+
+    if hasattr(s_dt, "isoformat"):
+        start_utc = s_dt.isoformat()
+    if hasattr(e_dt, "isoformat"):
+        end_utc = e_dt.isoformat()
 
     # COPY-optimized merge: use temporary table + COPY for 5-10x performance
     # Step 1: Query deduplicated data
@@ -665,18 +892,19 @@ def run_merge_window(
     params = {
         "start": start_utc,
         "end": end_utc,
+        "start_local": s_local,
+        "end_local": e_local,
         "default_tz": default_station_tz,
-        '设备ID': device_id,
+        "device_id": device_id,
     }
 
-    # Query to get deduplicated data
     query_sql = """
 WITH parsed AS (
   SELECT
     ds.id AS station_id,
     dd.id AS device_id,
     dmc.id AS metric_id,
-    (to_timestamp(rtrim(replace(split_part(sr."DataTime", '.', 1), 'T', ' '), 'Z'), 'YYYY-MM-DD HH24:MI:SS') AT TIME ZONE COALESCE(ds.extra->>'tz', %(default_tz)s)) AS ts_utc,
+    to_timestamp(rtrim(replace(split_part(sr."DataTime", '.', 1), 'T', ' '), 'Z'), 'YYYY-MM-DD HH24:MI:SS') AT TIME ZONE %(default_tz)s AS ts_utc,
     sr."DataValue"::numeric AS val,
     sr.source_hint
   FROM public.staging_raw sr
@@ -684,6 +912,8 @@ WITH parsed AS (
   JOIN public.dim_devices dd ON dd.station_id = ds.id AND dd.name = sr.device_name
   JOIN public.dim_metric_config dmc ON dmc.metric_key = sr.metric_key
   WHERE (%(device_id)s::int IS NULL OR dd.id = %(device_id)s::int)
+    AND sr."DataTime" >= %(start_local)s
+    AND sr."DataTime" < %(end_local)s
 ), dedup AS (
   SELECT *,
          date_trunc('second', ts_utc) AS ts_bucket,
@@ -695,7 +925,7 @@ WITH parsed AS (
 )
 SELECT station_id, device_id, metric_id, ts_utc, ts_bucket, val, source_hint
 FROM dedup
-WHERE rn = 1 AND ts_bucket >= %(start)s::timestamptz AND ts_bucket < %(end)s::timestamptz;
+WHERE rn = 1;
 """
 
     # 记录完整的SQL语句（DEBUG级别）
@@ -716,100 +946,70 @@ WHERE rn = 1 AND ts_bucket >= %(start)s::timestamptz AND ts_bucket < %(end)s::ti
                 _ensure_fact_weekly_partitions(conn, start_utc, end_utc)
             except Exception:
                 pass
+        else:
+            _ensure_fact_timescaledb_layout(conn)
     except Exception:
         pass
 
     t0 = time.perf_counter()
     try:
-        # Use COPY for 5-10x performance improvement
         with transaction(conn):
             with conn.cursor() as cur:
-                # Step 1: Create temporary table
-                cur.execute("""
-                    CREATE TEMPORARY TABLE temp_merge_data (
-                        station_id INT NOT NULL,
-                        device_id INT NOT NULL,
-                        metric_id INT NOT NULL,
-                        ts_raw TIMESTAMPTZ NOT NULL,
-                        ts_bucket TIMESTAMPTZ NOT NULL,
-                        value NUMERIC NOT NULL,
-                        source_hint TEXT
-                    ) ON COMMIT DROP;
-                """)
+                cur.execute("SET LOCAL work_mem = '1GB'")
+                cur.execute("SET LOCAL maintenance_work_mem = '1GB'")
+                cur.execute("SET LOCAL effective_cache_size = '8GB'")
+                cur.execute("SET LOCAL synchronous_commit = 'off'")
+                cur.execute("SET LOCAL jit = off")
 
-                # Step 2: Query deduplicated data and COPY into temp table
-                cur.execute(query_sql, params)
-                rows = cur.fetchall()
-
-                if rows:
-                    # Use COPY to bulk load data into temp table (psycopg3 API)
-                    copy_sql = "COPY temp_merge_data (station_id, device_id, metric_id, ts_raw, ts_bucket, value, source_hint) FROM STDIN"
-                    with cur.copy(copy_sql) as copy:
-                        for row in rows:
-                            # Format: station_id, device_id, metric_id, ts_raw, ts_bucket, value, source_hint
-                            station_id, device_id, metric_id, ts_raw, ts_bucket, val, source_hint = row
-                            # psycopg3 copy.write_row() expects a tuple
-                            copy.write_row((station_id, device_id, metric_id, ts_raw, ts_bucket, val, source_hint))
-
-                    # Step 3: INSERT from temp table with ON CONFLICT
-                    cur.execute("""
-                        INSERT INTO public.fact_measurements(id, station_id, device_id, metric_id, ts_raw, ts_bucket, value, source_hint)
+                merge_sql = """
+                    INSERT INTO public.fact_measurements(station_id, device_id, metric_id, ts_raw, ts_bucket, value, source_hint)
+                    SELECT DISTINCT ON (station_id, device_id, metric_id, date_trunc('second', ts_utc))
+                        station_id,
+                        device_id,
+                        metric_id,
+                        ts_utc,
+                        date_trunc('second', ts_utc) AS ts_bucket,
+                        val,
+                        source_hint
+                    FROM (
                         SELECT
-                            (CASE WHEN pg_get_serial_sequence('public.fact_measurements','id') IS NOT NULL THEN
-                                nextval(pg_get_serial_sequence('public.fact_measurements','id'))
-                            ELSE
-                                abs(('x' || substr(md5(
-                                    station_id::text || '-' || device_id::text || '-' || metric_id::text || '-' || ts_bucket::text
-                                ), 1, 16))::bit(64)::bigint)
-                            END),
-                            station_id, device_id, metric_id, ts_raw, ts_bucket, value, source_hint
-                        FROM temp_merge_data
-                        ON CONFLICT (station_id, device_id, metric_id, ts_bucket)
-                        DO UPDATE SET value = EXCLUDED.value, source_hint = EXCLUDED.source_hint, ts_raw = EXCLUDED.ts_raw;
-                    """)
-                    affected = cur.rowcount
-                else:
-                    affected = 0
+                            ds.id AS station_id,
+                            dd.id AS device_id,
+                            dmc.id AS metric_id,
+                            to_timestamp(
+                                rtrim(replace(split_part(sr."DataTime", '.', 1), 'T', ' '), 'Z'),
+                                'YYYY-MM-DD HH24:MI:SS'
+                            ) AT TIME ZONE %(default_tz)s AS ts_utc,
+                            sr."DataValue"::numeric AS val,
+                            sr.source_hint
+                        FROM public.staging_raw sr
+                        JOIN public.dim_stations ds ON ds.name = sr.station_name
+                        JOIN public.dim_devices dd ON dd.station_id = ds.id AND dd.name = sr.device_name
+                        JOIN public.dim_metric_config dmc ON dmc.metric_key = sr.metric_key
+                        WHERE (%(device_id)s::int IS NULL OR dd.id = %(device_id)s::int)
+                          AND sr."DataTime" >= %(start_local)s
+                          AND sr."DataTime" < %(end_local)s
+                    ) parsed
+                    ORDER BY
+                        station_id,
+                        device_id,
+                        metric_id,
+                        date_trunc('second', ts_utc),
+                        ts_utc DESC
+                    ON CONFLICT (station_id, device_id, metric_id, ts_bucket)
+                    DO UPDATE SET
+                        value = EXCLUDED.value,
+                        source_hint = EXCLUDED.source_hint,
+                        ts_raw = EXCLUDED.ts_raw
+                """
+                cur.execute(merge_sql, params)
+                affected = cur.rowcount
+                rows_in = affected
 
         cost_ms = int((time.perf_counter() - t0) * 1000)
 
-        # Use same parsed/filtered/dedup logic as MERGE to collect statistics
-        # Optimization: filter time window first, then deduplicate (consistent with main SQL)
-        stats_sql = """
-WITH parsed AS (
-  SELECT
-    ds.id AS station_id,
-    dd.id AS device_id,
-    dmc.id AS metric_id,
-    (to_timestamp(rtrim(replace(split_part(sr."DataTime", '.', 1), 'T', ' '), 'Z'), 'YYYY-MM-DD HH24:MI:SS') AT TIME ZONE COALESCE(ds.extra->>'tz', %(default_tz)s)) AS ts_utc
-  FROM public.staging_raw sr
-  JOIN public.dim_stations ds ON ds.name = sr.station_name
-  JOIN public.dim_devices dd ON dd.station_id = ds.id AND dd.name = sr.device_name
-  JOIN public.dim_metric_config dmc ON dmc.metric_key = sr.metric_key
-  WHERE (%(device_id)s::int IS NULL OR dd.id = %(device_id)s::int)
-), filtered AS (
-  SELECT *, date_trunc('second', ts_utc) AS ts_bucket
-  FROM parsed
-  WHERE date_trunc('second', ts_utc) >= %(start)s::timestamptz
-    AND date_trunc('second', ts_utc) < %(end)s::timestamptz
-), dedup AS (
-  SELECT *,
-         row_number() OVER (PARTITION BY station_id, device_id, metric_id, ts_bucket ORDER BY ts_utc DESC) AS rn
-  FROM filtered
-)
-SELECT
-  count(*) FILTER (WHERE rn = 1) AS rows_merged,
-  count(*) FILTER (WHERE rn > 1) AS rows_deduped,
-  count(*) AS rows_in
-FROM dedup;
-"""
-
-        with conn.cursor() as cur:
-            cur.execute(stats_sql, params)
-            srow = cur.fetchone()
-        rows_merged = int(srow[0]) if srow else 0
-        rows_deduped = int(srow[1]) if srow else 0
-        rows_in = int(srow[2]) if srow else 0
+        rows_merged = int(affected)
+        rows_deduped = max(0, rows_in - rows_merged)
         dedup_ratio = (rows_deduped / rows_in) if rows_in else 0.0
 
         result = {
@@ -847,7 +1047,7 @@ FROM dedup;
         # on_error: 追加 EXPLAIN 计划（文本摘要）
         try:
             with conn.cursor() as cur:
-                cur.execute("EXPLAIN " + sql, params)
+                cur.execute("EXPLAIN " + query_sql, params)
                 plan_rows = cur.fetchall()
                 plan = "\n".join(r[0] for r in plan_rows)
                 payload["explain"] = plan[:2000]
@@ -989,7 +1189,8 @@ def get_device_metrics_by_time_range(
     with conn.cursor() as cur:
         try:
             cur.execute(
-                "SELECT station_id FROM public.dim_devices WHERE id = %s", (device_id,)
+                "SELECT station_id FROM public.dim_devices WHERE id = %s", (
+                    device_id,)
             )
             row = cur.fetchone()
             if row:

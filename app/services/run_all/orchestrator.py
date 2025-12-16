@@ -75,7 +75,8 @@ def run_all(
     try:
         # 优先使用 settings.system.directories.configs，避免受当前工作目录影响
         try:
-            _cfg_dirs = getattr(getattr(settings, "system", None), "directories", None)
+            _cfg_dirs = getattr(
+                getattr(settings, "system", None), "directories", None)
             _cfg_dir_path = _Path(getattr(_cfg_dirs, "configs", "configs"))
         except Exception:
             _cfg_dir_path = _Path("configs")
@@ -84,12 +85,16 @@ def run_all(
             data = yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
             ra = (data or {}).get("run_all", {}) or {}
             do_prepare_dim = bool(ra.get("prepare_dim", do_prepare_dim))
-            do_create_staging = bool(ra.get("create_staging", do_create_staging))
+            do_create_staging = bool(
+                ra.get("create_staging", do_create_staging))
             do_ingest_copy = bool(ra.get("ingest_copy", do_ingest_copy))
             do_merge_fact = bool(ra.get("merge_fact", do_merge_fact))
-            do_prepare_dim_stage2 = bool(ra.get("prepare_dim_stage2", do_prepare_dim_stage2))
-            cfg_device_running = bool(ra.get("device_running", cfg_device_running))
-            cfg_calculation = bool(ra.get("enable_calculation", cfg_calculation))
+            do_prepare_dim_stage2 = bool(
+                ra.get("prepare_dim_stage2", do_prepare_dim_stage2))
+            cfg_device_running = bool(
+                ra.get("device_running", cfg_device_running))
+            cfg_calculation = bool(
+                ra.get("enable_calculation", cfg_calculation))
             device_running_cfg = (ra.get("device_running_cfg", {}) or {})
             calculation_cfg = (ra.get("calculation_cfg", {}) or {})
 
@@ -145,13 +150,15 @@ def run_all(
             _logging.getLogger("activity").info("[进度] prepare-dim 阶段1 开始")
         except Exception:
             pass
-        prepare_dim(settings, Path(mapping), stage=1)
+        prepare_dim(settings, Path(mapping), stage=1,
+                    skip_staging_raw=not do_ingest_copy)
         duration_s = time.perf_counter() - t0_stage
         timing_stats["prepare_dim_stage1"] = {"duration_s": duration_s}
         try:
             import logging as _logging
 
-            _logging.getLogger("activity").info(f"[进度] prepare-dim 阶段1 完成 (耗时: {duration_s:.2f}秒)")
+            _logging.getLogger("activity").info(
+                f"[进度] prepare-dim 阶段1 完成 (耗时: {duration_s:.2f}秒)")
         except Exception:
             pass
 
@@ -170,7 +177,8 @@ def run_all(
         try:
             import logging as _logging
 
-            _logging.getLogger("activity").info(f"[进度] create-staging 完成 (耗时: {duration_s:.2f}秒)")
+            _logging.getLogger("activity").info(
+                f"[进度] create-staging 完成 (耗时: {duration_s:.2f}秒)")
         except Exception:
             pass
 
@@ -189,7 +197,8 @@ def run_all(
         try:
             import logging as _logging
 
-            _logging.getLogger("activity").info(f"[进度] ingest-copy 完成 (耗时: {duration_s:.2f}秒)")
+            _logging.getLogger("activity").info(
+                f"[进度] ingest-copy 完成 (耗时: {duration_s:.2f}秒)")
         except Exception:
             pass
 
@@ -208,7 +217,8 @@ def run_all(
             _dt = datetime.fromisoformat(_s.replace("Z", "+00:00"))
             if _dt.tzinfo is None:
                 try:
-                    _tz_name = str(getattr(getattr(getattr(settings, "system", None), "timezone", None), "default", "UTC"))
+                    _tz_name = str(getattr(
+                        getattr(getattr(settings, "system", None), "timezone", None), "default", "UTC"))
                 except Exception:
                     _tz_name = "UTC"
                 if _ZI:
@@ -239,7 +249,6 @@ def run_all(
 
         # 统一使用 gateway.get_staging_time_range（站点时区优先 + UTC 转换）
         from app.adapters.db.gateway import get_staging_time_range
-
 
         with get_conn(settings) as conn:
             ws_dt, we_dt, row_count = get_staging_time_range(conn)
@@ -276,7 +285,6 @@ def run_all(
         ws_local = _fmt_local(_ws_dt)
         we_local = _fmt_local(_we_dt)
 
-
     merge_stats = None
     if do_merge_fact:
         t0_stage = time.perf_counter()
@@ -311,7 +319,8 @@ def run_all(
 
             _logging.getLogger("activity").info(
                 f"[进度] merge-fact 完成 (耗时: {duration_s:.2f}秒)",
-                extra={"extra_data": {"event": "merge.done", "stats": merge_stats, "duration_s": duration_s}},
+                extra={"extra_data": {"event": "merge.done",
+                                      "stats": merge_stats, "duration_s": duration_s}},
             )
         except Exception:
             pass
@@ -333,11 +342,13 @@ def run_all(
             for key, val in prepare_dim_result["rule_generation"].items():
                 if isinstance(val, dict) and "duration_ms" in val:
                     rule_timing[key] = val["duration_ms"]
-        timing_stats["prepare_dim_stage2"] = {"duration_s": duration_s, "rule_timing_ms": rule_timing}
+        timing_stats["prepare_dim_stage2"] = {
+            "duration_s": duration_s, "rule_timing_ms": rule_timing}
         try:
             import logging as _logging
 
-            _logging.getLogger("activity").info(f"[进度] prepare-dim 阶段2 完成 (耗时: {duration_s:.2f}秒)")
+            _logging.getLogger("activity").info(
+                f"[进度] prepare-dim 阶段2 完成 (耗时: {duration_s:.2f}秒)")
         except Exception:
             pass
 
@@ -383,13 +394,15 @@ def run_all(
                     device_ids = [row[0] for row in cur.fetchall()]
                 else:
                     # 否则计算所有设备
-                    cur.execute("SELECT id FROM dim_devices WHERE COALESCE(is_active, TRUE)=TRUE AND COALESCE(NULLIF(type,''),'') NOT IN ('clear_water_pool','other') ORDER BY id")
+                    cur.execute(
+                        "SELECT id FROM dim_devices WHERE COALESCE(is_active, TRUE)=TRUE AND COALESCE(NULLIF(type,''),'') NOT IN ('clear_water_pool','other') ORDER BY id")
                     device_ids = [row[0] for row in cur.fetchall()]
 
             if device_ids:
                 _act.info(
                     f"[进度] 缺失指标计算：找到 {len(device_ids)} 个设备",
-                    extra={"extra_data": {"event": "calculation.devices_found", "device_count": len(device_ids)}}
+                    extra={"extra_data": {
+                        "event": "calculation.devices_found", "device_count": len(device_ids)}}
                 )
 
                 # 从配置读取参数
@@ -406,7 +419,8 @@ def run_all(
                 try:
                     from zoneinfo import ZoneInfo as _ZI
 
-                    _tz_cfg = getattr(getattr(settings, "system", None), "timezone", None)
+                    _tz_cfg = getattr(
+                        getattr(settings, "system", None), "timezone", None)
                     if isinstance(_tz_cfg, str):
                         _tz_name = _tz_cfg or "Asia/Shanghai"
                     else:
@@ -434,7 +448,8 @@ def run_all(
                 )
 
                 # 创建Scheduler并执行计算
-                scheduler = Scheduler(max_workers=max_workers, enable_adaptive_chunk=True)
+                scheduler = Scheduler(
+                    max_workers=max_workers, enable_adaptive_chunk=True)
                 result = scheduler.schedule_all_metrics(
                     device_ids=device_ids,
                     start_time=_ws_dt,
@@ -444,9 +459,12 @@ def run_all(
                 )
 
                 # 汇总所有指标的结果
-                total_success = sum(r.get("success_count", 0) for r in result.values())
-                total_failure = sum(r.get("failure_count", 0) for r in result.values())
-                total_points = sum(r.get("total_points", 0) for r in result.values())
+                total_success = sum(r.get("success_count", 0)
+                                    for r in result.values())
+                total_failure = sum(r.get("failure_count", 0)
+                                    for r in result.values())
+                total_points = sum(r.get("total_points", 0)
+                                   for r in result.values())
 
                 calculation_summary = {
                     "status": "ok",
@@ -487,7 +505,8 @@ def run_all(
                 }
                 _act.info(
                     f"[进度] 缺失指标计算跳过：未找到设备 (耗时: {duration_s:.2f}秒)",
-                    extra={"extra_data": {"event": "calculation.skipped", "reason": "no_devices_found", "duration_s": duration_s}}
+                    extra={"extra_data": {"event": "calculation.skipped",
+                                          "reason": "no_devices_found", "duration_s": duration_s}}
                 )
 
         except Exception as ex:
@@ -495,7 +514,8 @@ def run_all(
             import traceback
 
             duration_s = time.perf_counter() - t0_stage
-            timing_stats["calculation"] = {"duration_s": duration_s, "error": str(ex)}
+            timing_stats["calculation"] = {
+                "duration_s": duration_s, "error": str(ex)}
 
             _logging.getLogger("error").error(
                 f"[错误] 缺失指标计算失败 (耗时: {duration_s:.2f}秒): {ex}",
@@ -513,7 +533,6 @@ def run_all(
                 "message": str(ex),
                 "window": {"start": ws_local, "end": we_local},
             }
-
 
     # 生成耗时统计报告
     total_duration_s = time.perf_counter() - t0_total
@@ -540,7 +559,8 @@ def run_all(
             if stage_name == "total":
                 continue
             duration_s = stage_data.get("duration_s", 0)
-            percentage = (duration_s / total_duration_s * 100) if total_duration_s > 0 else 0
+            percentage = (duration_s / total_duration_s *
+                          100) if total_duration_s > 0 else 0
 
             # 详细信息（规则生成的6个函数耗时）
             details = ""
@@ -558,7 +578,8 @@ def run_all(
 
         # 总计行
         report_lines.append("|---------|-----------|----------|---------|")
-        report_lines.append(f"| **总计** | **{total_duration_s:.2f}** | **100.0** | |")
+        report_lines.append(
+            f"| **总计** | **{total_duration_s:.2f}** | **100.0** | |")
         report_lines.append("=" * 80)
         report_lines.append("")
 

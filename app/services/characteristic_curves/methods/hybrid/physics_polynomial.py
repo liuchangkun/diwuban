@@ -18,7 +18,7 @@ import numpy as np
 from scipy.optimize import minimize
 
 from app.services.characteristic_curves.methods.base_method import BaseMethod
-from app.services.characteristic_curves.models import MethodResult
+from app.services.characteristic_curves.core.data_structures import MethodResult
 
 logger = logging.getLogger(__name__)
 

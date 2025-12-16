@@ -1,15 +1,21 @@
 from __future__ import annotations
+from app.services.ingest.prepare_dim import prepare_dim
+from app.core.logging.setup import init_logging
+from app.core.config.loader_new import load_settings
+from app.adapters.db import init_database
+import typer
+from typing import Tuple
+from pathlib import Path
 
 import os
 import sys
-from pathlib import Path
-from typing import Tuple
 
-import typer
-
-from app.adapters.db import init_database
-from app.core.config.loader_new import load_settings
-from app.core.logging.setup import init_logging
+# 解决Windows PowerShell的stdout缓冲问题，确保print实时输出
+os.environ['PYTHONUNBUFFERED'] = '1'
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(line_buffering=True)
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(line_buffering=True)
 
 
 def _parse_bool(val: str | None, default: bool = False) -> bool:
@@ -54,7 +60,6 @@ def get_orchestrator_default_flags(
 # 计算动态默认值（模块加载时）
 _DEV_RUN_DEFAULT = get_orchestrator_default_flags()
 
-from app.services.ingest.prepare_dim import prepare_dim
 
 ingest_workers_option = typer.Option(
     None, help="覆盖导入并发数（INGEST_WORKERS）", show_default=False
@@ -109,7 +114,8 @@ def version() -> None:
     ),
 )
 def cmd_prepare_dim(
-    mapping: str = typer.Argument("configs/data_mapping.v2.json", help="data_mapping.json 路径（相对仓库根）"),
+    mapping: str = typer.Argument(
+        "configs/data_mapping.v2.json", help="data_mapping.json 路径（相对仓库根）"),
     stage: int | None = typer.Option(
         None,
         "--stage",
@@ -178,8 +184,10 @@ def cmd_ingest_copy(
     ),
 )
 def cmd_merge_fact(
-    window_start: str = typer.Option(..., help="起始时间（ISO8601）。不带时区按系统默认时区解析；对外展示统一为 +08 格式"),
-    window_end: str = typer.Option(..., help="结束时间（ISO8601）。不带时区按系统默认时区解析；对外展示统一为 +08 格式"),
+    window_start: str = typer.Option(...,
+                                     help="起始时间（ISO8601）。不带时区按系统默认时区解析；对外展示统一为 +08 格式"),
+    window_end: str = typer.Option(...,
+                                   help="结束时间（ISO8601）。不带时区按系统默认时区解析；对外展示统一为 +08 格式"),
 ) -> None:
     initialize_app()
     settings = load_settings(Path("configs"))
@@ -200,8 +208,10 @@ def cmd_merge_fact(
     ),
 )
 def cmd_data_report(
-    window_start: str = typer.Option(..., help="起始时间（ISO8601）。不带时区按系统默认时区解析；对外展示统一为 +08 格式"),
-    window_end: str = typer.Option(..., help="结束时间（ISO8601）。不带时区按系统默认时区解析；对外展示统一为 +08 格式"),
+    window_start: str = typer.Option(...,
+                                     help="起始时间（ISO8601）。不带时区按系统默认时区解析；对外展示统一为 +08 格式"),
+    window_end: str = typer.Option(...,
+                                   help="结束时间（ISO8601）。不带时区按系统默认时区解析；对外展示统一为 +08 格式"),
     expected_interval: int = typer.Option(
         1, "--expected-interval", help="期望采样间隔（秒），用于覆盖率与缺口检测"
     ),
@@ -337,7 +347,8 @@ def cmd_run_all(
         settings = load_settings(Path("configs"))
         import yaml  # type: ignore
         from pathlib import Path as _Path
-        cfg_dir = getattr(getattr(settings.system, "directories", None), "configs", "configs")
+        cfg_dir = getattr(
+            getattr(settings.system, "directories", None), "configs", "configs")
         cfg_path = _Path(cfg_dir) / "merge.yaml"
         reset_logs = False
         reset_db = False
@@ -350,7 +361,8 @@ def cmd_run_all(
             from app.services.system.cleanup import clear_logs_directory, clear_database
             if reset_logs:
                 try:
-                    logs_dir = Path(getattr(getattr(settings.system, "directories", None), "logs", "logs"))
+                    logs_dir = Path(
+                        getattr(getattr(settings.system, "directories", None), "logs", "logs"))
                     clear_logs_directory(logs_dir, backup_count=0)
                 except Exception:
                     pass
@@ -431,10 +443,12 @@ def cmd_run_all(
                 "extra_data": {
                     "event": "run_all.done",
                     "window": (
-                        summary.get("window") if isinstance(summary, dict) else None
+                        summary.get("window") if isinstance(
+                            summary, dict) else None
                     ),
                     "copy": (
-                        summary.get("copy_stats") if isinstance(summary, dict) else None
+                        summary.get("copy_stats") if isinstance(
+                            summary, dict) else None
                     ),
                     "merge": (
                         summary.get("merge_stats")
@@ -460,9 +474,6 @@ def cmd_run_all(
 # baseline:auto:compute command removed (2025-11-07)
 # Reason: Quality checking feature deleted, baseline tables no longer used
 # Archive location: _archive/baseline_feature_20251107/
-
-
-
 
 
 @app.command(
@@ -520,8 +531,10 @@ def cmd_rules_diff_report(
 )
 def cmd_fit_curve(
     pump_id: int = typer.Option(..., "--pump-id", help="泵设备ID"),
-    curve_type: str = typer.Option("qh", "--curve-type", help="曲线类型: qh, qp, qeta"),
-    output: str | None = typer.Option(None, "--output", "-o", help="输出文件路径（JSON）"),
+    curve_type: str = typer.Option(
+        "qh", "--curve-type", help="曲线类型: qh, qp, qeta"),
+    output: str | None = typer.Option(
+        None, "--output", "-o", help="输出文件路径（JSON）"),
 ) -> None:
     """拟合泵特性曲线。
     示例：python -m app.cli.main fit-curve --pump-id=1 --curve-type=qh
@@ -545,7 +558,8 @@ def cmd_fit_curve(
     }
 
     if output:
-        Path(output).write_text(_json.dumps(output_data, ensure_ascii=False, indent=2))
+        Path(output).write_text(_json.dumps(
+            output_data, ensure_ascii=False, indent=2))
         typer.echo(f"✅ 结果已保存到: {output}")
     else:
         typer.echo(_json.dumps(output_data, ensure_ascii=False, indent=2))
@@ -560,9 +574,12 @@ def cmd_fit_curve(
 )
 def cmd_validate_curve(
     result_id: int = typer.Option(..., "--result-id", help="拟合结果ID（数据库主键）"),
-    r_squared_threshold: float = typer.Option(0.90, "--r-squared-threshold", help="R²阈值（默认0.90）"),
-    rmse_threshold: float = typer.Option(0.10, "--rmse-threshold", help="RMSE阈值（默认0.10）"),
-    min_data_points: int = typer.Option(10, "--min-data-points", help="最小数据点数（默认10）"),
+    r_squared_threshold: float = typer.Option(
+        0.90, "--r-squared-threshold", help="R²阈值（默认0.90）"),
+    rmse_threshold: float = typer.Option(
+        0.10, "--rmse-threshold", help="RMSE阈值（默认0.10）"),
+    min_data_points: int = typer.Option(
+        10, "--min-data-points", help="最小数据点数（默认10）"),
     strict: bool = typer.Option(False, "--strict", help="严格模式：所有检查必须通过"),
 ) -> None:
     """验证已拟合的曲线。
@@ -651,11 +668,14 @@ def cmd_validate_curve(
                 # 总体验证结果
                 if strict:
                     # 严格模式：所有检查必须通过
-                    validation_passed = all(check["passed"] for check in checks.values())
+                    validation_passed = all(check["passed"]
+                                            for check in checks.values())
                 else:
                     # 宽松模式：关键检查通过即可
-                    critical_checks = ["r_squared_check", "rmse_check", "status_check"]
-                    validation_passed = all(checks[key]["passed"] for key in critical_checks)
+                    critical_checks = ["r_squared_check",
+                                       "rmse_check", "status_check"]
+                    validation_passed = all(
+                        checks[key]["passed"] for key in critical_checks)
 
                 overall_status = "valid" if validation_passed else "invalid"
 
@@ -683,7 +703,8 @@ def cmd_validate_curve(
                     "suggestions": suggestions,
                 }
 
-                typer.echo(_json.dumps(validation_result, ensure_ascii=False, indent=2))
+                typer.echo(_json.dumps(validation_result,
+                           ensure_ascii=False, indent=2))
 
     except Exception as e:
         typer.echo(f"❌ 验证失败: {e}", err=True)
@@ -699,10 +720,12 @@ def cmd_validate_curve(
 )
 def cmd_compare_versions(
     device_id: int = typer.Option(..., "--device-id", help="设备ID"),
-    curve_type: str = typer.Option(..., "--curve-type", help="曲线类型（qh/qp/qeta）"),
+    curve_type: str = typer.Option(..., "--curve-type",
+                                   help="曲线类型（qh/qp/qeta）"),
     v1: str = typer.Option(..., "--v1", help="版本1的版本号"),
     v2: str = typer.Option(..., "--v2", help="版本2的版本号"),
-    output: str | None = typer.Option(None, "--output", "-o", help="输出文件路径（JSON）"),
+    output: str | None = typer.Option(
+        None, "--output", "-o", help="输出文件路径（JSON）"),
 ) -> None:
     """比较不同版本的曲线。
     示例：python -m app.cli.main compare-versions --device-id=1 --curve-type=qh --v1=20250101_100000 --v2=20250102_100000
@@ -715,15 +738,19 @@ def cmd_compare_versions(
         storage = ResultStorage()
 
         # 加载两个版本
-        result_v1 = storage.load(device_id=device_id, curve_type=curve_type, version=v1)
-        result_v2 = storage.load(device_id=device_id, curve_type=curve_type, version=v2)
+        result_v1 = storage.load(
+            device_id=device_id, curve_type=curve_type, version=v1)
+        result_v2 = storage.load(
+            device_id=device_id, curve_type=curve_type, version=v2)
 
         if not result_v1:
-            typer.echo(f"❌ 未找到版本1: device_id={device_id}, curve_type={curve_type}, version={v1}", err=True)
+            typer.echo(
+                f"❌ 未找到版本1: device_id={device_id}, curve_type={curve_type}, version={v1}", err=True)
             raise typer.Exit(code=1)
 
         if not result_v2:
-            typer.echo(f"❌ 未找到版本2: device_id={device_id}, curve_type={curve_type}, version={v2}", err=True)
+            typer.echo(
+                f"❌ 未找到版本2: device_id={device_id}, curve_type={curve_type}, version={v2}", err=True)
             raise typer.Exit(code=1)
 
         # 比较指标
@@ -733,7 +760,8 @@ def cmd_compare_versions(
 
         # 比较系数
         coefficient_changes = []
-        all_keys = set(result_v1.coefficients.keys()) | set(result_v2.coefficients.keys())
+        all_keys = set(result_v1.coefficients.keys()) | set(
+            result_v2.coefficients.keys())
         for key in sorted(all_keys):
             c1 = result_v1.coefficients.get(key, 0.0)
             c2 = result_v2.coefficients.get(key, 0.0)
@@ -801,10 +829,12 @@ def cmd_compare_versions(
         }
 
         if output:
-            Path(output).write_text(_json.dumps(comparison_result, ensure_ascii=False, indent=2))
+            Path(output).write_text(_json.dumps(
+                comparison_result, ensure_ascii=False, indent=2))
             typer.echo(f"✅ 比较结果已保存到: {output}")
         else:
-            typer.echo(_json.dumps(comparison_result, ensure_ascii=False, indent=2))
+            typer.echo(_json.dumps(comparison_result,
+                       ensure_ascii=False, indent=2))
 
     except Exception as e:
         typer.echo(f"❌ 比较失败: {e}", err=True)
@@ -819,10 +849,14 @@ def cmd_compare_versions(
     ),
 )
 def cmd_batch_fit(
-    device_ids: str = typer.Option(..., "--device-ids", help="设备ID列表（逗号分隔），如：1,2,3"),
-    curve_type: str = typer.Option("qh", "--curve-type", help="曲线类型: qh, qp, qeta"),
-    output: str | None = typer.Option(None, "--output", "-o", help="输出文件路径（JSON）"),
-    continue_on_error: bool = typer.Option(True, "--continue-on-error", help="遇到错误时继续处理"),
+    device_ids: str = typer.Option(..., "--device-ids",
+                                   help="设备ID列表（逗号分隔），如：1,2,3"),
+    curve_type: str = typer.Option(
+        "qh", "--curve-type", help="曲线类型: qh, qp, qeta"),
+    output: str | None = typer.Option(
+        None, "--output", "-o", help="输出文件路径（JSON）"),
+    continue_on_error: bool = typer.Option(
+        True, "--continue-on-error", help="遇到错误时继续处理"),
 ) -> None:
     """批量拟合多个设备的特性曲线。
 
@@ -885,7 +919,8 @@ def cmd_batch_fit(
                 )
             else:
                 failed_count += 1
-                error_info = result.metadata.get("error", "未知错误") if result.metadata else "拟合失败"
+                error_info = result.metadata.get(
+                    "error", "未知错误") if result.metadata else "拟合失败"
                 typer.echo(f"  ⚠️ 失败: {error_info}")
 
         except Exception as e:
@@ -925,10 +960,12 @@ def cmd_batch_fit(
     }
 
     if output:
-        Path(output).write_text(_json.dumps(output_data, ensure_ascii=False, indent=2))
+        Path(output).write_text(_json.dumps(
+            output_data, ensure_ascii=False, indent=2))
         typer.echo(f"\n✅ 结果已保存到: {output}")
     else:
-        typer.echo(f"\n{_json.dumps(output_data, ensure_ascii=False, indent=2)}")
+        typer.echo(
+            f"\n{_json.dumps(output_data, ensure_ascii=False, indent=2)}")
 
 
 @app.command(
@@ -941,7 +978,8 @@ def cmd_batch_fit(
 def cmd_evaluate_fit(
     result_id: int = typer.Option(..., "--result-id", help="拟合结果ID（数据库主键）"),
     test_days: int = typer.Option(7, "--test-days", help="测试窗口天数（默认7天）"),
-    output: str | None = typer.Option(None, "--output", "-o", help="输出文件路径（JSON）"),
+    output: str | None = typer.Option(
+        None, "--output", "-o", help="输出文件路径（JSON）"),
 ) -> None:
     """评估已拟合曲线的预测准确性。
 
@@ -1003,7 +1041,8 @@ def cmd_evaluate_fit(
                 """
                 cursor.execute(param_query, (result_id,))
                 param_rows = cursor.fetchall()
-                coefficients = [row[1] for row in param_rows] if param_rows else []
+                coefficients = [row[1]
+                                for row in param_rows] if param_rows else []
 
                 typer.echo(f"  设备ID: {device_id}")
                 typer.echo(f"  曲线类型: {curve_type}")
@@ -1030,7 +1069,8 @@ def cmd_evaluate_fit(
     start_time = end_time - timedelta(days=test_days)
     test_window = TimeWindow(start=start_time, end=end_time)
 
-    typer.echo(f"\n📅 测试窗口: {start_time.strftime('%Y-%m-%d')} ~ {end_time.strftime('%Y-%m-%d')}")
+    typer.echo(
+        f"\n📅 测试窗口: {start_time.strftime('%Y-%m-%d')} ~ {end_time.strftime('%Y-%m-%d')}")
 
     # 评估预测准确性
     try:
@@ -1046,10 +1086,14 @@ def cmd_evaluate_fit(
         typer.echo(f"\n{'='*60}")
         typer.echo("📊 评估结果")
         typer.echo(f"  测试点数: {evaluation['test_point_count']}")
-        typer.echo(f"  5%偏差内: {evaluation['pass_rate']['within_5_percent']*100:.1f}%")
-        typer.echo(f"  10%偏差内: {evaluation['pass_rate']['within_10_percent']*100:.1f}%")
-        typer.echo(f"  平均偏差: {evaluation['deviation_stats']['mean_deviation']:.2f}%")
-        typer.echo(f"  最大偏差: {evaluation['deviation_stats']['max_deviation']:.2f}%")
+        typer.echo(
+            f"  5%偏差内: {evaluation['pass_rate']['within_5_percent']*100:.1f}%")
+        typer.echo(
+            f"  10%偏差内: {evaluation['pass_rate']['within_10_percent']*100:.1f}%")
+        typer.echo(
+            f"  平均偏差: {evaluation['deviation_stats']['mean_deviation']:.2f}%")
+        typer.echo(
+            f"  最大偏差: {evaluation['deviation_stats']['max_deviation']:.2f}%")
 
         # 判断是否合格
         is_qualified = evaluation["pass_rate"]["within_5_percent"] >= 0.90
@@ -1070,10 +1114,12 @@ def cmd_evaluate_fit(
         }
 
         if output:
-            Path(output).write_text(_json.dumps(output_data, ensure_ascii=False, indent=2))
+            Path(output).write_text(_json.dumps(
+                output_data, ensure_ascii=False, indent=2))
             typer.echo(f"\n✅ 评估结果已保存到: {output}")
         else:
-            typer.echo(f"\n{_json.dumps(output_data, ensure_ascii=False, indent=2)}")
+            typer.echo(
+                f"\n{_json.dumps(output_data, ensure_ascii=False, indent=2)}")
 
     except Exception as e:
         typer.echo(f"❌ 评估失败: {e}", err=True)
@@ -1088,9 +1134,12 @@ def cmd_evaluate_fit(
     ),
 )
 def cmd_export_curves(
-    device_id: int | None = typer.Option(None, "--device-id", help="设备ID（可选，不指定则导出所有）"),
-    curve_type: str | None = typer.Option(None, "--curve-type", help="曲线类型（可选）: qh, qp, qeta"),
-    format: str = typer.Option("csv", "--format", "-f", help="导出格式: csv, json, excel"),
+    device_id: int | None = typer.Option(
+        None, "--device-id", help="设备ID（可选，不指定则导出所有）"),
+    curve_type: str | None = typer.Option(
+        None, "--curve-type", help="曲线类型（可选）: qh, qp, qeta"),
+    format: str = typer.Option(
+        "csv", "--format", "-f", help="导出格式: csv, json, excel"),
     output: str = typer.Option(..., "--output", "-o", help="输出文件路径"),
     limit: int = typer.Option(1000, "--limit", help="最大导出行数（默认1000）"),
 ) -> None:
@@ -1114,7 +1163,7 @@ def cmd_export_curves(
     initialize_app()
     import json as _json
     from app.adapters.db.pool import get_connection
-    from app.services.characteristic_curves.shared.data_exporter import DataExporter
+    # Note: DataExporter 已删除，改为pandas直接导出
 
     typer.echo(f"📊 开始导出曲线数据")
     typer.echo(f"  设备ID: {device_id or '全部'}")
@@ -1176,19 +1225,22 @@ def cmd_export_curves(
         typer.echo(f"❌ 查询数据失败: {e}", err=True)
         raise typer.Exit(code=1)
 
-    # 导出数据
+    # 直接使用pandas导出
     try:
-        exporter = DataExporter()
-        result = exporter.export(data=df, format=format, file_path=output)
-
-        if result.success:
-            typer.echo(f"\n✅ 导出成功")
-            typer.echo(f"  文件路径: {result.file_path}")
-            typer.echo(f"  导出行数: {result.rows}")
-            typer.echo(f"  导出格式: {result.format}")
+        if format == "csv":
+            df.to_csv(output, index=False)
+        elif format == "excel":
+            df.to_excel(output, index=False)
+        elif format == "json":
+            df.to_json(output, orient="records", indent=2)
         else:
-            typer.echo(f"❌ 导出失败: {result.message}", err=True)
+            typer.echo(f"❌ 不支持的格式: {format}", err=True)
             raise typer.Exit(code=1)
+
+        typer.echo(f"\n✅ 导出成功")
+        typer.echo(f"  文件路径: {output}")
+        typer.echo(f"  导出行数: {len(df)}")
+        typer.echo(f"  导出格式: {format}")
 
     except Exception as e:
         typer.echo(f"❌ 导出失败: {e}", err=True)

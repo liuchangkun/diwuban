@@ -29,6 +29,22 @@ class MergeTzPolicy:
 
 
 @dataclass(frozen=True)
+class ParallelMergeSettings:
+    """
+    并行合并配置
+
+    用于配置按设备并行处理策略。
+
+    属性：
+        enabled: 是否启用并行处理
+        max_workers: 最大并行线程数
+    """
+
+    enabled: bool = False
+    max_workers: int = 4
+
+
+@dataclass(frozen=True)
 class SegmentedMergeSettings:
     """
     分段合并配置
@@ -38,10 +54,12 @@ class SegmentedMergeSettings:
     属性：
         enabled: 是否启用分段合并
         granularity: 合并粒度，如 "30m"、"1h"
+        parallel: 并行处理配置
     """
 
     enabled: bool = True
     granularity: str = "1h"  # 例如：30m/1h
+    parallel: ParallelMergeSettings = ParallelMergeSettings()
 
 
 @dataclass(frozen=True)

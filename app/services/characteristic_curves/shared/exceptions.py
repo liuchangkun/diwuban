@@ -1,12 +1,12 @@
 """
-特性曲线拟合系统 - 统一异常定义
+异常类体系
 
-版本: v2.6
-创建日期: 2025-12-09
+定义特性曲线拟合系统的所有异常类。
+
+版本: v2.7
+更新日期: 2025-12-11
+来源: 特性曲线开发/开发文档/03_核心模块/03_共用层.md 第0节
 文件路径: app/services/characteristic_curves/shared/exceptions.py
-来源: 03_共用层.md 第0章
-
-原则: 宁可失败并明确告知，也不要使用不可靠的降级数据继续执行
 """
 
 from typing import List, Dict, Any, Optional
@@ -30,10 +30,19 @@ class CurveFittingError(Exception):
         return f"[{self.error_code}] {self.message} | details={self.details}"
 
 
+# ==================== 核心异常 (文档权威定义 CF001-CF007) ====================
+
 class InsufficientDataError(CurveFittingError):
-    """数据不足异常 (CF001)
+    """数据不足异常
 
     当训练或验证数据点数不满足最小要求时抛出。
+
+    Raises:
+        当 actual_points < min_points 时
+
+    处理策略:
+        ❌ 不使用降级数据
+        ✅ 记录错误日志，跳过该泵/泵组
     """
 
     error_code: str = "CF001"
@@ -59,36 +68,17 @@ class InsufficientDataError(CurveFittingError):
         self.stage = stage
 
 
-class DataExtractionError(CurveFittingError):
-    """数据提取异常 (CF009)
-
-    当从数据库提取训练数据失败时抛出。
-    """
-
-    error_code: str = "CF009"
-
-    def __init__(
-        self,
-        message: str,
-        device_id: Optional[int] = None,
-        curve_type: Optional[str] = None,
-        reason: Optional[str] = None
-    ):
-        details = {
-            "device_id": device_id,
-            "curve_type": curve_type,
-            "reason": reason
-        }
-        super().__init__(message, details)
-        self.device_id = device_id
-        self.curve_type = curve_type
-        self.reason = reason
-
-
 class FrequencyQueryError(CurveFittingError):
-    """频率查询异常 (CF002)
+    """频率查询异常
 
     当无法获取变频泵的运行频率时抛出。
+
+    Raises:
+        当 fact_measurements 查询返回空或None
+
+    处理策略:
+        ❌ 不使用default_freq=50.0降级
+        ✅ 记录错误日志，标记该泵组合成失败
     """
 
     error_code: str = "CF002"
@@ -106,9 +96,16 @@ class FrequencyQueryError(CurveFittingError):
 
 
 class HeadOutOfRangeError(CurveFittingError):
-    """扬程超出范围异常 (CF003)
+    """扬程超出范围异常
 
     当系统扬程超出所有泵的有效H范围时抛出。
+
+    Raises:
+        当 H_system > max(H_max) 或 H_system < min(H_min)
+
+    处理策略:
+        ❌ 不返回0流量作为降级
+        ✅ 抛出异常，明确告知扬程超范围
     """
 
     error_code: str = "CF003"
@@ -134,9 +131,16 @@ class HeadOutOfRangeError(CurveFittingError):
 
 
 class CorrectionModelTrainingError(CurveFittingError):
-    """修正模型训练失败异常 (CF004)
+    """修正模型训练失败异常
 
     当SystemCorrectionModel训练失败时抛出。
+
+    Raises:
+        当训练数据不足或模型拟合失败
+
+    处理策略:
+        ❌ 不使用默认α=1.0
+        ✅ 抛出异常，记录详细训练失败原因
     """
 
     error_code: str = "CF004"
@@ -164,9 +168,16 @@ class CorrectionModelTrainingError(CurveFittingError):
 
 
 class P0FittingRetryExhaustedError(CurveFittingError):
-    """P0拟合重试耗尽异常 (CF005)
+    """P0拟合重试耗尽异常
 
     当auto_trigger_p0重试次数超过最大限制时抛出。
+
+    Raises:
+        当 retry_count >= max_retries
+
+    处理策略:
+        ✅ 防止死循环
+        ✅ 明确告知需要人工检查数据
     """
 
     error_code: str = "CF005"
@@ -192,21 +203,28 @@ class P0FittingRetryExhaustedError(CurveFittingError):
 
 
 class CurveInconsistencyError(CurveFittingError):
-    """曲线一致性异常 (CF006)
+    """曲线一致性异常（v2.3新增）
 
     当同构泵组的曲线参数差异超出阈值时抛出。
+
+    Raises:
+        当同型号泵归一化后的H0或K参数差异过大时抛出
+
+    场景:
+        - 同构泵组P2阶段前置检查
+        - 曲线一致性验证失败
     """
 
-    error_code: str = "CF006"
+    error_code = "CF006"
 
     def __init__(
         self,
         message: str,
-        pump_ids: Optional[List[int]] = None,
+        pump_ids: List[int] = None,
         parameter: str = "",
         deviation: float = 0.0,
         threshold: float = 0.0,
-        details: Optional[Dict[str, Any]] = None
+        details: Dict[str, Any] = None
     ):
         super().__init__(message, details)
         self.pump_ids = pump_ids or []
@@ -223,18 +241,25 @@ class CurveInconsistencyError(CurveFittingError):
 
 
 class MissingCurveError(CurveFittingError):
-    """单泵曲线缺失异常 (CF007)
+    """单泵曲线缺失异常【v2.4新增 P42修复】
 
     当泵组处理时发现单泵曲线未注册时抛出。
+
+    场景:
+        - P2泵组处理前置检查
+        - 单泵曲线未完成P0拟合
+
+    Attributes:
+        missing_pump_ids: 缺失曲线的泵ID列表
     """
 
-    error_code: str = "CF007"
+    error_code = "CF007"
 
     def __init__(
         self,
         message: str,
-        missing_pump_ids: Optional[List[int]] = None,
-        details: Optional[Dict[str, Any]] = None
+        missing_pump_ids: List[int] = None,
+        details: Dict[str, Any] = None
     ):
         super().__init__(message, details)
         self.missing_pump_ids = missing_pump_ids or []
@@ -246,25 +271,213 @@ class MissingCurveError(CurveFittingError):
         )
 
 
-class DataNotFoundError(CurveFittingError):
-    """数据未找到异常 (CF008)
+class DataExtractionError(CurveFittingError):
+    """数据提取异常（v2.6新增）
 
-    当查询必需数据返回空时抛出。
+    当从数据库提取训练数据失败时抛出。
+
+    Raises:
+        - 数据库查询失败
+        - 提取的数据为空
+        - 数据格式不符合要求
+
+    处理策略:
+        ❌ 不使用空数据或默认数据降级
+        ✅ 抛出异常，记录详细错误原因
     """
 
-    error_code: str = "CF008"
+    error_code: str = "CF009"
 
     def __init__(
         self,
         message: str,
-        query_type: Optional[str] = None,
-        entity_id: Optional[int] = None
+        device_id: Optional[int] = None,
+        curve_type: Optional[str] = None,
+        reason: Optional[str] = None
     ):
         details = {
-            "query_type": query_type,
-            "entity_id": entity_id
+            "device_id": device_id,
+            "curve_type": curve_type,
+            "reason": reason
         }
         super().__init__(message, details)
-        self.query_type = query_type
-        self.entity_id = entity_id
+        self.device_id = device_id
+        self.curve_type = curve_type
+        self.reason = reason
 
+
+# ==================== 向后兼容的辅助异常类 ====================
+
+class DataError(CurveFittingError):
+    """数据相关异常基类（向后兼容）"""
+    pass
+
+
+class DataNotFoundError(DataError):
+    """数据不存在异常（向后兼容）"""
+    error_code: str = "CF008"
+
+
+class DataInsufficientError(InsufficientDataError):
+    """数据量不足异常（向后兼容，建议使用InsufficientDataError）"""
+
+    def __init__(
+        self,
+        message: str,
+        required: int,
+        actual: int,
+        device_id: Optional[int] = None,
+        **kwargs
+    ):
+        super().__init__(
+            message=message,
+            actual_points=actual,
+            min_points=required,
+            device_id=device_id
+        )
+
+
+class DataQualityError(DataError):
+    """数据质量异常（异常值过多、缺失率过高等）"""
+    error_code: str = "CF010"
+
+
+# ==================== 参数异常 ====================
+
+class ParameterError(CurveFittingError):
+    """参数相关异常"""
+    pass
+
+
+class ParameterMissingError(ParameterError):
+    """参数缺失异常（设备额定参数缺失）"""
+
+    def __init__(
+        self,
+        message: str,
+        missing_params: List[str],
+        **kwargs
+    ):
+        self.missing_params = missing_params
+        super().__init__(message, **kwargs)
+
+
+# ==================== 拟合异常 ====================
+
+class FittingError(CurveFittingError):
+    """拟合相关异常"""
+    pass
+
+
+class FittingFailedError(FittingError):
+    """拟合失败异常（所有方法都失败）"""
+    pass
+
+
+# ==================== 验证异常 ====================
+
+class ValidationError(CurveFittingError):
+    """验证相关异常"""
+    pass
+
+
+class ConstraintViolationError(ValidationError):
+    """约束违反异常"""
+
+    def __init__(
+        self,
+        message: str,
+        violated_constraints: List[dict],
+        **kwargs
+    ):
+        self.violated_constraints = violated_constraints
+        super().__init__(message, **kwargs)
+
+
+# ==================== P0 新增异常(设计文档3.4节) ====================
+
+
+class TimeWindowSplitError(CurveFittingError):
+    """时间窗口分割失败异常
+
+    错误代码: CF016
+    阶段: 零零1 TIME_WINDOW_SPLIT
+    """
+    error_code: str = "CF016"
+
+
+class DataCleaningError(DataError):
+    """数据清洗失败异常
+
+    错误代码: CF017
+    阶段: 零零4 DATA_CLEAN
+    """
+    error_code: str = "CF017"
+
+
+class SteadyStateDetectionError(CurveFittingError):
+    """稳态检测失败异常
+
+    错误代码: CF018
+    阶段: 零零5 STEADY_STATE_DETECT
+    """
+    error_code: str = "CF018"
+
+
+class NormalizationError(CurveFittingError):
+    """数据归一化失败异常
+
+    错误代码: CF019
+    阶段: 零零7 FREQ_NORMALIZE 或零零8 DATA_NORMALIZE
+    """
+    error_code: str = "CF019"
+
+
+class FittingFailureError(FittingError):
+    """拟合失败异常(重命名,与设计文档一致)
+
+    错误代码: CF011
+    阶段: 零零10 CURVE_FIT
+    """
+    error_code: str = "CF011"
+
+    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None, **kwargs):
+        super().__init__(message, details)
+
+
+class ValidationFailureError(ValidationError):
+    """验证失败异常
+
+    错误代码: CF012
+    阶段: 零零11 RESULT_VALIDATE
+    """
+    error_code: str = "CF012"
+
+    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None, **kwargs):
+        super().__init__(message, details)
+
+
+class VisualizationError(CurveFittingError):
+    """可视化生成失败异常
+
+    错误代码: CF013
+    阶段: 图片生成阶段
+    """
+    error_code: str = "CF013"
+
+
+class StorageError(CurveFittingError):
+    """存储失败异常
+
+    错误代码: CF014
+    阶段: 零零13 RESULT_STORE
+    """
+    error_code: str = "CF014"
+
+
+class DatabaseConnectionError(CurveFittingError):
+    """数据库连接失败异常
+
+    错误代码: CF015
+    """
+    error_code: str = "CF015"

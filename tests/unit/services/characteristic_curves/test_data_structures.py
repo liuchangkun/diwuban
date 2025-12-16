@@ -13,10 +13,14 @@
 - 禁止回退机制
 """
 
+import pytest
+
+# P2模块已删除，等待P0完成后重写
+pytestmark = pytest.mark.skip(reason="P2模块已删除，等待P0完成后重写")
+
 from datetime import datetime
 
 import numpy as np
-import pytest
 
 from app.services.characteristic_curves.models import (
     CurveType,

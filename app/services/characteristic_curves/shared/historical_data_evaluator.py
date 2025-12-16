@@ -56,20 +56,21 @@ class TimeWindowSplitResult:
 
 class HistoricalDataEvaluator:
     """历史数据评估器
-    
+
     评估曲线对独立测试数据的预测能力。
     合格标准：within_5_percent ≥ 90%（90%的测试点偏差小于5%）
     """
 
     def __init__(self, data_extractor: Optional[Any] = None):
         """初始化历史数据评估器
-        
+
         Args:
             data_extractor: 数据提取器（可选，用于从数据库提取数据）
         """
         self._extractor = data_extractor
-        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-        
+        self._logger = logging.getLogger(
+            f"{__name__}.{self.__class__.__name__}")
+
         self._logger.info(
             "[历史评估] 初始化",
             extra={"extra_data": {"组件": "HistoricalDataEvaluator"}}
@@ -84,14 +85,14 @@ class HistoricalDataEvaluator:
         test_data: Optional[pd.DataFrame] = None
     ) -> Dict[str, Any]:
         """评估曲线对独立测试数据的预测能力（核心方法）
-        
+
         Args:
             device_id: 设备ID
             curve_type: 曲线类型 ('qh', 'qp', 'qeta')
             predict_func: 预测函数，输入X返回预测Y
             test_window: 测试窗口
             test_data: 测试数据（可选，如不提供则从数据库读取）
-            
+
         Returns:
             Dict: {
                 'test_period': {'start': datetime, 'end': datetime},
@@ -105,17 +106,18 @@ class HistoricalDataEvaluator:
         if curve_type not in CURVE_METRICS:
             self._logger.error(f"[历史评估] 不支持的曲线类型: {curve_type}")
             return {'error': f'不支持的曲线类型: {curve_type}', 'overall_passed': False}
-        
+
         x_col = CURVE_METRICS[curve_type]['x']
         y_col = CURVE_METRICS[curve_type]['y']
-        
+
         # 获取测试数据
         if test_data is None:
             if self._extractor is None:
                 self._logger.error("[历史评估] 未提供测试数据且无数据提取器")
                 return {'error': '未提供测试数据', 'overall_passed': False}
-            test_data = self._extract_test_data(device_id, curve_type, test_window)
-        
+            test_data = self._extract_test_data(
+                device_id, curve_type, test_window)
+
         if test_data is None or len(test_data) == 0:
             self._logger.warning("[历史评估] 测试数据为空")
             return {
@@ -126,11 +128,12 @@ class HistoricalDataEvaluator:
                 'overall_passed': False,
                 'error': '测试数据为空'
             }
-        
+
         # 过滤有效数据
         valid_data = test_data[[x_col, y_col]].dropna()
-        valid_data = valid_data[(valid_data[x_col] > 0) & (valid_data[y_col] > 0)]
-        
+        valid_data = valid_data[(valid_data[x_col] > 0)
+                                & (valid_data[y_col] > 0)]
+
         if len(valid_data) == 0:
             return {
                 'test_period': {'start': test_window.start, 'end': test_window.end},
@@ -138,14 +141,15 @@ class HistoricalDataEvaluator:
                 'overall_passed': False,
                 'error': '无有效测试数据点'
             }
-        
+
         X = valid_data[x_col].values
         Y_actual = valid_data[y_col].values
-        
+
         # 计算预测值和偏差
         Y_pred = np.array([predict_func(x) for x in X])
-        relative_deviations = np.abs((Y_pred - Y_actual) / Y_actual) * 100  # 百分比
-        
+        relative_deviations = np.abs(
+            (Y_pred - Y_actual) / Y_actual) * 100  # 百分比
+
         return self._build_evaluation_result(
             test_window, X, Y_actual, Y_pred, relative_deviations
         )
@@ -343,22 +347,88 @@ class HistoricalDataEvaluator:
                 'evaluated_versions': int
             }
         """
-        # 此方法需要从数据库读取历史版本数据
-        # 暂时返回占位结果
-        self._logger.info(
-            "[历史评估] 稳定性评估",
-            extra={"extra_data": {
-                "设备ID": device_id,
-                "曲线类型": curve_type,
-                "版本数": len(versions)
-            }}
-        )
+        # 从数据库读取历史版本的R²和RMSE数据
+        try:
+            from app.services.characteristic_curves.shared import ResultStorage
+            storage = ResultStorage()
 
-        return {
-            'r2_variance': 0.0,
-            'stability_score': 1.0,
-            'evaluated_versions': len(versions)
-        }
+            r2_values = []
+            rmse_values = []
+
+            for version in versions:
+                try:
+                    fit_result = storage.load(
+                        device_id=device_id,
+                        curve_type=curve_type,
+                        version=version
+                    )
+                    if fit_result and fit_result.r_squared is not None:
+                        r2_values.append(fit_result.r_squared)
+                        if fit_result.rmse is not None:
+                            rmse_values.append(fit_result.rmse)
+                except Exception as e:
+                    self._logger.warning(
+                        f"[历史评估] 加载版本{version}失败: {e}"
+                    )
+                    continue
+
+            if len(r2_values) < 2:
+                self._logger.warning(
+                    f"[历史评估] 可用版本不足({len(r2_values)}<2)，稳定性评估无效"
+                )
+                return {
+                    'r2_variance': 0.0,
+                    'stability_score': 0.0,
+                    'evaluated_versions': len(r2_values),
+                    'warning': 'insufficient_versions'
+                }
+
+            # 计算R²方差和稳定性得分
+            r2_variance = float(np.var(r2_values))
+            r2_std = float(np.std(r2_values))
+            r2_mean = float(np.mean(r2_values))
+
+            # 稳定性得分: 方差越小得分越高 (0-1)
+            # 使用公式: score = exp(-10 * variance)
+            stability_score = float(np.exp(-10 * r2_variance))
+
+            self._logger.info(
+                "[历史评估] 稳定性评估完成",
+                extra={"extra_data": {
+                    "设备ID": device_id,
+                    "曲线类型": curve_type,
+                    "版本数": len(r2_values),
+                    "R²均值": r2_mean,
+                    "R²方差": r2_variance,
+                    "稳定性得分": stability_score
+                }}
+            )
+
+            result = {
+                'r2_variance': r2_variance,
+                'r2_std': r2_std,
+                'r2_mean': r2_mean,
+                'stability_score': stability_score,
+                'evaluated_versions': len(r2_values)
+            }
+
+            if rmse_values:
+                result['rmse_variance'] = float(np.var(rmse_values))
+                result['rmse_mean'] = float(np.mean(rmse_values))
+
+            return result
+
+        except Exception as e:
+            self._logger.error(
+                f"[历史评估] 稳定性评估失败: {e}",
+                extra={"extra_data": {"错误": str(e)}}
+            )
+            return {
+                'r2_variance': 0.0,
+                'stability_score': 0.0,
+                'evaluated_versions': 0,
+                'error': str(e)
+            }
 
     def compare_versions(
         self,
@@ -378,21 +448,96 @@ class HistoricalDataEvaluator:
         Returns:
             Dict: 包含两个版本的对比信息
         """
-        self._logger.info(
-            "[历史评估] 版本对比",
-            extra={"extra_data": {
-                "设备ID": device_id,
-                "曲线类型": curve_type,
-                "版本1": version1,
-                "版本2": version2
-            }}
-        )
+        # 从数据库读取两个版本的拟合结果
+        try:
+            from app.services.characteristic_curves.shared import ResultStorage
+            storage = ResultStorage()
 
-        return {
-            'device_id': device_id,
-            'curve_type': curve_type,
-            'version1': version1,
-            'version2': version2,
-            'comparison': {}  # 需要从数据库读取版本数据后填充
-        }
+            result1 = storage.load(
+                device_id=device_id,
+                curve_type=curve_type,
+                version=version1
+            )
+            result2 = storage.load(
+                device_id=device_id,
+                curve_type=curve_type,
+                version=version2
+            )
 
+            if not result1 or not result2:
+                missing = []
+                if not result1:
+                    missing.append(version1)
+                if not result2:
+                    missing.append(version2)
+                return {
+                    'device_id': device_id,
+                    'curve_type': curve_type,
+                    'version1': version1,
+                    'version2': version2,
+                    'error': f'版本不存在: {missing}'
+                }
+
+            # 计算指标差异
+            r2_diff = abs(result1.r_squared - result2.r_squared)
+            rmse_diff = abs(
+                result1.rmse - result2.rmse) if result1.rmse and result2.rmse else None
+
+            # 参数变化
+            param_changes = {}
+            if result1.coefficients and result2.coefficients:
+                all_keys = set(result1.coefficients.keys()) | set(
+                    result2.coefficients.keys())
+                for key in all_keys:
+                    val1 = result1.coefficients.get(key, 0)
+                    val2 = result2.coefficients.get(key, 0)
+                    param_changes[key] = {
+                        'v1': float(val1),
+                        'v2': float(val2),
+                        'change': float(val2 - val1),
+                        'change_pct': float((val2 - val1) / val1 * 100) if val1 != 0 else None
+                    }
+
+            self._logger.info(
+                "[历史评估] 版本对比完成",
+                extra={"extra_data": {
+                    "设备ID": device_id,
+                    "曲线类型": curve_type,
+                    "版本1": version1,
+                    "版本2": version2,
+                    "R²差异": r2_diff
+                }}
+            )
+
+            comparison = {
+                'r2_diff': float(r2_diff),
+                'r2_v1': float(result1.r_squared),
+                'r2_v2': float(result2.r_squared),
+                'param_changes': param_changes
+            }
+
+            if rmse_diff is not None:
+                comparison['rmse_diff'] = float(rmse_diff)
+                comparison['rmse_v1'] = float(result1.rmse)
+                comparison['rmse_v2'] = float(result2.rmse)
+
+            return {
+                'device_id': device_id,
+                'curve_type': curve_type,
+                'version1': version1,
+                'version2': version2,
+                'comparison': comparison
+            }
+
+        except Exception as e:
+            self._logger.error(
+                f"[历史评估] 版本对比失败: {e}",
+                extra={"extra_data": {"错误": str(e)}}
+            )
+            return {
+                'device_id': device_id,
+                'curve_type': curve_type,
+                'version1': version1,
+                'version2': version2,
+                'error': str(e)
+            }

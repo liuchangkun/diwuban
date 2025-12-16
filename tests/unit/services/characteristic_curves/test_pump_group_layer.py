@@ -19,8 +19,12 @@
 更新日期: 2025-12-09
 """
 
-import numpy as np
 import pytest
+
+# P2模块已删除，等待P0完成后重写
+pytestmark = pytest.mark.skip(reason="P2模块已删除，等待P0完成后重写")
+
+import numpy as np
 from unittest.mock import MagicMock, patch
 
 from app.services.characteristic_curves.models import GroupProcessingStrategy

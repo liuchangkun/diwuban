@@ -45,7 +45,7 @@ from .ingest import (
     IngestPerformance,
     IngestSettings,
 )
-from .merge import IngestWindow, MergeSettings, MergeTzPolicy, SegmentedMergeSettings
+from .merge import IngestWindow, MergeSettings, MergeTzPolicy, ParallelMergeSettings, SegmentedMergeSettings
 from .system import (
     SystemDirectoriesSettings,
     SystemGeneralSettings,
@@ -170,7 +170,8 @@ def load_settings(config_dir: Path) -> Settings:
     )
 
     # 构建合并配置（使用系统默认时区）
-    merge_settings = _build_merge_settings(data.get("merge", {}), default_timezone)
+    merge_settings = _build_merge_settings(
+        data.get("merge", {}), default_timezone)
 
     # 构建错误处理配置（仅从 YAML 加载）
     error_handling_settings = _build_error_handling_settings(
@@ -260,11 +261,13 @@ def _build_database_settings(db_config: Dict[str, Any]) -> DbSettings:
             ),
         ),
         timeouts=DbTimeoutSettings(
-            connect_timeout_ms=int(timeouts_config.get("connect_timeout_ms", 5000)),
+            connect_timeout_ms=int(
+                timeouts_config.get("connect_timeout_ms", 5000)),
             statement_timeout_ms=int(
                 timeouts_config.get("statement_timeout_ms", 30000)
             ),
-            query_timeout_ms=int(timeouts_config.get("query_timeout_ms", 60000)),
+            query_timeout_ms=int(timeouts_config.get(
+                "query_timeout_ms", 60000)),
             connection_acquire_timeout_ms=int(
                 timeouts_config.get("connection_acquire_timeout_ms", 10000)
             ),
@@ -278,7 +281,8 @@ def _build_database_settings(db_config: Dict[str, Any]) -> DbSettings:
         retry=DbRetrySettings(
             max_retries=int(retry_config.get("max_retries", 3)),
             retry_delay_ms=int(retry_config.get("retry_delay_ms", 1000)),
-            backoff_multiplier=float(retry_config.get("backoff_multiplier", 2.0)),
+            backoff_multiplier=float(
+                retry_config.get("backoff_multiplier", 2.0)),
         ),
         staging_unlogged=bool(db_config.get("staging_unlogged", False)),
     )
@@ -313,16 +317,20 @@ def _build_ingest_settings(
     error_config = ingest_config.get("error_handling", {})
     error_settings = ErrorHandlingSettings(
         max_errors_per_file=int(error_config.get("max_errors_per_file", 100)),
-        error_threshold_percent=float(error_config.get("error_threshold_percent", 5.0)),
+        error_threshold_percent=float(
+            error_config.get("error_threshold_percent", 5.0)),
         continue_on_error=bool(error_config.get("continue_on_error", True)),
     )
 
     # 性能配置
     performance_config = ingest_config.get("performance", {})
     performance_settings = IngestPerformance(
-        read_buffer_size=int(performance_config.get("read_buffer_size", 65536)),
-        write_buffer_size=int(performance_config.get("write_buffer_size", 65536)),
-        connection_pool_size=int(performance_config.get("connection_pool_size", 5)),
+        read_buffer_size=int(performance_config.get(
+            "read_buffer_size", 65536)),
+        write_buffer_size=int(performance_config.get(
+            "write_buffer_size", 65536)),
+        connection_pool_size=int(
+            performance_config.get("connection_pool_size", 5)),
     )
 
     # 背压配置
@@ -346,7 +354,8 @@ def _build_ingest_settings(
             )  # 默认路径统一至 configs/
         ),
         dim_metric_config=str(
-            paths_config.get("dim_metric_config", "config/dim_metric_config.json")
+            paths_config.get("dim_metric_config",
+                             "config/dim_metric_config.json")
         ),
     )
 
@@ -361,10 +370,12 @@ def _build_ingest_settings(
     return IngestSettings(
         base_dir=data_dir,  # 使用系统配置中的值，解决硬编码
         # 支持环境变量覆盖的字段
-        workers=int(os.getenv("INGEST_WORKERS", ingest_config.get("workers", 6))),
+        workers=int(os.getenv("INGEST_WORKERS",
+                    ingest_config.get("workers", 6))),
         commit_interval=int(
             os.getenv(
-                "INGEST_COMMIT_INTERVAL", ingest_config.get("commit_interval", 1000000)
+                "INGEST_COMMIT_INTERVAL", ingest_config.get(
+                    "commit_interval", 1000000)
             )
         ),
         p95_window=int(
@@ -376,7 +387,8 @@ def _build_ingest_settings(
         ),
         batch_id_mode=str(
             os.getenv(
-                "INGEST_BATCH_ID_MODE", ingest_config.get("batch_id_mode", "run_id")
+                "INGEST_BATCH_ID_MODE", ingest_config.get(
+                    "batch_id_mode", "run_id")
             )
         ),
         csv=csv_settings,
@@ -408,11 +420,18 @@ def _build_merge_settings(
                 tz_config.get("default_station_tz", default_timezone)
             ),  # 使用系统默认时区
             allow_missing_tz=bool(tz_config.get("allow_missing_tz", True)),
-            missing_tz_policy=str(tz_config.get("missing_tz_policy", "default")),
+            missing_tz_policy=str(tz_config.get(
+                "missing_tz_policy", "default")),
         ),
         segmented=SegmentedMergeSettings(
             enabled=bool(segmented_config.get("enabled", True)),
             granularity=str(segmented_config.get("granularity", "1h")),
+            parallel=ParallelMergeSettings(
+                enabled=bool(segmented_config.get(
+                    "parallel", {}).get("enabled", False)),
+                max_workers=int(segmented_config.get(
+                    "parallel", {}).get("max_workers", 4)),
+            ),
         ),
     )
 
@@ -514,12 +533,14 @@ def _build_config_sources(config_dir: Path) -> Dict[str, Any]:
             ),
             "commit_interval": _get_env_source(
                 "INGEST_COMMIT_INTERVAL",
-                _get_yaml_field_source(yaml_data.get("ingest", {}), "commit_interval")
+                _get_yaml_field_source(yaml_data.get(
+                    "ingest", {}), "commit_interval")
                 == "YAML",
             ),
             "p95_window": _get_env_source(
                 "INGEST_P95_WINDOW",
-                _get_yaml_field_source(yaml_data.get("ingest", {}), "p95_window")
+                _get_yaml_field_source(
+                    yaml_data.get("ingest", {}), "p95_window")
                 == "YAML",
             ),
             "enhanced_source_hint": _get_env_source(
@@ -531,7 +552,8 @@ def _build_config_sources(config_dir: Path) -> Dict[str, Any]:
             ),
             "batch_id_mode": _get_env_source(
                 "INGEST_BATCH_ID_MODE",
-                _get_yaml_field_source(yaml_data.get("ingest", {}), "batch_id_mode")
+                _get_yaml_field_source(yaml_data.get(
+                    "ingest", {}), "batch_id_mode")
                 == "YAML",
             ),
             "csv.delimiter": _get_yaml_field_source(
@@ -650,10 +672,12 @@ def _build_error_handling_settings(
                 analysis_config.get("recording", {}).get("max_records", 10000)
             ),
             analysis_window=int(
-                analysis_config.get("recording", {}).get("analysis_window", 3600)
+                analysis_config.get("recording", {}).get(
+                    "analysis_window", 3600)
             ),
             cleanup_interval=int(
-                analysis_config.get("recording", {}).get("cleanup_interval", 300)
+                analysis_config.get("recording", {}).get(
+                    "cleanup_interval", 300)
             ),
             auto_cleanup=bool(
                 analysis_config.get("recording", {}).get("auto_cleanup", True)
@@ -661,10 +685,12 @@ def _build_error_handling_settings(
         ),
         pattern_detection=PatternDetectionConfig(
             min_frequency=int(
-                analysis_config.get("pattern_detection", {}).get("min_frequency", 3)
+                analysis_config.get("pattern_detection", {}
+                                    ).get("min_frequency", 3)
             ),
             time_window=int(
-                analysis_config.get("pattern_detection", {}).get("time_window", 1800)
+                analysis_config.get("pattern_detection", {}
+                                    ).get("time_window", 1800)
             ),
             similarity_threshold=float(
                 analysis_config.get("pattern_detection", {}).get(
@@ -679,16 +705,20 @@ def _build_error_handling_settings(
         ),
         trend_analysis=TrendAnalysisConfig(
             analysis_interval=int(
-                analysis_config.get("trend_analysis", {}).get("analysis_interval", 300)
+                analysis_config.get("trend_analysis", {}).get(
+                    "analysis_interval", 300)
             ),
             trend_window=int(
-                analysis_config.get("trend_analysis", {}).get("trend_window", 3600)
+                analysis_config.get("trend_analysis", {}).get(
+                    "trend_window", 3600)
             ),
             rate_threshold=float(
-                analysis_config.get("trend_analysis", {}).get("rate_threshold", 0.1)
+                analysis_config.get("trend_analysis", {}).get(
+                    "rate_threshold", 0.1)
             ),
             enable_prediction=bool(
-                analysis_config.get("trend_analysis", {}).get("enable_prediction", True)
+                analysis_config.get("trend_analysis", {}).get(
+                    "enable_prediction", True)
             ),
         ),
         reporting=ReportingConfig(
@@ -696,19 +726,23 @@ def _build_error_handling_settings(
                 analysis_config.get("reporting", {}).get("auto_generate", True)
             ),
             report_interval=int(
-                analysis_config.get("reporting", {}).get("report_interval", 1800)
+                analysis_config.get("reporting", {}).get(
+                    "report_interval", 1800)
             ),
             max_reports=int(
                 analysis_config.get("reporting", {}).get("max_reports", 100)
             ),
             include_patterns=bool(
-                analysis_config.get("reporting", {}).get("include_patterns", True)
+                analysis_config.get("reporting", {}).get(
+                    "include_patterns", True)
             ),
             include_trends=bool(
-                analysis_config.get("reporting", {}).get("include_trends", True)
+                analysis_config.get("reporting", {}).get(
+                    "include_trends", True)
             ),
             include_suggestions=bool(
-                analysis_config.get("reporting", {}).get("include_suggestions", True)
+                analysis_config.get("reporting", {}).get(
+                    "include_suggestions", True)
             ),
         ),
     )
@@ -723,35 +757,44 @@ def _build_error_handling_settings(
                 )
             ),
             max_context_size=int(
-                monitoring_config.get("decorator", {}).get("max_context_size", 1000)
+                monitoring_config.get("decorator", {}).get(
+                    "max_context_size", 1000)
             ),
             capture_args=bool(
-                monitoring_config.get("decorator", {}).get("capture_args", True)
+                monitoring_config.get("decorator", {}).get(
+                    "capture_args", True)
             ),
             capture_return=bool(
-                monitoring_config.get("decorator", {}).get("capture_return", False)
+                monitoring_config.get("decorator", {}).get(
+                    "capture_return", False)
             ),
             exclude_sensitive_keys=monitoring_config.get("decorator", {}).get(
-                "exclude_sensitive_keys", ["password", "token", "secret", "key", "auth"]
+                "exclude_sensitive_keys", [
+                    "password", "token", "secret", "key", "auth"]
             ),
         ),
         performance=PerformanceMonitoringConfig(
             enable_timing=bool(
-                monitoring_config.get("performance", {}).get("enable_timing", True)
+                monitoring_config.get("performance", {}).get(
+                    "enable_timing", True)
             ),
             slow_threshold=float(
-                monitoring_config.get("performance", {}).get("slow_threshold", 5.0)
+                monitoring_config.get("performance", {}).get(
+                    "slow_threshold", 5.0)
             ),
             memory_monitoring=bool(
-                monitoring_config.get("performance", {}).get("memory_monitoring", False)
+                monitoring_config.get("performance", {}).get(
+                    "memory_monitoring", False)
             ),
         ),
         alerting=AlertingConfig(
             enable_alerts=bool(
-                monitoring_config.get("alerting", {}).get("enable_alerts", False)
+                monitoring_config.get("alerting", {}).get(
+                    "enable_alerts", False)
             ),
             error_rate_threshold=float(
-                monitoring_config.get("alerting", {}).get("error_rate_threshold", 0.05)
+                monitoring_config.get("alerting", {}).get(
+                    "error_rate_threshold", 0.05)
             ),
             consecutive_failures_threshold=int(
                 monitoring_config.get("alerting", {}).get(
@@ -786,7 +829,8 @@ def _build_error_handling_settings(
                 )
             ),
             valid_strategies=validation_config.get("retry_validation", {}).get(
-                "valid_strategies", ["fixed", "linear", "exponential", "fibonacci"]
+                "valid_strategies", ["fixed", "linear",
+                                     "exponential", "fibonacci"]
             ),
         ),
         circuit_breaker_validation=CircuitBreakerValidationConfig(
@@ -840,7 +884,8 @@ def _build_error_handling_settings(
     initialization_settings = InitializationSettings(
         startup=StartupConfig(
             validate_config=bool(
-                initialization_config.get("startup", {}).get("validate_config", True)
+                initialization_config.get("startup", {}).get(
+                    "validate_config", True)
             ),
             initialize_components=bool(
                 initialization_config.get("startup", {}).get(
@@ -865,7 +910,8 @@ def _build_error_handling_settings(
                 )
             ),
             reload_interval=int(
-                initialization_config.get("hot_reload", {}).get("reload_interval", 60)
+                initialization_config.get(
+                    "hot_reload", {}).get("reload_interval", 60)
             ),
             backup_on_reload=bool(
                 initialization_config.get("hot_reload", {}).get(

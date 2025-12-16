@@ -1,4 +1,13 @@
 from __future__ import annotations
+from app.services.ingest.prepare_dim.backup import BackupManager
+from app.core.config.loader_new import Settings
+from app.adapters.db.gateway import get_conn
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Any, Dict
+from pathlib import Path
+from dataclasses import dataclass
+import hashlib
+import time
 
 """
 准备维表与映射快照（ingest.prepare_dim）
@@ -15,17 +24,6 @@ import json
 import logging
 
 _act = logging.getLogger("activity")
-
-import time
-import hashlib
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Any, Dict
-from concurrent.futures import ThreadPoolExecutor, as_completed
-
-from app.adapters.db.gateway import get_conn
-from app.core.config.loader_new import Settings
-from app.services.ingest.prepare_dim.backup import BackupManager
 
 
 @dataclass(frozen=True)
@@ -247,7 +245,6 @@ def _upsert_mapping_item(
         raise
 
 
-
 def _validate_metadata_completeness(cur) -> Dict[str, Any]:
     """
     验证 dim_metric_metadata 表的数据完整性
@@ -310,7 +307,8 @@ def _validate_metadata_completeness(cur) -> Dict[str, Any]:
         metric_count = cur.fetchone()[0]
 
         # 计算期望的总记录数
-        expected_total = metric_count + metric_count + (device_count * metric_count)
+        expected_total = metric_count + \
+            metric_count + (device_count * metric_count)
 
         # 查询实际数据
         cur.execute("""
@@ -342,29 +340,35 @@ def _validate_metadata_completeness(cur) -> Dict[str, Any]:
         # 验证总记录数
         if total_count == 0:
             result["is_valid"] = False
-            result["errors"].append(f"❌ dim_metric_metadata 表为空！期望 {expected_total} 条记录")
-            result["errors"].append("   请手动执行迁移脚本：scripts/sql/migrations/100_migrate_metadata_to_three_tier.sql")
+            result["errors"].append(
+                f"❌ dim_metric_metadata 表为空！期望 {expected_total} 条记录")
+            result["errors"].append(
+                "   请手动执行迁移脚本：scripts/sql/migrations/100_migrate_metadata_to_three_tier.sql")
             return result
 
         if total_count != expected_total:
             result["is_valid"] = False
-            result["errors"].append(f"❌ 总记录数不正确：期望 {expected_total} 条，实际 {total_count} 条")
+            result["errors"].append(
+                f"❌ 总记录数不正确：期望 {expected_total} 条，实际 {total_count} 条")
 
         # 验证全局级数据
         if global_count != metric_count:
             result["is_valid"] = False
-            result["errors"].append(f"❌ 全局级数据不完整：期望 {metric_count} 条，实际 {global_count} 条")
+            result["errors"].append(
+                f"❌ 全局级数据不完整：期望 {metric_count} 条，实际 {global_count} 条")
 
         # 验证站点级数据
         if station_count != metric_count:
             result["is_valid"] = False
-            result["errors"].append(f"❌ 站点级数据不完整：期望 {metric_count} 条，实际 {station_count} 条")
+            result["errors"].append(
+                f"❌ 站点级数据不完整：期望 {metric_count} 条，实际 {station_count} 条")
 
         # 验证设备级数据
         expected_device_level = device_count * metric_count
         if device_level_count != expected_device_level:
             result["is_valid"] = False
-            result["errors"].append(f"❌ 设备级数据不完整：期望 {expected_device_level} 条，实际 {device_level_count} 条")
+            result["errors"].append(
+                f"❌ 设备级数据不完整：期望 {expected_device_level} 条，实际 {device_level_count} 条")
 
         # 查询每个设备的数据完整性
         cur.execute("""
@@ -390,7 +394,8 @@ def _validate_metadata_completeness(cur) -> Dict[str, Any]:
 
             if count != metric_count:
                 result["is_valid"] = False
-                result["errors"].append(f"❌ 设备 {device_id} ({device_name}) 数据不完整：期望 {metric_count} 条，实际 {count} 条")
+                result["errors"].append(
+                    f"❌ 设备 {device_id} ({device_name}) 数据不完整：期望 {metric_count} 条，实际 {count} 条")
 
         result["details"]["device_details"] = device_details
 
@@ -405,14 +410,14 @@ def _validate_metadata_completeness(cur) -> Dict[str, Any]:
     return result
 
 
-def _clear_non_backup_tables(cur) -> int:
+def _clear_non_backup_tables(cur, skip_staging_raw: bool = False) -> int:
     """
     清空不在备份列表中的表
 
     只清空以下表（按依赖顺序从叶子到根）：
     0. calculation_failures_log, calculation_performance_metrics, completion_audit, completion_failures, staging_rejects, staging_raw（立刻清空）
     1. fact_measurements（所有历史数据，叶子节点）
-    2. mv_device_running_1s（派生数据，叶子节点）
+    2. mv_device_running_1s, mv_metric_60s_stats（派生数据，叶子节点）
     3. completion_runs, completion_steps（审计数据，叶子节点）
     4. （dim_device_capabilities 改为永久配置表，不再清空 - 2025-11-11）
     5. dim_devices（设备维度表，依赖 dim_stations）
@@ -436,6 +441,10 @@ def _clear_non_backup_tables(cur) -> int:
     - metric_calculation_order（旧版本计算系统）
     - metric_capability_policy（旧版本计算系统）
       （device_running_thresholds_shadow 已删除 - 2025-11-11）
+
+    参数：
+    - cur: 数据库游标
+    - skip_staging_raw: 是否跳过清空staging_raw表（当ingest_copy=false时设为True，保留已导入的数据）
 
     注意：
     - 标记"永久保留"的表不会被清空
@@ -501,17 +510,38 @@ def _clear_non_backup_tables(cur) -> int:
     total_deleted += deleted
     _act.info(f"[清空表] completion_failures: {deleted} 行")
 
-    # staging_rejects: 暂存拒绝表
-    cur.execute("DELETE FROM staging_rejects")
-    deleted = cur.rowcount
-    total_deleted += deleted
-    _act.info(f"[清空表] staging_rejects: {deleted} 行")
+    # staging_rejects: 暂存拒绝表（通常数据量较小）
+    # 检查表是否存在后再执行，避免事务失败
+    cur.execute("""
+        SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' AND table_name = 'staging_rejects'
+        )
+    """)
+    if cur.fetchone()[0]:
+        cur.execute("DELETE FROM staging_rejects")
+        deleted = cur.rowcount
+        total_deleted += deleted
+        _act.info(f"[清空表] staging_rejects: {deleted} 行")
+    else:
+        _act.info("[清空表] staging_rejects: 表不存在，跳过")
 
-    # staging_raw: 暂存原始数据表
-    cur.execute("DELETE FROM staging_raw")
-    deleted = cur.rowcount
-    total_deleted += deleted
-    _act.info(f"[清空表] staging_raw: {deleted} 行")
+    # staging_raw: 暂存原始数据表（数据量巨大，使用 TRUNCATE 提升清空速度）
+    # 当 ingest_copy=false 时跳过清空，保留已导入的数据以便重复测试合并阶段
+    if skip_staging_raw:
+        _act.info("[清空表] staging_raw: 跳过清空（ingest_copy=false，保留已导入的数据）")
+    else:
+        cur.execute("""
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'public' AND table_name = 'staging_raw'
+            )
+        """)
+        if cur.fetchone()[0]:
+            cur.execute("TRUNCATE TABLE staging_raw")
+            _act.info("[清空表] staging_raw: 使用 TRUNCATE 清空（未逐行统计行数）")
+        else:
+            _act.info("[清空表] staging_raw: 表不存在，跳过")
 
     # 第1层：叶子节点（无外键依赖）
     # fact_measurements: 所有历史数据
@@ -524,7 +554,14 @@ def _clear_non_backup_tables(cur) -> int:
     cur.execute("DELETE FROM mv_device_running_1s")
     deleted = cur.rowcount
     total_deleted += deleted
-    _act.info(f"[清空表] mv_device_running_1s: {deleted} 行（派生数据，将在 device_running 阶段重新生成）")
+    _act.info(
+        f"[清空表] mv_device_running_1s: {deleted} 行（派生数据，将在 device_running 阶段重新生成）")
+
+    # mv_metric_60s_stats: 指标60秒统计表（派生数据，可重新生成）
+    cur.execute("DELETE FROM mv_metric_60s_stats")
+    deleted = cur.rowcount
+    total_deleted += deleted
+    _act.info(f"[清空表] mv_metric_60s_stats: {deleted} 行（派生数据，将在规则生成阶段重新生成）")
 
     # completion_runs, completion_steps: 审计数据
     cur.execute("DELETE FROM completion_runs")
@@ -602,14 +639,16 @@ def _clear_non_backup_tables(cur) -> int:
     # cur.execute("DELETE FROM dim_devices")
     # deleted = cur.rowcount
     # total_deleted += deleted
-    _act.info(f"[清空表] dim_devices: 跳过（使用 UPSERT 逻辑更新，保护 calculation_parameters 外键引用）")
+    _act.info(
+        f"[清空表] dim_devices: 跳过（使用 UPSERT 逻辑更新，保护 calculation_parameters 外键引用）")
 
     # 第4层：dim_stations（根节点）
     # 修改：不再清空 dim_stations 表，原因同上
     # cur.execute("DELETE FROM dim_stations")
     # deleted = cur.rowcount
     # total_deleted += deleted
-    _act.info(f"[清空表] dim_stations: 跳过（使用 UPSERT 逻辑更新，保护 calculation_parameters 外键引用）")
+    _act.info(
+        f"[清空表] dim_stations: 跳过（使用 UPSERT 逻辑更新，保护 calculation_parameters 外键引用）")
 
     # 第5层：dim_mapping_items（叶子节点）
     cur.execute("DELETE FROM dim_mapping_items")
@@ -621,8 +660,6 @@ def _clear_non_backup_tables(cur) -> int:
     _act.info(f"[清空表] 备份表未清空: {', '.join(sorted(backup_tables))}")
 
     return total_deleted
-
-
 
 
 def _execute_adaptive_sql_scripts(settings: Settings, cur) -> Dict[str, Any]:
@@ -656,7 +693,8 @@ def _execute_adaptive_sql_scripts(settings: Settings, cur) -> Dict[str, Any]:
         # "04_metadata_override.sql"  # 跳过：dim_metric_metadata_override 从备份恢复
     ]
 
-    adaptive_dir = _Path(__file__).parent.parent.parent.parent.parent / "scripts" / "sql" / "adaptive"
+    adaptive_dir = _Path(
+        __file__).parent.parent.parent.parent.parent / "scripts" / "sql" / "adaptive"
 
     for script_name in scripts:
         try:
@@ -739,9 +777,11 @@ def _generate_rule_tables(settings) -> Dict[str, Any]:
     try:
         config_path = Path("configs/merge.yaml")
         if config_path.exists():
-            config_data = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+            config_data = yaml.safe_load(
+                config_path.read_text(encoding="utf-8"))
             run_all_cfg = config_data.get("run_all", {}) or {}
-            skip_shadow_rules = bool(run_all_cfg.get("skip_shadow_rules", False))
+            skip_shadow_rules = bool(
+                run_all_cfg.get("skip_shadow_rules", False))
             cfg_device_running = bool(run_all_cfg.get("device_running", True))
             device_running_cfg = run_all_cfg.get("device_running_cfg")
 
@@ -786,7 +826,8 @@ def _generate_rule_tables(settings) -> Dict[str, Any]:
 
     with get_conn(settings) as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT MIN(ts_bucket), MAX(ts_bucket) FROM public.fact_measurements")
+            cur.execute(
+                "SELECT MIN(ts_bucket), MAX(ts_bucket) FROM public.fact_measurements")
             row = cur.fetchone() or (None, None)
             if row[0] is not None and row[1] is not None:
                 start_time = row[0]
@@ -869,7 +910,8 @@ def _generate_rule_tables(settings) -> Dict[str, Any]:
         )
         count_a1 = res.get("inserted", 0) if isinstance(res, dict) else 0
         duration_ms_a1 = int((time.perf_counter() - t0_a1) * 1000)
-        result["running_thresholds_prod"] = {"count": count_a1, "duration_ms": duration_ms_a1}
+        result["running_thresholds_prod"] = {
+            "count": count_a1, "duration_ms": duration_ms_a1}
         _act.info(
             f"[规则生成] A1/7 完成：run_running_thresholds (耗时: {duration_ms_a1}ms, 插入: {count_a1}条)",
             extra={
@@ -885,7 +927,8 @@ def _generate_rule_tables(settings) -> Dict[str, Any]:
         )
     except Exception as e:
         duration_ms_a1 = int((time.perf_counter() - t0_a1) * 1000)
-        result["running_thresholds_prod"] = {"count": 0, "duration_ms": duration_ms_a1, "error": str(e)}
+        result["running_thresholds_prod"] = {
+            "count": 0, "duration_ms": duration_ms_a1, "error": str(e)}
         _act.error(
             f"[规则生成] A1/7 失败：run_running_thresholds (耗时: {duration_ms_a1}ms, 错误: {e})",
             extra={
@@ -906,7 +949,8 @@ def _generate_rule_tables(settings) -> Dict[str, Any]:
     # ========================================================================
     _act.info(
         "[规则生成] ========== 阶段B：调用 device_running 填充 mv_device_running_1s ==========",
-        extra={"extra_data": {"event": "phase_b.start", "device_running_enabled": cfg_device_running}}
+        extra={"extra_data": {"event": "phase_b.start",
+                              "device_running_enabled": cfg_device_running}}
     )
 
     if cfg_device_running:
@@ -933,8 +977,10 @@ def _generate_rule_tables(settings) -> Dict[str, Any]:
             _dr = device_running_cfg or {}
             _job_cfg = JobConfig(
                 slice_granularity=str(_dr.get("slice", "week")),
-                max_device_concurrency=int(_dr.get("max_device_concurrency", 2)),
-                update_only_when_changed=bool(_dr.get("update_only_when_changed", True)),
+                max_device_concurrency=int(
+                    _dr.get("max_device_concurrency", 2)),
+                update_only_when_changed=bool(
+                    _dr.get("update_only_when_changed", True)),
                 force_recompute=bool(_dr.get("force_recompute", False)),
             )
             job = DeviceRunningJob(settings, _job_cfg)
@@ -943,7 +989,8 @@ def _generate_rule_tables(settings) -> Dict[str, Any]:
             job.run(start_ts=start_time, end_ts=end_time)
 
             duration_ms_b = int((time.perf_counter() - t0_b) * 1000)
-            result["device_running"] = {"success": True, "duration_ms": duration_ms_b}
+            result["device_running"] = {
+                "success": True, "duration_ms": duration_ms_b}
             _act.info(
                 f"[规则生成] B/7 完成：device_running (耗时: {duration_ms_b}ms)",
                 extra={
@@ -957,7 +1004,8 @@ def _generate_rule_tables(settings) -> Dict[str, Any]:
             )
         except Exception as e:
             duration_ms_b = int((time.perf_counter() - t0_b) * 1000)
-            result["device_running"] = {"success": False, "duration_ms": duration_ms_b, "error": str(e)}
+            result["device_running"] = {
+                "success": False, "duration_ms": duration_ms_b, "error": str(e)}
             _act.error(
                 f"[规则生成] B/7 失败：device_running (耗时: {duration_ms_b}ms, 错误: {e})",
                 extra={
@@ -983,7 +1031,8 @@ def _generate_rule_tables(settings) -> Dict[str, Any]:
                 }
             }
         )
-        result["device_running"] = {"success": False, "skipped": True, "reason": "disabled_in_config"}
+        result["device_running"] = {
+            "success": False, "skipped": True, "reason": "disabled_in_config"}
 
     # ========================================================================
     # 阶段B2：填充 mv_metric_60s_stats 表（依赖 fact_measurements）
@@ -1017,7 +1066,8 @@ def _generate_rule_tables(settings) -> Dict[str, Any]:
             conn.commit()
 
         duration_ms_b2 = int((time.perf_counter() - t0_b2) * 1000)
-        result["mv_metric_60s_stats"] = {"success": True, "duration_ms": duration_ms_b2}
+        result["mv_metric_60s_stats"] = {
+            "success": True, "duration_ms": duration_ms_b2}
         _act.info(
             f"[规则生成] B2/1 完成：mv_metric_60s_stats 填充完成 (耗时: {duration_ms_b2}ms)",
             extra={
@@ -1031,7 +1081,8 @@ def _generate_rule_tables(settings) -> Dict[str, Any]:
         )
     except Exception as e:
         duration_ms_b2 = int((time.perf_counter() - t0_b2) * 1000)
-        result["mv_metric_60s_stats"] = {"success": False, "duration_ms": duration_ms_b2, "error": str(e)}
+        result["mv_metric_60s_stats"] = {
+            "success": False, "duration_ms": duration_ms_b2, "error": str(e)}
         _act.error(
             f"[规则生成] B2/1 失败：mv_metric_60s_stats 填充失败 (耗时: {duration_ms_b2}ms, 错误: {e})",
             extra={
@@ -1069,7 +1120,8 @@ def _generate_rule_tables(settings) -> Dict[str, Any]:
             }
         }
     )
-    result["baseline_shadow"] = {"count": 0, "duration_ms": 0, "skipped": True, "reason": "feature_deleted"}
+    result["baseline_shadow"] = {
+        "count": 0, "duration_ms": 0, "skipped": True, "reason": "feature_deleted"}
 
     # C2. 生产baseline - 已删除（2025-11-07）
     # Reason: Quality checking feature deleted, baseline tables no longer used
@@ -1086,7 +1138,8 @@ def _generate_rule_tables(settings) -> Dict[str, Any]:
             }
         }
     )
-    result["baseline_prod"] = {"count": 0, "duration_ms": 0, "skipped": True, "reason": "feature_deleted"}
+    result["baseline_prod"] = {
+        "count": 0, "duration_ms": 0, "skipped": True, "reason": "feature_deleted"}
 
     # C3. 影子运行阈值 - 已删除 (2025-11-07)
     _act.info(
@@ -1102,15 +1155,18 @@ def _generate_rule_tables(settings) -> Dict[str, Any]:
             }
         }
     )
-    result["running_thresholds_shadow"] = {"count": 0, "duration_ms": 0, "skipped": True, "reason": "feature_deleted"}
+    result["running_thresholds_shadow"] = {
+        "count": 0, "duration_ms": 0, "skipped": True, "reason": "feature_deleted"}
 
     # C4. 影子质量规则 - 已删除（表不存在）
     _act.info("[规则生成] C4/7 跳过：质量规则（影子）- 表已删除")
-    result["quality_rules_shadow"] = {"count": 0, "duration_ms": 0, "skipped": True, "reason": "table_deleted"}
+    result["quality_rules_shadow"] = {
+        "count": 0, "duration_ms": 0, "skipped": True, "reason": "table_deleted"}
 
     # C5. 生产质量规则 - 已删除（表不存在）
     _act.info("[规则生成] C5/7 跳过：质量规则（生产）- 表已删除")
-    result["quality_rules_prod"] = {"count": 0, "duration_ms": 0, "skipped": True, "reason": "table_deleted"}
+    result["quality_rules_prod"] = {
+        "count": 0, "duration_ms": 0, "skipped": True, "reason": "table_deleted"}
 
     # =====================================================================
     # 新增：验证 device_running_thresholds 表的完整性
@@ -1176,13 +1232,19 @@ def _generate_rule_tables(settings) -> Dict[str, Any]:
     return result
 
 
-def prepare_dim(settings: Settings, mapping_path: Path, stage: int | None = None) -> Dict[str, Any]:
+def prepare_dim(
+    settings: Settings,
+    mapping_path: Path,
+    stage: int | None = None,
+    skip_staging_raw: bool = False,
+) -> Dict[str, Any]:
     """从映射 JSON 准备维表数据（两阶段执行）。
 
     参数：
         settings: 系统配置
         mapping_path: 映射文件路径
         stage: 执行阶段（1=阶段1，2=阶段2，None=完整流程）
+        skip_staging_raw: 是否跳过清空staging_raw表（当ingest_copy=false时设为True，保留已导入的数据）
 
     阶段1（在 merge-fact 前执行）：
         - 备份手动配置表
@@ -1271,27 +1333,35 @@ def prepare_dim(settings: Settings, mapping_path: Path, stage: int | None = None
                     ]
 
                     backup_manager = BackupManager()
-                    backup_result = backup_manager.backup_tables(cur, tables_to_backup)
+                    backup_result = backup_manager.backup_tables(
+                        cur, tables_to_backup)
 
                     # 统计备份结果
-                    ok_count = sum(1 for r in backup_result.values() if r["status"] == "ok")
-                    skipped_count = sum(1 for r in backup_result.values() if r["status"] == "skipped")
-                    error_count = sum(1 for r in backup_result.values() if r["status"] == "error")
+                    ok_count = sum(
+                        1 for r in backup_result.values() if r["status"] == "ok")
+                    skipped_count = sum(
+                        1 for r in backup_result.values() if r["status"] == "skipped")
+                    error_count = sum(
+                        1 for r in backup_result.values() if r["status"] == "error")
 
-                    _act.info(f"[prepare-dim] ✓ 备份完成：成功 {ok_count} 个，跳过 {skipped_count} 个，失败 {error_count} 个")
+                    _act.info(
+                        f"[prepare-dim] ✓ 备份完成：成功 {ok_count} 个，跳过 {skipped_count} 个，失败 {error_count} 个")
 
                     # 记录详细结果
                     for table_name, result in backup_result.items():
                         if result["status"] == "ok":
-                            _act.info(f"  - {table_name}: 备份成功，版本 v{result['version']}，{result['rows']} 行")
+                            _act.info(
+                                f"  - {table_name}: 备份成功，版本 v{result['version']}，{result['rows']} 行")
                         elif result["status"] == "skipped":
                             _act.info(f"  - {table_name}: {result['message']}")
                         elif result["status"] == "error":
-                            _act.warning(f"  - {table_name}: 备份失败 - {result['message']}")
+                            _act.warning(
+                                f"  - {table_name}: 备份失败 - {result['message']}")
 
                     # 1.2 清空非备份表
                     _act.info("[prepare-dim] [2/4] 清空非备份表...")
-                    total_deleted = _clear_non_backup_tables(cur)
+                    total_deleted = _clear_non_backup_tables(
+                        cur, skip_staging_raw=skip_staging_raw)
                     _act.info(f"[prepare-dim] ✓ 清空完成：共删除 {total_deleted} 行")
 
                     # 1.3 重建维度表
@@ -1302,15 +1372,19 @@ def prepare_dim(settings: Settings, mapping_path: Path, stage: int | None = None
 
                     # 恢复 dim_metric_config 表数据（从备份）
                     backup_manager = BackupManager()
-                    restore_result = backup_manager.restore_table(cur, "dim_metric_config")
+                    restore_result = backup_manager.restore_table(
+                        cur, "dim_metric_config")
                     if restore_result["status"] == "ok":
-                        _act.info(f"[prepare-dim] ✓ dim_metric_config 恢复成功，版本 v{restore_result['version']}")
+                        _act.info(
+                            f"[prepare-dim] ✓ dim_metric_config 恢复成功，版本 v{restore_result['version']}")
                     else:
-                        _act.warning(f"[prepare-dim] ⚠ dim_metric_config 恢复失败: {restore_result['message']}")
+                        _act.warning(
+                            f"[prepare-dim] ⚠ dim_metric_config 恢复失败: {restore_result['message']}")
 
                     # 确保 is_active 列存在（幂等）
                     try:
-                        cur.execute("ALTER TABLE public.dim_devices ADD COLUMN IF NOT EXISTS is_active boolean NOT NULL DEFAULT TRUE;")
+                        cur.execute(
+                            "ALTER TABLE public.dim_devices ADD COLUMN IF NOT EXISTS is_active boolean NOT NULL DEFAULT TRUE;")
                     except Exception:
                         pass
 
@@ -1325,7 +1399,8 @@ def prepare_dim(settings: Settings, mapping_path: Path, stage: int | None = None
                         # 从配置文件读取泵站的固定ID
                         station_id_raw = (s or {}).get("id")
                         if not station_id_raw or not isinstance(station_id_raw, int) or station_id_raw <= 0:
-                            raise ValueError(f"泵站 '{sname}' 的ID无效或缺失：{station_id_raw}")
+                            raise ValueError(
+                                f"泵站 '{sname}' 的ID无效或缺失：{station_id_raw}")
 
                         sid = _upsert_station(cur, station_id_raw, sname)
                         stations_count += 1
@@ -1338,14 +1413,16 @@ def prepare_dim(settings: Settings, mapping_path: Path, stage: int | None = None
                             # 从配置文件读取设备的固定ID
                             device_id_raw = (d or {}).get("id")
                             if not device_id_raw or not isinstance(device_id_raw, int) or device_id_raw <= 0:
-                                raise ValueError(f"设备 '{dname}' 的ID无效或缺失：{device_id_raw}")
+                                raise ValueError(
+                                    f"设备 '{dname}' 的ID无效或缺失：{device_id_raw}")
 
                             # 规范化设备类型与泵型
                             dtype_raw = (d or {}).get("type")
                             pump_type_raw = (d or {}).get("pump_type")
                             dtype_norm = None
                             if dtype_raw:
-                                k = str(dtype_raw).strip().lower().replace("-", "_")
+                                k = str(dtype_raw).strip(
+                                ).lower().replace("-", "_")
                                 # 特殊处理：清水池/Other 类设备需纳入 dim_devices，但标记为不参与计算
                                 if k in ("clear_water_pool", "clearwaterpool", "clear_water", "clearpool", "pool"):
                                     dtype_norm = "clear_water_pool"
@@ -1363,13 +1440,15 @@ def prepare_dim(settings: Settings, mapping_path: Path, stage: int | None = None
 
                             pump_type_norm = None
                             if dtype_norm == "pump" and pump_type_raw:
-                                pr = str(pump_type_raw).strip().lower().replace("-", "_")
+                                pr = str(pump_type_raw).strip(
+                                ).lower().replace("-", "_")
                                 if pr in ("variable_frequency", "vf", "variable"):
                                     pump_type_norm = "variable_frequency"
                                 elif pr in ("soft_start", "softstart", "soft"):
                                     pump_type_norm = "soft_start"
 
-                            did = _upsert_device(cur, device_id_raw, sid, dname, dtype_norm, pump_type_norm)
+                            did = _upsert_device(
+                                cur, device_id_raw, sid, dname, dtype_norm, pump_type_norm)
 
                             # 规范：确保 other/clear_water_pool 类型标记且禁用参与计算
                             if dtype_norm == "clear_water_pool":
@@ -1403,7 +1482,8 @@ def prepare_dim(settings: Settings, mapping_path: Path, stage: int | None = None
                     cur.execute("SELECT COUNT(*) FROM dim_metric_config")
                     metrics_count = cur.fetchone()[0]
 
-                    _act.info(f"[prepare-dim] ✓ 重建完成：{stations_count}个站点, {devices_count}个设备, {metrics_count}个指标")
+                    _act.info(
+                        f"[prepare-dim] ✓ 重建完成：{stations_count}个站点, {devices_count}个设备, {metrics_count}个指标")
                     result["stations_count"] = stations_count
                     result["devices_count"] = devices_count
                     result["metrics_count"] = metrics_count
@@ -1428,29 +1508,39 @@ def prepare_dim(settings: Settings, mapping_path: Path, stage: int | None = None
                         if details:
                             _act.warning("")
                             _act.warning("当前数据状态：")
-                            _act.warning(f"  ├─ 总记录数：{details.get('total_count', 0)} / {details.get('expected_count', 0)} (期望)")
-                            _act.warning(f"  ├─ 全局级：{details.get('global_count', 0)} / {details.get('metric_count', 0)} (期望)")
-                            _act.warning(f"  ├─ 站点级：{details.get('station_count', 0)} / {details.get('metric_count', 0)} (期望)")
-                            _act.warning(f"  └─ 设备级：{details.get('device_count', 0)} / {details.get('device_total', 0) * details.get('metric_count', 0)} (期望)")
+                            _act.warning(
+                                f"  ├─ 总记录数：{details.get('total_count', 0)} / {details.get('expected_count', 0)} (期望)")
+                            _act.warning(
+                                f"  ├─ 全局级：{details.get('global_count', 0)} / {details.get('metric_count', 0)} (期望)")
+                            _act.warning(
+                                f"  ├─ 站点级：{details.get('station_count', 0)} / {details.get('metric_count', 0)} (期望)")
+                            _act.warning(
+                                f"  └─ 设备级：{details.get('device_count', 0)} / {details.get('device_total', 0) * details.get('metric_count', 0)} (期望)")
 
                         _act.warning("")
                         _act.warning("说明：元数据表验证失败不会阻止流程继续执行，但可能影响计算结果。")
-                        _act.warning("建议：执行迁移脚本修复元数据表：scripts/sql/migrations/100_migrate_metadata_to_three_tier.sql")
+                        _act.warning(
+                            "建议：执行迁移脚本修复元数据表：scripts/sql/migrations/100_migrate_metadata_to_three_tier.sql")
                         _act.warning("=" * 80)
                     else:
                         _act.info("✓ 元数据表完整性验证通过")
                         details = validation_result.get("details", {})
-                        _act.info(f"  ├─ 总记录数：{details.get('total_count', 0)} 条")
-                        _act.info(f"  ├─ 全局级：{details.get('global_count', 0)} 条")
-                        _act.info(f"  ├─ 站点级：{details.get('station_count', 0)} 条")
-                        _act.info(f"  └─ 设备级：{details.get('device_count', 0)} 条（{details.get('device_total', 0)} 个设备）")
+                        _act.info(
+                            f"  ├─ 总记录数：{details.get('total_count', 0)} 条")
+                        _act.info(
+                            f"  ├─ 全局级：{details.get('global_count', 0)} 条")
+                        _act.info(
+                            f"  ├─ 站点级：{details.get('station_count', 0)} 条")
+                        _act.info(
+                            f"  └─ 设备级：{details.get('device_count', 0)} 条（{details.get('device_total', 0)} 个设备）")
 
                         # 打印每个设备的状态（简化版）
                         device_details = details.get("device_details", [])
                         if device_details and len(device_details) <= 10:
                             _act.info("  设备详情：")
                             for device in device_details:
-                                _act.info(f"    ✓ 设备 {device['device_id']} ({device['device_name']}): {device['metric_count']} 条")
+                                _act.info(
+                                    f"    ✓ 设备 {device['device_id']} ({device['device_name']}): {device['metric_count']} 条")
 
                     # 1.4 执行自适应SQL脚本（条件执行，避免覆盖现有配置）
                     _act.info("[prepare-dim] [4/4] 检查配置表状态...")
@@ -1466,21 +1556,25 @@ def prepare_dim(settings: Settings, mapping_path: Path, stage: int | None = None
                         cur.execute(f"SELECT COUNT(*) FROM {table}")
                         count = cur.fetchone()[0]
                         if count > 0:
-                            _act.info(f"[prepare-dim] 检测到 {table} 表已有 {count} 条数据")
+                            _act.info(
+                                f"[prepare-dim] 检测到 {table} 表已有 {count} 条数据")
                             all_empty = False
                             break
 
                     if all_empty:
                         # 所有配置表都为空，执行自适应SQL脚本作为降级方案
                         _act.info("[prepare-dim] 配置表为空，执行自适应SQL脚本作为降级方案...")
-                        adaptive_result = _execute_adaptive_sql_scripts(settings, cur)
+                        adaptive_result = _execute_adaptive_sql_scripts(
+                            settings, cur)
 
                         if adaptive_result["status"] == "ok":
-                            _act.info(f"[prepare-dim] ✓ 自适应SQL脚本执行完成：成功 {len(adaptive_result['scripts_executed'])} 个")
+                            _act.info(
+                                f"[prepare-dim] ✓ 自适应SQL脚本执行完成：成功 {len(adaptive_result['scripts_executed'])} 个")
                             for script_name in adaptive_result["scripts_executed"]:
                                 _act.info(f"  - {script_name}: 执行成功")
                         else:
-                            _act.error(f"[prepare-dim] ✗ 自适应SQL脚本执行失败：失败 {len(adaptive_result['scripts_failed'])} 个")
+                            _act.error(
+                                f"[prepare-dim] ✗ 自适应SQL脚本执行失败：失败 {len(adaptive_result['scripts_failed'])} 个")
                             for script_name, error_msg in adaptive_result["errors"].items():
                                 _act.error(f"  - {script_name}: {error_msg}")
                             raise RuntimeError("自适应SQL脚本执行失败")
@@ -1503,14 +1597,17 @@ def prepare_dim(settings: Settings, mapping_path: Path, stage: int | None = None
                     _act.info("[prepare-dim] 阶段2：规则生成")
 
                     # 前置检查：验证 fact_measurements 表是否有数据
-                    _act.info("[prepare-dim] [0/5] 前置检查：验证 fact_measurements 表...")
+                    _act.info(
+                        "[prepare-dim] [0/5] 前置检查：验证 fact_measurements 表...")
                     cur.execute("SELECT COUNT(*) FROM fact_measurements")
                     fact_count = cur.fetchone()[0]
                     if fact_count == 0:
-                        _act.warning("[prepare-dim] ⚠ fact_measurements 表为空，无法生成规则表")
+                        _act.warning(
+                            "[prepare-dim] ⚠ fact_measurements 表为空，无法生成规则表")
                         raise ValueError("fact_measurements 表为空，请先导入数据并完成时间对齐")
                     else:
-                        _act.info(f"[prepare-dim] ✓ fact_measurements 表有 {fact_count} 条数据，可以生成规则表")
+                        _act.info(
+                            f"[prepare-dim] ✓ fact_measurements 表有 {fact_count} 条数据，可以生成规则表")
 
                     # 2.1 清空规则表
                     _act.info("[prepare-dim] [1/5] 清空规则表...")
@@ -1525,7 +1622,8 @@ def prepare_dim(settings: Settings, mapping_path: Path, stage: int | None = None
                     # 适配新的返回值结构：从 {"key": {"count": N, "duration_ms": M}} 提取总数
                     # 排除 threshold_validation 键（它的值结构不同）
                     total_rules = sum(
-                        v["count"] if isinstance(v, dict) and "count" in v else 0
+                        v["count"] if isinstance(
+                            v, dict) and "count" in v else 0
                         for k, v in rule_result.items()
                         if k != "threshold_validation"
                     )
@@ -1534,7 +1632,8 @@ def prepare_dim(settings: Settings, mapping_path: Path, stage: int | None = None
                         for k, v in rule_result.items()
                         if k != "threshold_validation"
                     )
-                    _act.info(f"[prepare-dim] ✓ 生成完成：共生成 {total_rules} 条规则（总耗时: {total_duration_ms}ms）")
+                    _act.info(
+                        f"[prepare-dim] ✓ 生成完成：共生成 {total_rules} 条规则（总耗时: {total_duration_ms}ms）")
                     result["rule_generation"] = rule_result
 
                     # 2.4 生成映射表（dim_mapping_items）

@@ -101,7 +101,8 @@ class MethodRegistry:
         with self._lock:
             if self._initialized:
                 return
-            self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+            self._logger = logging.getLogger(
+                f"{__name__}.{self.__class__.__name__}")
             self._methods: Dict[str, Dict[str, Type[BaseMethod]]] = {}
             self._method_metadata: Dict[str, Dict[str, Dict[str, Any]]] = {}
             self._method_benchmarks: Dict[str, MethodBenchmark] = (
@@ -249,6 +250,25 @@ class MethodRegistry:
         candidates.sort(key=lambda x: x[0], reverse=True)
         return candidates[0][1]
 
+    def has_method(self, method_id: str, curve_type: Optional[str] = None) -> bool:
+        """检查方法是否已注册
+
+        Args:
+            method_id: 方法ID
+            curve_type: 曲线类型（可选，为None时搜索所有类型）
+
+        Returns:
+            bool: 是否存在
+        """
+        if curve_type is not None:
+            return curve_type in self._methods and method_id in self._methods[curve_type]
+        else:
+            # 搜索所有曲线类型
+            for ct_methods in self._methods.values():
+                if method_id in ct_methods:
+                    return True
+            return False
+
     def list_methods(self, curve_type: Optional[str] = None) -> List[Dict[str, Any]]:
         """列出所有已注册方法
 
@@ -316,4 +336,3 @@ class MethodRegistry:
             MethodBenchmark: 性能基准数据，不存在时返回None
         """
         return self._method_benchmarks.get(method_id)
-

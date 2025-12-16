@@ -5,9 +5,9 @@
 - BaseMethod: 拟合方法抽象基类
 - MethodRegistry: 方法注册表（线程安全单例）
 - MethodBenchmark: 方法性能基准数据
-- 数学方法子包 (math/): 多项式、样条、核函数、有理函数、统计、局部方法
-- 物理模型子包 (physics/): 泵特性方程、功率方程
-- 机器学习子包 (ml/): 梯度提升、随机森林、高斯过程
+- 数学方法子包 (mathematical/): 多项式、样条、核函数、有理函数、统计、局部方法
+- 物理模型子包 (physical/): 泵特性方程、功率方程
+- 机器学习子包 (machine_learning/): 梯度提升、随机森林、高斯过程
 - 混合方法子包 (hybrid/): 物理约束多项式
 
 版本: v1.3
@@ -30,7 +30,7 @@ from .method_registry import (
 )
 
 # 数学方法
-from .math import (
+from .mathematical import (
     MathPoly2Method,
     MathPoly3Method,
     MathStatGaussianMethod,
@@ -43,14 +43,14 @@ from .math import (
 )
 
 # 物理模型方法
-from .physics import (
+from .physical import (
     PhysicsPumpCharMethod,
     PhysicsPowerEqMethod,
     register_all_physics_methods,
 )
 
 # 机器学习方法
-from .ml import (
+from .machine_learning import (
     MLGradientBoostMethod,
     MLRandomForestMethod,
     MLGaussianProcessMethod,
@@ -96,4 +96,3 @@ __all__ = [
     # 混合方法
     "HybridPhysicsPolyMethod",
 ]
-

@@ -24,7 +24,7 @@ from app.services.characteristic_curves.shared import CacheManager
 
 class ConstraintParameterManager:
     """约束参数管理器
-    
+
     提供约束参数的统一获取和管理：
     1. 优先从缓存获取
     2. 缓存未命中则从数据库加载
@@ -38,15 +38,16 @@ class ConstraintParameterManager:
         cache: Optional[CacheManager] = None
     ):
         """初始化约束参数管理器
-        
+
         Args:
             learner: 约束学习器（可选，默认创建新实例）
             cache: 缓存管理器（可选，默认使用单例）
         """
         self._learner = learner or ConstraintLearner()
         self._cache = cache or CacheManager()
-        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-        
+        self._logger = logging.getLogger(
+            f"{__name__}.{self.__class__.__name__}")
+
         self._logger.info(
             "[约束管理] 初始化",
             extra={"extra_data": {"组件": "ConstraintParameterManager"}}
@@ -120,20 +121,21 @@ class ConstraintParameterManager:
         source: str = "manual"
     ) -> bool:
         """更新约束参数
-        
+
         Args:
             device_id: 设备ID
             curve_type: 曲线类型
             constraints: 约束参数
             source: 来源 ('manual', 'learned', 'imported')
-            
+
         Returns:
             bool: 是否成功
         """
         try:
             # 保存到数据库
-            success = self._save_to_database(device_id, curve_type, constraints, source)
-            
+            success = self._save_to_database(
+                device_id, curve_type, constraints, source)
+
             if success:
                 # 更新缓存
                 cache_key = self._cache.build_key(
@@ -142,7 +144,7 @@ class ConstraintParameterManager:
                     method_id="constraints"
                 )
                 self._cache.set(cache_key, constraints)
-                
+
                 self._logger.info(
                     "[约束管理] 约束参数已更新",
                     extra={"extra_data": {
@@ -151,7 +153,7 @@ class ConstraintParameterManager:
                         "来源": source
                     }}
                 )
-            
+
             return success
         except Exception as e:
             self._logger.error(f"[约束管理] 更新约束失败: {e}", exc_info=True)
@@ -163,7 +165,7 @@ class ConstraintParameterManager:
         curve_type: Optional[str] = None
     ) -> None:
         """使缓存失效
-        
+
         Args:
             device_id: 设备ID（可选，为None则清除所有）
             curve_type: 曲线类型（可选）
@@ -237,12 +239,91 @@ class ConstraintParameterManager:
         Returns:
             bool: 是否成功
         """
-        # TODO: 实现数据库保存逻辑
-        # 当前返回True，表示"虚拟"成功
-        self._logger.debug(
-            f"[约束管理] 保存约束（待实现）: device_id={device_id}, curve_type={curve_type}"
-        )
-        return True
+        try:
+            from app.adapters.db import get_connection
+            import json
+            from datetime import datetime
+
+            # 准备保存数据
+            learned_from_samples = constraints.pop('learned_from_samples', 0)
+            learning_method = constraints.pop('learning_method', source)
+            statistics = constraints.pop('statistics', None)
+            confidence = constraints.pop('confidence', 0.0)
+
+            # 构造自动验证结果
+            auto_validation_result = {
+                'overall_passed': confidence > 0.5,
+                'confidence_level': 'high' if confidence > 0.8 else ('medium' if confidence > 0.5 else 'low'),
+                'confidence_score': confidence,
+                'validated_at': datetime.now().isoformat()
+            }
+
+            with get_connection() as conn:
+                with conn.cursor() as cur:
+                    # 使用 INSERT ... ON CONFLICT 实现 upsert
+                    sql = """
+                        INSERT INTO learned_constraints (
+                            device_id,
+                            curve_type,
+                            constraints,
+                            learned_from_samples,
+                            learning_method,
+                            statistics,
+                            auto_validation_result,
+                            is_applied,
+                            applied_at,
+                            created_at,
+                            created_by
+                        ) VALUES (
+                            %s, %s, %s::jsonb, %s, %s, %s::jsonb, %s::jsonb,
+                            TRUE, NOW(), NOW(), 'system'
+                        )
+                        ON CONFLICT (device_id, curve_type)
+                        DO UPDATE SET
+                            constraints = EXCLUDED.constraints,
+                            learned_from_samples = EXCLUDED.learned_from_samples,
+                            learning_method = EXCLUDED.learning_method,
+                            statistics = EXCLUDED.statistics,
+                            auto_validation_result = EXCLUDED.auto_validation_result,
+                            is_applied = TRUE,
+                            applied_at = NOW()
+                    """
+
+                    cur.execute(sql, (
+                        device_id,
+                        curve_type,
+                        json.dumps(constraints),
+                        max(learned_from_samples, 0),  # 确保非负
+                        learning_method,
+                        json.dumps(statistics) if statistics else None,
+                        json.dumps(auto_validation_result)
+                    ))
+
+                conn.commit()
+
+            self._logger.info(
+                "[约束管理] 约束参数已保存到数据库",
+                extra={"extra_data": {
+                    "设备ID": device_id,
+                    "曲线类型": curve_type,
+                    "学习方法": learning_method,
+                    "样本数": learned_from_samples
+                }}
+            )
+
+            return True
+
+        except Exception as e:
+            self._logger.error(
+                f"[约束管理] 保存约束到数据库失败: {e}",
+                extra={"extra_data": {
+                    "设备ID": device_id,
+                    "曲线类型": curve_type,
+                    "错误": str(e)
+                }},
+                exc_info=True
+            )
+            return False
 
     def learn_and_update(
         self,
@@ -260,7 +341,8 @@ class ConstraintParameterManager:
         Returns:
             Dict: 学习结果
         """
-        result = self._learner.learn_from_history(device_id, curve_type, min_samples)
+        result = self._learner.learn_from_history(
+            device_id, curve_type, min_samples)
 
         if result.get('learned_params') and result.get('confidence', 0) > 0.5:
             self.update_constraints(
@@ -281,4 +363,3 @@ class ConstraintParameterManager:
     def cache(self) -> CacheManager:
         """获取缓存管理器"""
         return self._cache
-
