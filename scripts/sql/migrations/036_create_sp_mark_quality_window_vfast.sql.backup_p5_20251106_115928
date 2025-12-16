@@ -1,0 +1,1686 @@
+BEGIN;
+
+CREATE OR REPLACE PROCEDURE public.sp_mark_quality_window_vfast(
+  IN p_start timestamptz,
+  IN p_end   timestamptz,
+  IN p_station_id bigint DEFAULT NULL,
+  IN p_device_id  bigint DEFAULT NULL,
+  IN p_codes int[] DEFAULT NULL
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_running_id bigint;
+  v_pf_id      bigint;
+  v_power_id   bigint;
+  v_flow_id    bigint;
+  v_cur_a_id   bigint;
+  v_cur_b_id   bigint;
+  v_cur_c_id   bigint;
+  v_volt_a_id  bigint;
+  v_volt_b_id  bigint;
+  v_volt_c_id  bigint;
+  v_thr        numeric := 0.15; -- 三相不平衡默认阈值
+  v_rc         bigint := 0;     -- rows affected
+  v_cnt        bigint := 0;     -- temp counter
+  v_t          timestamptz;     -- stage timer
+BEGIN
+  -- 放宽本事务资源限制，专用于大窗口
+  PERFORM set_config('statement_timeout','0', true); -- 0 = no timeout
+  PERFORM set_config('work_mem','256MB', true);
+
+  -- 窗口临时表
+  v_t := clock_timestamp();
+  DROP TABLE IF EXISTS fwin;
+  CREATE TEMP TABLE fwin ON COMMIT DROP AS
+  SELECT id, station_id, device_id, metric_id, ts_bucket, value, COALESCE(quality_status,0) AS qs
+  FROM public.fact_measurements
+  WHERE ts_bucket>=p_start AND ts_bucket<p_end
+    AND (p_station_id IS NULL OR station_id=p_station_id)
+    AND (p_device_id  IS NULL OR device_id=p_device_id);
+  CREATE INDEX ON fwin(station_id, device_id, ts_bucket);
+  CREATE INDEX ON fwin(metric_id, ts_bucket);
+  CREATE INDEX ON fwin(station_id, device_id, ts_bucket, metric_id, value);
+  INSERT INTO public.quality_profile_log(window_start, window_end, station_id, device_id, stage, duration_ms, rows_affected, details)
+  VALUES (p_start, p_end, p_station_id, p_device_id, 'fwin_build', EXTRACT(MILLISECOND FROM (clock_timestamp()-v_t)), (SELECT COUNT(*) FROM fwin), NULL);
+
+  -- 解析关键 metric_id
+  SELECT id INTO v_running_id FROM public.dim_metric_config WHERE metric_key='device_running';
+  SELECT id INTO v_pf_id      FROM public.dim_metric_config WHERE metric_key IN ('pump_power_factor','power_factor');
+  SELECT id INTO v_power_id   FROM public.dim_metric_config WHERE metric_key IN ('pump_active_power','active_power','power');
+  SELECT id INTO v_flow_id    FROM public.dim_metric_config WHERE metric_key IN ('pump_flow_rate','main_pipeline_flow_rate');
+  SELECT id INTO v_cur_a_id   FROM public.dim_metric_config WHERE metric_key='pump_current_a';
+  SELECT id INTO v_cur_b_id   FROM public.dim_metric_config WHERE metric_key='pump_current_b';
+  SELECT id INTO v_cur_c_id   FROM public.dim_metric_config WHERE metric_key='pump_current_c';
+  SELECT id INTO v_volt_a_id  FROM public.dim_metric_config WHERE metric_key='pump_voltage_a';
+  SELECT id INTO v_volt_b_id  FROM public.dim_metric_config WHERE metric_key='pump_voltage_b';
+  SELECT id INTO v_volt_c_id  FROM public.dim_metric_config WHERE metric_key='pump_voltage_c';
+
+
+  -- 将 mv_device_running_1s 注入 fwin 以兼容历史规则对 device_running 的依赖（彻底摆脱对 fact 的依赖）
+  IF v_running_id IS NOT NULL THEN
+    INSERT INTO fwin(id, station_id, device_id, metric_id, ts_bucket, value, qs)
+    SELECT NULL::bigint, r.station_id, r.device_id, v_running_id, r.ts_bucket, r.running::int, 0
+    FROM public.mv_device_running_1s r
+    LEFT JOIN fwin x ON (
+        x.station_id = r.station_id
+        AND x.device_id = r.device_id
+        AND x.metric_id = v_running_id
+        AND x.ts_bucket = r.ts_bucket
+    )
+    WHERE r.ts_bucket>=p_start AND r.ts_bucket<p_end
+      AND (p_station_id IS NULL OR r.station_id=p_station_id)
+      AND (p_device_id  IS NULL OR r.device_id=p_device_id)
+      AND x.id IS NULL;
+  END IF;
+
+  -- 0) 计数器单调性（751）——与现版一致
+  v_t := clock_timestamp();
+  WITH base AS (
+    SELECT f.id AS row_id, f.station_id, f.device_id, f.ts_bucket, f.metric_id,
+           f.value, LAG(f.value) OVER (PARTITION BY f.station_id,f.device_id,f.metric_id ORDER BY f.ts_bucket) AS prev_v,
+           mc.metric_key
+    FROM public.fact_measurements f
+    JOIN public.dim_metric_config mc ON mc.id=f.metric_id
+    WHERE f.ts_bucket>=p_start AND f.ts_bucket<p_end
+      AND (p_station_id IS NULL OR f.station_id=p_station_id)
+      AND (p_device_id  IS NULL OR f.device_id=p_device_id)
+      AND COALESCE(f.quality_status,0)=0
+      AND mc.metric_key IN ('pump_kwh','pump_cumulative_flow','main_pipeline_cumulative_flow')
+  )
+  UPDATE public.fact_measurements u
+  SET quality_codes = CASE
+        WHEN NOT (751 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+          THEN array_append(COALESCE(u.quality_codes, '{}'::int[]), 751)
+          ELSE u.quality_codes
+      END,
+      quality_status = CASE WHEN COALESCE(u.quality_status,0)=0 THEN 751 ELSE u.quality_status END,
+      quality_type='counter_nonmonotonic',
+      quality_meta=jsonb_build_object('v',b.value,'prev',b.prev_v)
+  FROM base b
+  WHERE u.id=b.row_id AND b.prev_v IS NOT NULL AND b.value<b.prev_v
+    AND NOT (751 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+    AND (p_codes IS NULL OR 751 = ANY(p_codes));
+  GET DIAGNOSTICS v_rc = ROW_COUNT;
+  INSERT INTO public.quality_profile_log(window_start, window_end, station_id, device_id, stage, duration_ms, rows_affected)
+  VALUES (p_start, p_end, p_station_id, p_device_id, 'update_751', EXTRACT(MILLISECOND FROM (clock_timestamp()-v_t)), v_rc);
+
+  -- 1) PF 越界（701）——与现版一致
+  IF v_pf_id IS NOT NULL THEN
+    v_t := clock_timestamp();
+    WITH pf AS (
+      SELECT fp.id AS row_id, fp.device_id, fp.value AS pfv, drt.pf_min, drt.pf_max
+      FROM public.fact_measurements fp
+      LEFT JOIN public.device_running_thresholds drt ON drt.device_id=fp.device_id
+      WHERE fp.metric_id=v_pf_id AND fp.ts_bucket>=p_start AND fp.ts_bucket<p_end
+        AND (p_station_id IS NULL OR fp.station_id=p_station_id)
+        AND (p_device_id  IS NULL OR fp.device_id=p_device_id)
+        AND COALESCE(fp.quality_status,0)=0
+    )
+    UPDATE public.fact_measurements u
+    SET quality_codes = CASE
+          WHEN NOT (701 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+            THEN array_append(COALESCE(u.quality_codes, '{}'::int[]), 701)
+            ELSE u.quality_codes
+        END,
+        quality_status = CASE WHEN COALESCE(u.quality_status,0)=0 THEN 701 ELSE u.quality_status END,
+        quality_type='pf_out_of_range',
+        quality_meta=jsonb_build_object('pf',pf.pfv,'pf_min',pf.pf_min,'pf_max',pf.pf_max)
+    FROM pf
+    WHERE u.id=pf.row_id AND pf.pf_min IS NOT NULL AND pf.pf_max IS NOT NULL
+      AND (pf.pfv<pf.pf_min OR pf.pfv>pf.pf_max)
+      AND NOT (701 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+      AND (p_codes IS NULL OR 701 = ANY(p_codes));
+    GET DIAGNOSTICS v_rc = ROW_COUNT;
+    INSERT INTO public.quality_profile_log(window_start, window_end, station_id, device_id, stage, duration_ms, rows_affected)
+    VALUES (p_start, p_end, p_station_id, p_device_id, 'update_701_pf', EXTRACT(MILLISECOND FROM (clock_timestamp()-v_t)), v_rc);
+  END IF;
+
+  -- 2) 三相不平衡（702）——窗口内基于 fwin 与物化运行态，避免全表自连接
+  SELECT COALESCE(MAX(imbalance_max_pct), 0.15) INTO v_thr FROM public.device_running_thresholds;
+
+  -- 电流三相
+  IF v_cur_a_id IS NOT NULL AND v_cur_b_id IS NOT NULL AND v_cur_c_id IS NOT NULL THEN -- 三相电流齐全才判，否则跳过
+    v_t := clock_timestamp();
+    -- 汇总需要更新的 id，避免 OR 条件导致的糟糕计划；CTE 嵌入到 CREATE ... AS
+    CREATE TEMP TABLE t702_cur_ids ON COMMIT DROP AS
+    WITH cur3 AS (
+      SELECT fa.station_id, fa.device_id, fa.ts_bucket,
+             fa.id AS id_a, fb.id AS id_b, fc.id AS id_c,
+             fa.value AS va, fb.value AS vb, fc.value AS vc
+      FROM fwin fa
+      JOIN fwin fb ON fb.station_id=fa.station_id AND fb.device_id=fa.device_id AND fb.ts_bucket=fa.ts_bucket AND fb.metric_id=v_cur_b_id
+      JOIN fwin fc ON fc.station_id=fa.station_id AND fc.device_id=fa.device_id AND fc.ts_bucket=fa.ts_bucket AND fc.metric_id=v_cur_c_id
+      JOIN public.mv_device_running_1s fr ON fr.station_id=fa.station_id AND fr.device_id=fa.device_id AND fr.ts_bucket=fa.ts_bucket AND fr.running=1
+      WHERE fa.metric_id=v_cur_a_id AND fa.qs=0 AND fb.qs=0 AND fc.qs=0
+    ), bad AS (
+      SELECT *, CASE WHEN (va+vb+vc)>0 THEN (GREATEST(va,vb,vc)-LEAST(va,vb,vc))/NULLIF(((va+vb+vc)/3.0),0) ELSE NULL END AS imb
+      FROM cur3
+    )
+    SELECT DISTINCT id, imb FROM (
+      SELECT id_a AS id, imb FROM bad WHERE imb IS NOT NULL AND imb>v_thr
+      UNION ALL
+      SELECT id_b AS id, imb FROM bad WHERE imb IS NOT NULL AND imb>v_thr
+      UNION ALL
+      SELECT id_c AS id, imb FROM bad WHERE imb IS NOT NULL AND imb>v_thr
+    ) s;
+    CREATE INDEX ON t702_cur_ids(id);
+
+    UPDATE public.fact_measurements u
+    SET quality_codes = CASE
+          WHEN NOT (702 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+            THEN array_append(COALESCE(u.quality_codes, '{}'::int[]), 702)
+            ELSE u.quality_codes
+        END,
+        quality_status = CASE WHEN COALESCE(u.quality_status,0)=0 THEN 702 ELSE u.quality_status END,
+        quality_type='three_phase_imbalance',
+        quality_meta=jsonb_build_object('imbalance',t.imb,'thr',v_thr)
+    FROM t702_cur_ids t
+    WHERE u.id=t.id
+      AND NOT (702 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+      AND (p_codes IS NULL OR 702 = ANY(p_codes));
+    GET DIAGNOSTICS v_rc = ROW_COUNT;
+    INSERT INTO public.quality_profile_log(window_start, window_end, station_id, device_id, stage, duration_ms, rows_affected)
+    VALUES (p_start, p_end, p_station_id, p_device_id, 'update_702_current', EXTRACT(MILLISECOND FROM (clock_timestamp()-v_t)), v_rc);
+  END IF;
+
+  -- 电压三相
+  IF v_volt_a_id IS NOT NULL AND v_volt_b_id IS NOT NULL AND v_volt_c_id IS NOT NULL THEN -- 三相电压齐全才判，否则跳过
+    v_t := clock_timestamp();
+    -- 汇总需要更新的 id，避免 OR 条件导致的糟糕计划；CTE 嵌入到 CREATE ... AS
+    CREATE TEMP TABLE t702_volt_ids ON COMMIT DROP AS
+    WITH v3 AS (
+      SELECT fa.station_id, fa.device_id, fa.ts_bucket,
+             fa.id AS id_a, fb.id AS id_b, fc.id AS id_c,
+             fa.value AS va, fb.value AS vb, fc.value AS vc
+      FROM fwin fa
+      JOIN fwin fb ON fb.station_id=fa.station_id AND fb.device_id=fa.device_id AND fb.ts_bucket=fa.ts_bucket AND fb.metric_id=v_volt_b_id
+      JOIN fwin fc ON fc.station_id=fa.station_id AND fc.device_id=fa.device_id AND fc.ts_bucket=fa.ts_bucket AND fc.metric_id=v_volt_c_id
+      JOIN public.mv_device_running_1s fr ON fr.station_id=fa.station_id AND fr.device_id=fa.device_id AND fr.ts_bucket=fa.ts_bucket AND fr.running=1
+      WHERE fa.metric_id=v_volt_a_id AND fa.qs=0 AND fb.qs=0 AND fc.qs=0
+    ), bad AS (
+      SELECT *, CASE WHEN (va+vb+vc)>0 THEN (GREATEST(va,vb,vc)-LEAST(va,vb,vc))/NULLIF(((va+vb+vc)/3.0),0) ELSE NULL END AS imb
+      FROM v3
+    )
+    SELECT DISTINCT id, imb FROM (
+      SELECT id_a AS id, imb FROM bad WHERE imb IS NOT NULL AND imb>v_thr
+      UNION ALL
+      SELECT id_b AS id, imb FROM bad WHERE imb IS NOT NULL AND imb>v_thr
+      UNION ALL
+      SELECT id_c AS id, imb FROM bad WHERE imb IS NOT NULL AND imb>v_thr
+    ) s;
+    CREATE INDEX ON t702_volt_ids(id);
+
+    UPDATE public.fact_measurements u
+    SET quality_codes = CASE
+          WHEN NOT (702 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+            THEN array_append(COALESCE(u.quality_codes, '{}'::int[]), 702)
+            ELSE u.quality_codes
+        END,
+        quality_status = CASE WHEN COALESCE(u.quality_status,0)=0 THEN 702 ELSE u.quality_status END,
+        quality_type='three_phase_imbalance',
+        quality_meta=jsonb_build_object('imbalance',t.imb,'thr',v_thr)
+    FROM t702_volt_ids t
+    WHERE u.id=t.id
+      AND NOT (702 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+      AND (p_codes IS NULL OR 702 = ANY(p_codes));
+    GET DIAGNOSTICS v_rc = ROW_COUNT;
+    INSERT INTO public.quality_profile_log(window_start, window_end, station_id, device_id, stage, duration_ms, rows_affected)
+    VALUES (p_start, p_end, p_station_id, p_device_id, 'update_702_voltage', EXTRACT(MILLISECOND FROM (clock_timestamp()-v_t)), v_rc);
+  END IF;
+
+  -- 3) 状态矛盾（401/402/403）——与现版一致并扩展
+  IF v_running_id IS NOT NULL AND v_flow_id IS NOT NULL THEN
+    v_t := clock_timestamp();
+    WITH f AS (
+      SELECT ff.id AS row_id, ff.value AS q,
+             COALESCE(o.phys_min, m.phys_min, 0.0) AS q_min
+      FROM fwin ff
+      LEFT JOIN LATERAL (
+        SELECT dmo.phys_min
+        FROM public.dim_metric_metadata_override dmo
+        WHERE dmo.metric_id=ff.metric_id
+          AND (dmo.device_id = ff.device_id OR dmo.device_id IS NULL)
+          AND (dmo.station_id = ff.station_id OR dmo.station_id IS NULL)
+        ORDER BY (dmo.device_id IS NOT NULL) DESC, (dmo.station_id IS NOT NULL) DESC
+        LIMIT 1
+      ) o ON TRUE
+      LEFT JOIN public.dim_metric_metadata m ON m.metric_id=ff.metric_id
+      WHERE ff.metric_id=v_flow_id AND ff.qs=0
+        AND EXISTS (
+          SELECT 1 FROM fwin fr
+          WHERE fr.station_id=ff.station_id AND fr.device_id=ff.device_id
+            AND fr.ts_bucket=ff.ts_bucket AND fr.metric_id=v_running_id AND fr.value=1
+        )
+        AND (COALESCE(o.phys_min, m.phys_min, 0.0) IS NOT NULL)
+        AND ff.value <= COALESCE(o.phys_min, m.phys_min, 0.0)
+    )
+    UPDATE public.fact_measurements u
+    SET quality_codes = CASE
+          WHEN NOT (401 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+            THEN array_append(COALESCE(u.quality_codes, '{}'::int[]), 401)
+            ELSE u.quality_codes
+        END,
+        quality_status = CASE WHEN COALESCE(u.quality_status,0)=0 THEN 401 ELSE u.quality_status END,
+        quality_type='state_conflict_running_but_zero_output',
+        quality_meta=jsonb_build_object('q',f.q,'q_min',f.q_min)
+    FROM f
+    WHERE u.id=f.row_id
+      AND NOT (401 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+      AND (p_codes IS NULL OR 401 = ANY(p_codes));
+    GET DIAGNOSTICS v_rc = ROW_COUNT;
+    INSERT INTO public.quality_profile_log(window_start, window_end, station_id, device_id, stage, duration_ms, rows_affected)
+    VALUES (p_start, p_end, p_station_id, p_device_id, 'update_401', EXTRACT(MILLISECOND FROM (clock_timestamp()-v_t)), v_rc);
+  END IF;
+
+  -- 402：运行=1 但功率/流量近零（近零阈值可参数化：flatline_eps 或 remark.near_zero_eps）
+  IF v_running_id IS NOT NULL AND (v_power_id IS NOT NULL OR v_flow_id IS NOT NULL) THEN
+    v_t := clock_timestamp();
+
+
+    -- 402a: 流量近零
+    WITH tgt AS (
+      SELECT ff.id AS row_id, ff.value AS q, eps.eps
+      FROM fwin ff
+      LEFT JOIN LATERAL (
+        SELECT COALESCE(NULLIF((regexp_match(COALESCE(r.remark,''), '"near_zero_eps"\s*:\s*([0-9.]+)'))[1], '')::double precision, 0.001) AS eps
+        FROM public.metric_quality_rules r
+        WHERE r.metric_id = ff.metric_id
+          AND (r.device_id = ff.device_id OR r.device_id IS NULL)
+          AND (r.station_id = ff.station_id OR r.station_id IS NULL)
+        ORDER BY (r.device_id IS NOT NULL) DESC, (r.station_id IS NOT NULL) DESC
+        LIMIT 1
+      ) eps ON TRUE
+      JOIN public.mv_device_running_1s fr ON fr.station_id=ff.station_id AND fr.device_id=ff.device_id AND fr.ts_bucket=ff.ts_bucket AND fr.running=1
+      WHERE ff.metric_id=v_flow_id AND ff.qs=0 AND ff.value IS NOT NULL AND ABS(ff.value) <= eps.eps
+    )
+    UPDATE public.fact_measurements u
+    SET quality_codes = CASE
+          WHEN NOT (402 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+            THEN array_append(COALESCE(u.quality_codes, '{}'::int[]), 402)
+            ELSE u.quality_codes
+        END,
+        quality_status = CASE WHEN COALESCE(u.quality_status,0)=0 THEN 402 ELSE u.quality_status END,
+        quality_type='running_but_near_zero_output',
+        quality_meta=jsonb_build_object('v',t.q,'eps',t.eps,'metric','flow')
+    FROM tgt t
+    WHERE u.id=t.row_id
+      AND NOT (402 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+      AND (p_codes IS NULL OR 402 = ANY(p_codes));
+    GET DIAGNOSTICS v_rc = ROW_COUNT;
+    INSERT INTO public.quality_profile_log(window_start, window_end, station_id, device_id, stage, duration_ms, rows_affected)
+    VALUES (p_start, p_end, p_station_id, p_device_id, 'update_402_flow', EXTRACT(MILLISECOND FROM (clock_timestamp()-v_t)), v_rc);
+
+    -- 402b: 功率近零
+    IF v_power_id IS NOT NULL THEN
+      WITH tgt AS (
+        SELECT ff.id AS row_id, ff.value AS p, eps.eps
+        FROM fwin ff
+        LEFT JOIN LATERAL (
+          SELECT COALESCE(NULLIF((regexp_match(COALESCE(r.remark,''), '"near_zero_eps"\s*:\s*([0-9.]+)'))[1], '')::double precision, 0.001) AS eps
+          FROM public.metric_quality_rules r
+          WHERE r.metric_id = ff.metric_id
+            AND (r.device_id = ff.device_id OR r.device_id IS NULL)
+            AND (r.station_id = ff.station_id OR r.station_id IS NULL)
+          ORDER BY (r.device_id IS NOT NULL) DESC, (r.station_id IS NOT NULL) DESC
+          LIMIT 1
+        ) eps ON TRUE
+        JOIN public.mv_device_running_1s fr ON fr.station_id=ff.station_id AND fr.device_id=ff.device_id AND fr.ts_bucket=ff.ts_bucket AND fr.running=1
+        WHERE ff.metric_id=v_power_id AND ff.qs=0 AND ff.value IS NOT NULL AND ABS(ff.value) <= eps.eps
+      )
+      UPDATE public.fact_measurements u
+      SET quality_codes = CASE
+            WHEN NOT (402 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+              THEN array_append(COALESCE(u.quality_codes, '{}'::int[]), 402)
+              ELSE u.quality_codes
+          END,
+          quality_status = CASE WHEN COALESCE(u.quality_status,0)=0 THEN 402 ELSE u.quality_status END,
+          quality_type='running_but_near_zero_output',
+          quality_meta=jsonb_build_object('v',t.p,'eps',t.eps,'metric','power')
+      FROM tgt t
+      WHERE u.id=t.row_id
+        AND NOT (402 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+        AND (p_codes IS NULL OR 402 = ANY(p_codes));
+      GET DIAGNOSTICS v_rc = ROW_COUNT;
+      INSERT INTO public.quality_profile_log(window_start, window_end, station_id, device_id, stage, duration_ms, rows_affected)
+      VALUES (p_start, p_end, p_station_id, p_device_id, 'update_402_power', EXTRACT(MILLISECOND FROM (clock_timestamp()-v_t)), v_rc);
+    END IF;
+  END IF;
+
+  -- 403：传感器间冲突（示例：功率较高但电流近零），阈值来自 remark：current_near_zero_eps, power_min
+  IF v_running_id IS NOT NULL AND v_power_id IS NOT NULL AND v_cur_a_id IS NOT NULL THEN
+    v_t := clock_timestamp();
+
+    -- 403 优化：预构建运行=1切片，修正等值连接，避免笛卡尔积
+    DROP TABLE IF EXISTS t403_run;
+    CREATE TEMP TABLE t403_run AS
+    SELECT station_id, device_id, ts_bucket
+    FROM fwin
+    WHERE metric_id=v_running_id AND qs=0 AND value=1;
+    CREATE INDEX ON t403_run(station_id, device_id, ts_bucket);
+
+    WITH cur AS (
+      SELECT fa.id AS id_a, fa.station_id, fa.device_id, fa.ts_bucket, fa.value AS ia
+      FROM fwin fa
+      WHERE fa.metric_id=v_cur_a_id AND fa.qs=0
+    ), tgt AS (
+      SELECT fp.id AS row_id, fp.value AS p, th.p_min, th.i_eps, c.ia
+      FROM fwin fp
+      LEFT JOIN LATERAL (
+        SELECT
+          COALESCE(NULLIF((regexp_match(COALESCE(r.remark,''), '"power_min"\s*:\s*([0-9.]+)'))[1], '')::double precision, 1.0) AS p_min,
+          COALESCE(NULLIF((regexp_match(COALESCE(r.remark,''), '"current_near_zero_eps"\s*:\s*([0-9.]+)'))[1], '')::double precision, 0.1) AS i_eps
+        FROM public.metric_quality_rules r
+        WHERE r.metric_id = fp.metric_id
+          AND (r.device_id = fp.device_id OR r.device_id IS NULL)
+          AND (r.station_id = fp.station_id OR r.station_id IS NULL)
+        ORDER BY (r.device_id IS NOT NULL) DESC, (r.station_id IS NOT NULL) DESC
+        LIMIT 1
+      ) th ON TRUE
+      JOIN t403_run rr
+        ON rr.station_id=fp.station_id AND rr.device_id=fp.device_id AND rr.ts_bucket=fp.ts_bucket
+      JOIN cur c
+        ON c.station_id=fp.station_id AND c.device_id=fp.device_id AND c.ts_bucket=fp.ts_bucket
+       AND c.ia <= th.i_eps
+      WHERE fp.metric_id=v_power_id AND fp.qs=0 AND fp.value >= th.p_min
+    )
+    UPDATE public.fact_measurements u
+    SET quality_codes = CASE
+          WHEN NOT (403 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+            THEN array_append(COALESCE(u.quality_codes, '{}'::int[]), 403)
+            ELSE u.quality_codes
+        END,
+        quality_status = CASE WHEN COALESCE(u.quality_status,0)=0 THEN 403 ELSE u.quality_status END,
+        quality_type='cross_sensor_inconsistency',
+        quality_meta=jsonb_build_object('p',t.p,'p_min',t.p_min,'i_a',t.ia,'i_eps',t.i_eps)
+    FROM tgt t
+    WHERE u.id=t.row_id
+      AND NOT (403 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+      AND (p_codes IS NULL OR 403 = ANY(p_codes));
+    GET DIAGNOSTICS v_rc = ROW_COUNT;
+    INSERT INTO public.quality_profile_log(window_start, window_end, station_id, device_id, stage, duration_ms, rows_affected)
+    VALUES (p_start, p_end, p_station_id, p_device_id, 'update_403', EXTRACT(MILLISECOND FROM (clock_timestamp()-v_t)), v_rc);
+  END IF;
+
+  -- 4) 102 负值不可能（非负量约束），优先于101执行以避免被越界覆盖
+
+  -- 300 系：运行阶段（基于 mv_device_running_1s 的边沿与阈值），仅标记过渡期（启动/停止后若干秒）
+  -- 301 启动中、302 停止中；参数来源 device_running_thresholds.start_post_secs/stop_post_secs，默认 5/3 秒
+  v_t := clock_timestamp();
+  DROP TABLE IF EXISTS t300_params;
+  CREATE TEMP TABLE t300_params ON COMMIT DROP AS
+  SELECT t.device_id,
+         COALESCE(t.start_post_secs, 5) AS start_post,
+         COALESCE(t.stop_post_secs,  3) AS stop_post
+  FROM public.device_running_thresholds t
+  WHERE (p_device_id IS NULL OR t.device_id=p_device_id);
+  CREATE INDEX ON t300_params(device_id);
+
+  DROP TABLE IF EXISTS t300_edges;
+  CREATE TEMP TABLE t300_edges ON COMMIT DROP AS
+  SELECT r.station_id, r.device_id, r.ts_bucket,
+         r.running::int AS running,
+         LAG(r.running::int) OVER (PARTITION BY r.station_id, r.device_id ORDER BY r.ts_bucket) AS prev
+  FROM public.mv_device_running_1s r
+  WHERE r.ts_bucket>=p_start AND r.ts_bucket<p_end
+    AND (p_station_id IS NULL OR r.station_id=p_station_id)
+    AND (p_device_id  IS NULL OR r.device_id=p_device_id);
+  CREATE INDEX ON t300_edges(station_id, device_id, ts_bucket);
+
+  -- 301 启动中：0->1 边沿后的 start_post 秒
+  DROP TABLE IF EXISTS t301_secs;
+  CREATE TEMP TABLE t301_secs ON COMMIT DROP AS
+  SELECT e.station_id, e.device_id, gs AS ts_bucket
+  FROM t300_edges e
+  JOIN t300_params p ON p.device_id=e.device_id
+  JOIN LATERAL generate_series(
+         e.ts_bucket,
+         LEAST(p_end - interval '1 second', e.ts_bucket + (p.start_post::text||' seconds')::interval),
+         interval '1 second'
+       ) AS gs ON TRUE
+  WHERE e.prev=0 AND e.running=1;
+  CREATE INDEX ON t301_secs(station_id, device_id, ts_bucket);
+
+  WITH tgt AS (
+    SELECT f.id AS row_id
+    FROM fwin f
+    JOIN public.dim_metric_config mc ON mc.id=f.metric_id
+    JOIN t301_secs s ON s.station_id=f.station_id AND s.device_id=f.device_id AND s.ts_bucket=f.ts_bucket
+    WHERE f.qs=0 AND mc.metric_key NOT IN ('device_running','device_phase')
+  )
+  UPDATE public.fact_measurements u
+  SET quality_codes = CASE
+        WHEN NOT (301 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+          THEN array_append(COALESCE(u.quality_codes, '{}'::int[]), 301)
+          ELSE u.quality_codes
+      END,
+      quality_status = CASE WHEN COALESCE(u.quality_status,0)=0 THEN 301 ELSE u.quality_status END,
+      quality_type='startup_phase'
+  FROM tgt
+  WHERE u.id=tgt.row_id
+    AND NOT (301 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+    AND (p_codes IS NULL OR 301 = ANY(p_codes));
+  GET DIAGNOSTICS v_rc = ROW_COUNT;
+  INSERT INTO public.quality_profile_log(window_start, window_end, station_id, device_id, stage, duration_ms, rows_affected)
+  VALUES (p_start, p_end, p_station_id, p_device_id, 'update_301_startup', EXTRACT(MILLISECOND FROM (clock_timestamp()-v_t)), v_rc);
+
+  -- 302 停止中：1->0 边沿后的 stop_post 秒
+  v_t := clock_timestamp();
+  DROP TABLE IF EXISTS t302_secs;
+  CREATE TEMP TABLE t302_secs ON COMMIT DROP AS
+  SELECT e.station_id, e.device_id, gs AS ts_bucket
+  FROM t300_edges e
+  JOIN t300_params p ON p.device_id=e.device_id
+  JOIN LATERAL generate_series(
+         e.ts_bucket,
+         LEAST(p_end - interval '1 second', e.ts_bucket + (p.stop_post::text||' seconds')::interval),
+         interval '1 second'
+       ) AS gs ON TRUE
+  WHERE e.prev=1 AND e.running=0;
+  CREATE INDEX ON t302_secs(station_id, device_id, ts_bucket);
+
+  WITH tgt2 AS (
+    SELECT f.id AS row_id
+    FROM fwin f
+    JOIN public.dim_metric_config mc ON mc.id=f.metric_id
+    JOIN t302_secs s ON s.station_id=f.station_id AND s.device_id=f.device_id AND s.ts_bucket=f.ts_bucket
+    WHERE f.qs=0 AND mc.metric_key NOT IN ('device_running','device_phase')
+  )
+  UPDATE public.fact_measurements u
+  SET quality_codes = CASE
+        WHEN NOT (302 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+          THEN array_append(COALESCE(u.quality_codes, '{}'::int[]), 302)
+          ELSE u.quality_codes
+      END,
+      quality_status = CASE WHEN COALESCE(u.quality_status,0)=0 THEN 302 ELSE u.quality_status END,
+      quality_type='shutdown_phase'
+  FROM tgt2
+  WHERE u.id=tgt2.row_id
+    AND NOT (302 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+    AND (p_codes IS NULL OR 302 = ANY(p_codes));
+  GET DIAGNOSTICS v_rc = ROW_COUNT;
+  INSERT INTO public.quality_profile_log(window_start, window_end, station_id, device_id, stage, duration_ms, rows_affected)
+  VALUES (p_start, p_end, p_station_id, p_device_id, 'update_302_shutdown', EXTRACT(MILLISECOND FROM (clock_timestamp()-v_t)), v_rc);
+
+  -- 303 临时超调：在启动/停止阶段内，若相邻秒差分 |Δ| 超过阈值（remark.overshoot_abs）
+  v_t := clock_timestamp();
+
+  -- 构造 301/302 秒集合并打上 phase
+  DROP TABLE IF EXISTS t30x_secs;
+  CREATE TEMP TABLE t30x_secs ON COMMIT DROP AS
+  SELECT s.station_id, s.device_id, s.ts_bucket, 301 AS phase
+  FROM t301_secs s
+  UNION ALL
+  SELECT s.station_id, s.device_id, s.ts_bucket, 302 AS phase
+  FROM t302_secs s;
+  CREATE INDEX ON t30x_secs(station_id, device_id, ts_bucket);
+
+  -- 计算这些秒对应指标的相邻差分
+  DROP TABLE IF EXISTS t303_dv;
+  CREATE TEMP TABLE t303_dv ON COMMIT DROP AS
+  SELECT f.id, f.station_id, f.device_id, f.metric_id, f.ts_bucket,
+         ABS(f.value - LAG(f.value) OVER (PARTITION BY f.station_id, f.device_id, f.metric_id ORDER BY f.ts_bucket)) AS dv,
+         x.phase
+  FROM fwin f
+  JOIN public.dim_metric_config mc ON mc.id=f.metric_id
+  JOIN t30x_secs x ON x.station_id=f.station_id AND x.device_id=f.device_id AND x.ts_bucket=f.ts_bucket
+  WHERE f.qs=0 AND mc.metric_key NOT IN ('device_running','device_phase');
+  CREATE INDEX ON t303_dv(id);
+
+  -- 采用 dv_abs 阈值（若未配置则不标记，避免误报）
+  WITH tgt AS (
+    SELECT d.id, d.dv, d.phase
+    FROM t303_dv d
+    LEFT JOIN LATERAL (
+      SELECT COALESCE(NULLIF((regexp_match(COALESCE(r.remark,''), '"overshoot_abs"\s*:\s*([0-9.]+)'))[1], '')::double precision, NULL) AS dv_abs
+      FROM public.metric_quality_rules r
+      WHERE r.metric_id = d.metric_id
+        AND (r.device_id = d.device_id OR r.device_id IS NULL)
+        AND (r.station_id = d.station_id OR r.station_id IS NULL)
+      ORDER BY (r.device_id IS NOT NULL) DESC, (r.station_id IS NOT NULL) DESC
+      LIMIT 1
+    ) th ON TRUE
+    WHERE th.dv_abs IS NOT NULL AND d.dv IS NOT NULL AND d.dv > th.dv_abs
+  )
+  UPDATE public.fact_measurements u
+  SET quality_codes = CASE
+        WHEN NOT (303 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+          THEN array_append(COALESCE(u.quality_codes, '{}'::int[]), 303)
+          ELSE u.quality_codes
+      END,
+      quality_status = CASE WHEN COALESCE(u.quality_status,0)=0 THEN 303 ELSE u.quality_status END,
+      quality_type='temporary_overshoot',
+      quality_meta=jsonb_build_object('dv',t.dv,'phase',t.phase)
+  FROM tgt t
+  WHERE u.id=t.id
+    AND NOT (303 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+    AND (p_codes IS NULL OR 303 = ANY(p_codes));
+  GET DIAGNOSTICS v_rc = ROW_COUNT;
+  INSERT INTO public.quality_profile_log(window_start, window_end, station_id, device_id, stage, duration_ms, rows_affected)
+  VALUES (p_start, p_end, p_station_id, p_device_id, 'update_303_overshoot', EXTRACT(MILLISECOND FROM (clock_timestamp()-v_t)), v_rc);
+
+  v_t := clock_timestamp();
+  WITH tgt AS (
+    SELECT f.id AS row_id, f.station_id, f.device_id, f.metric_id, f.ts_bucket, f.value,
+           COALESCE(o.phys_min, m.phys_min, 0.0) AS value_min,
+           mc.metric_key
+    FROM public.fact_measurements f
+    JOIN public.dim_metric_config mc ON mc.id=f.metric_id
+    LEFT JOIN LATERAL (
+      SELECT dmo.phys_min, dmo.phys_max
+      FROM public.dim_metric_metadata_override dmo
+      WHERE dmo.metric_id=f.metric_id
+        AND (dmo.device_id = f.device_id OR dmo.device_id IS NULL)
+        AND (dmo.station_id = f.station_id OR dmo.station_id IS NULL)
+      ORDER BY (dmo.device_id IS NOT NULL) DESC, (dmo.station_id IS NOT NULL) DESC
+      LIMIT 1
+    ) o ON TRUE
+    LEFT JOIN public.dim_metric_metadata m ON m.metric_id=f.metric_id
+    WHERE f.ts_bucket>=p_start AND f.ts_bucket<p_end
+      AND (p_station_id IS NULL OR f.station_id=p_station_id)
+      AND (p_device_id  IS NULL OR f.device_id=p_device_id)
+      AND COALESCE(f.quality_status,0)=0
+      AND f.value IS NOT NULL
+      AND f.value < 0
+      AND COALESCE(o.phys_min, m.phys_min, 0.0) >= 0.0
+      AND mc.metric_key NOT IN ('pump_kwh','pump_cumulative_flow','main_pipeline_cumulative_flow')
+  )
+  UPDATE public.fact_measurements u
+  SET quality_codes = CASE
+        WHEN NOT (102 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+          THEN array_append(COALESCE(u.quality_codes, '{}'::int[]), 102)
+          ELSE u.quality_codes
+      END,
+      quality_status = CASE WHEN COALESCE(u.quality_status,0)=0 THEN 102 ELSE u.quality_status END,
+      quality_type='负值不可能',
+      quality_meta=jsonb_build_object('min',t.value_min,'v',t.value,'source','non_negative')
+  FROM tgt t
+  WHERE u.id=t.row_id
+    AND NOT (102 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+    AND (p_codes IS NULL OR 102 = ANY(p_codes));
+  GET DIAGNOSTICS v_rc = ROW_COUNT;
+  INSERT INTO public.quality_profile_log(window_start, window_end, station_id, device_id, stage, duration_ms, rows_affected)
+  VALUES (p_start, p_end, p_station_id, p_device_id, 'update_102', EXTRACT(MILLISECOND FROM (clock_timestamp()-v_t)), v_rc);
+
+  WITH tgt AS (
+    SELECT f.id AS row_id, f.station_id, f.device_id, f.metric_id, f.ts_bucket, f.value,
+           COALESCE(o.phys_min, m.phys_min) AS value_min,
+           COALESCE(o.phys_max, m.phys_max) AS value_max,
+           mc.metric_key
+    FROM public.fact_measurements f
+    JOIN public.dim_metric_config mc ON mc.id=f.metric_id
+    LEFT JOIN LATERAL (
+      SELECT dmo.phys_min, dmo.phys_max
+      FROM public.dim_metric_metadata_override dmo
+      WHERE dmo.metric_id=f.metric_id
+        AND (dmo.device_id = f.device_id OR dmo.device_id IS NULL)
+        AND (dmo.station_id = f.station_id OR dmo.station_id IS NULL)
+      ORDER BY (dmo.device_id IS NOT NULL) DESC, (dmo.station_id IS NOT NULL) DESC
+      LIMIT 1
+    ) o ON TRUE
+    LEFT JOIN public.dim_metric_metadata m ON m.metric_id=f.metric_id
+    WHERE f.ts_bucket>=p_start AND f.ts_bucket<p_end
+      AND (p_station_id IS NULL OR f.station_id=p_station_id)
+      AND (p_device_id  IS NULL OR f.device_id=p_device_id)
+      AND COALESCE(f.quality_status,0)=0
+      AND f.value IS NOT NULL
+      AND mc.metric_key NOT IN ('pump_kwh','pump_cumulative_flow','main_pipeline_cumulative_flow')
+  )
+  UPDATE public.fact_measurements u
+  SET quality_codes = CASE
+        WHEN NOT (101 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+          THEN array_append(COALESCE(u.quality_codes, '{}'::int[]), 101)
+          ELSE u.quality_codes
+      END,
+      quality_status = CASE WHEN COALESCE(u.quality_status,0)=0 THEN 101 ELSE u.quality_status END,
+      quality_type='越界',
+      quality_meta=jsonb_build_object('min',t.value_min,'max',t.value_max,'v',t.value,'source','phys_bounds')
+  FROM tgt t
+  WHERE u.id=t.row_id AND t.value IS NOT NULL AND (
+        (t.value_min IS NOT NULL AND t.value<t.value_min) OR
+        (t.value_max IS NOT NULL AND t.value>t.value_max)
+  ) AND NOT (101 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+    AND (p_codes IS NULL OR 101 = ANY(p_codes));
+  GET DIAGNOSTICS v_rc = ROW_COUNT;
+  INSERT INTO public.quality_profile_log(window_start, window_end, station_id, device_id, stage, duration_ms, rows_affected)
+  VALUES (p_start, p_end, p_station_id, p_device_id, 'update_101', EXTRACT(MILLISECOND FROM (clock_timestamp()-v_t)), v_rc);
+
+  -- 5) 111 跳变（加速版）
+  DROP TABLE IF EXISTS t_params;
+  CREATE TEMP TABLE t_params ON COMMIT DROP AS
+  SELECT r.metric_id, r.spike_abs, r.roc_ratio, r.flatline_eps, r.flatline_delta, r.flatline_secs
+  FROM public.v_effective_metric_rules r;
+  CREATE INDEX ON t_params(metric_id);
+
+  DROP TABLE IF EXISTS t_meta;
+  CREATE TEMP TABLE t_meta ON COMMIT DROP AS
+  SELECT m.metric_id, COALESCE(m.resolution,0.0) AS resolution
+  FROM public.v_effective_metric_metadata m;
+  CREATE INDEX ON t_meta(metric_id);
+
+  -- 候选预筛：仅运行态 + 过滤不参与 111 的指标
+  DROP TABLE IF EXISTS t111_base;
+  CREATE TEMP TABLE t111_base ON COMMIT DROP AS
+  SELECT f.id, f.station_id, f.device_id, f.metric_id, f.ts_bucket, f.value
+  FROM fwin f
+  JOIN public.dim_metric_config mc ON mc.id=f.metric_id
+  JOIN fwin fr ON fr.station_id=f.station_id AND fr.device_id=f.device_id AND fr.ts_bucket=f.ts_bucket AND fr.metric_id=v_running_id AND fr.value=1
+  WHERE f.qs=0 AND mc.metric_key NOT IN ('device_running','device_phase','pump_kwh','pump_cumulative_flow','main_pipeline_cumulative_flow','pump_power_factor');
+  CREATE INDEX ON t111_base(metric_id, ts_bucket);
+
+  -- 计算差分 dv
+  DROP TABLE IF EXISTS t111_dv;
+  CREATE TEMP TABLE t111_dv ON COMMIT DROP AS
+  SELECT b.id, b.metric_id, b.ts_bucket,
+         b.value AS val,
+         LAG(b.value)  OVER (PARTITION BY b.station_id, b.device_id, b.metric_id ORDER BY b.ts_bucket) AS prev_val,
+         LEAD(b.value) OVER (PARTITION BY b.station_id, b.device_id, b.metric_id ORDER BY b.ts_bucket) AS next_val,
+         ABS(b.value - LAG(b.value) OVER (PARTITION BY b.station_id, b.device_id, b.metric_id ORDER BY b.ts_bucket)) AS dv
+  FROM t111_base b;
+  CREATE INDEX ON t111_dv(id);
+
+  -- 粗筛候选：dv >= 3×resolution（先用元数据分辨率）
+  DROP TABLE IF EXISTS t111_candidates;
+  CREATE TEMP TABLE t111_candidates ON COMMIT DROP AS
+  SELECT d.*, tm.resolution, tp.spike_abs, tp.roc_ratio
+  FROM t111_dv d
+  JOIN t_meta tm ON tm.metric_id=d.metric_id
+  LEFT JOIN t_params tp ON tp.metric_id=d.metric_id
+  WHERE d.dv IS NOT NULL AND d.dv >= GREATEST(3*tm.resolution, COALESCE(tp.spike_abs,0));
+  CREATE INDEX ON t111_candidates(id);
+
+  -- 精判：相对阈值 + 反跳去抖
+  DROP TABLE IF EXISTS t111_final;
+  CREATE TEMP TABLE t111_final ON COMMIT DROP AS
+  SELECT c.id
+  FROM t111_candidates c
+  WHERE c.dv > GREATEST(
+            COALESCE(c.spike_abs,0),
+            COALESCE(c.roc_ratio,0) * GREATEST(ABS(c.prev_val), 1e-9),
+            3*c.resolution
+        )
+    AND NOT (
+      c.next_val IS NOT NULL AND c.prev_val IS NOT NULL AND ABS(c.next_val - c.prev_val) <= c.dv * 0.25
+    );
+  CREATE INDEX ON t111_final(id);
+
+  v_t := clock_timestamp();
+  UPDATE public.fact_measurements u
+  SET quality_codes = CASE
+        WHEN NOT (111 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+          THEN array_append(COALESCE(u.quality_codes, '{}'::int[]), 111)
+          ELSE u.quality_codes
+      END,
+      quality_status = CASE WHEN COALESCE(u.quality_status,0)=0 THEN 111 ELSE u.quality_status END,
+      quality_type='异常跳变'
+  FROM t111_final t
+  WHERE u.id=t.id
+    AND NOT (111 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+    AND (p_codes IS NULL OR 111 = ANY(p_codes));
+  GET DIAGNOSTICS v_rc = ROW_COUNT;
+  INSERT INTO public.quality_profile_log(window_start, window_end, station_id, device_id, stage, duration_ms, rows_affected)
+  VALUES (p_start, p_end, p_station_id, p_device_id, 'update_111', EXTRACT(MILLISECOND FROM (clock_timestamp()-v_t)), v_rc);
+
+
+  -- 5b) 112 变化率异常（面向：流量/液位/温度/振动），复用 t111_dv + t_params
+  DROP TABLE IF EXISTS t112_candidates;
+  CREATE TEMP TABLE t112_candidates ON COMMIT DROP AS
+  SELECT d.id, d.metric_id,
+         ABS(d.dv) AS dv_abs,
+         CASE WHEN d.prev_val IS NOT NULL THEN ABS(d.dv)/GREATEST(ABS(d.prev_val), 1e-9) ELSE NULL END AS dv_rel,
+         NULL::double precision AS roc_abs, tp.roc_ratio,
+         mc.metric_key
+  FROM t111_dv d
+  JOIN public.dim_metric_config mc ON mc.id=d.metric_id
+  LEFT JOIN t_params tp ON tp.metric_id=d.metric_id
+  WHERE d.dv IS NOT NULL
+    AND (
+      mc.metric_key IN ('pump_flow_rate','main_pipeline_flow_rate','pool_liquid_level','water_temperature')
+      OR mc.metric_key LIKE 'pump_temperature_sensor_%'
+      OR mc.metric_key LIKE 'pump_motor_temperature_sensor_%'
+      OR mc.metric_key LIKE 'pump_vibration_sensor_%'
+      OR mc.metric_key LIKE 'pump_motor_vibration_sensor_%'
+    );
+  CREATE INDEX ON t112_candidates(id);
+
+  DROP TABLE IF EXISTS t112_final;
+  CREATE TEMP TABLE t112_final ON COMMIT DROP AS
+  SELECT c.id
+  FROM t112_candidates c
+  WHERE (
+    COALESCE(c.roc_abs,0) > 0 AND c.dv_abs >= c.roc_abs
+  ) OR (
+    COALESCE(c.roc_ratio,0) > 0 AND c.dv_rel IS NOT NULL AND c.dv_rel >= c.roc_ratio
+  );
+  CREATE INDEX ON t112_final(id);
+
+  v_t := clock_timestamp();
+  UPDATE public.fact_measurements u
+  SET quality_codes = CASE
+        WHEN NOT (112 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+          THEN array_append(COALESCE(u.quality_codes, '{}'::int[]), 112)
+          ELSE u.quality_codes
+      END,
+      quality_status = CASE WHEN COALESCE(u.quality_status,0)=0 THEN 112 ELSE u.quality_status END,
+      quality_type='变化率异常'
+  FROM t112_final t
+  WHERE u.id=t.id
+    AND NOT (112 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+    AND (p_codes IS NULL OR 112 = ANY(p_codes));
+  GET DIAGNOSTICS v_rc = ROW_COUNT;
+  INSERT INTO public.quality_profile_log(window_start, window_end, station_id, device_id, stage, duration_ms, rows_affected)
+  VALUES (p_start, p_end, p_station_id, p_device_id, 'update_112', EXTRACT(MILLISECOND FROM (clock_timestamp()-v_t)), v_rc);
+
+  -- 5c) 131/132 饱和（接近量程边界，持续 min_secs），使用分辨率与量程的组合阈值
+  DROP TABLE IF EXISTS t13x_base;
+  CREATE TEMP TABLE t13x_base ON COMMIT DROP AS
+  SELECT f.id, f.station_id, f.device_id, f.metric_id, f.ts_bucket, f.value,
+         COALESCE(o.phys_min, m.phys_min) AS vmin,
+         COALESCE(o.phys_max, m.phys_max) AS vmax,
+         tm.resolution,
+         COALESCE(tp.flatline_secs,5) AS min_secs
+  FROM fwin f
+  JOIN public.dim_metric_config mc ON mc.id=f.metric_id
+  LEFT JOIN LATERAL (
+    SELECT dmo.phys_min, dmo.phys_max
+    FROM public.dim_metric_metadata_override dmo
+    WHERE dmo.metric_id=f.metric_id
+      AND (dmo.device_id = f.device_id OR dmo.device_id IS NULL)
+      AND (dmo.station_id = f.station_id OR dmo.station_id IS NULL)
+    ORDER BY (dmo.device_id IS NOT NULL) DESC, (dmo.station_id IS NOT NULL) DESC
+    LIMIT 1
+  ) o ON TRUE
+  LEFT JOIN public.dim_metric_metadata m ON m.metric_id=f.metric_id
+  LEFT JOIN t_meta tm ON tm.metric_id=f.metric_id
+  LEFT JOIN t_params tp ON tp.metric_id=f.metric_id
+  WHERE f.qs=0
+    AND mc.metric_key NOT IN ('device_running','device_phase','pump_kwh','pump_cumulative_flow','main_pipeline_cumulative_flow','pump_power_factor');
+  CREATE INDEX ON t13x_base(metric_id, ts_bucket);
+
+  DROP TABLE IF EXISTS t13x_feat;
+  CREATE TEMP TABLE t13x_feat ON COMMIT DROP AS
+  SELECT b.*,
+         CASE WHEN b.vmin IS NOT NULL AND b.vmax IS NOT NULL THEN GREATEST(3*COALESCE(b.resolution,0), 0.01*(b.vmax-b.vmin))
+              WHEN b.vmin IS NOT NULL THEN GREATEST(3*COALESCE(b.resolution,0), 0.01*ABS(COALESCE(b.vmin,0)))
+              WHEN b.vmax IS NOT NULL THEN GREATEST(3*COALESCE(b.resolution,0), 0.01*ABS(COALESCE(b.vmax,0)))
+              ELSE 3*COALESCE(b.resolution,0) END AS eps,
+         CASE WHEN b.vmax IS NOT NULL AND b.value IS NOT NULL THEN (b.value >= b.vmax - (CASE WHEN b.vmin IS NOT NULL AND b.vmax IS NOT NULL THEN GREATEST(3*COALESCE(b.resolution,0), 0.01*(b.vmax-b.vmin)) ELSE 3*COALESCE(b.resolution,0) END)) ELSE FALSE END AS near_upper,
+         CASE WHEN b.vmin IS NOT NULL AND b.value IS NOT NULL THEN (b.value <= b.vmin + (CASE WHEN b.vmin IS NOT NULL AND b.vmax IS NOT NULL THEN GREATEST(3*COALESCE(b.resolution,0), 0.01*(b.vmax-b.vmin)) ELSE 3*COALESCE(b.resolution,0) END)) ELSE FALSE END AS near_lower
+  FROM t13x_base b;
+  CREATE INDEX ON t13x_feat(metric_id, ts_bucket);
+
+  DROP TABLE IF EXISTS t13x_win;
+  CREATE TEMP TABLE t13x_win ON COMMIT DROP AS
+  SELECT f.id,
+         SUM(CASE WHEN f.near_upper THEN 1 ELSE 0 END) OVER (PARTITION BY f.station_id,f.device_id,f.metric_id ORDER BY f.ts_bucket RANGE BETWEEN INTERVAL '5 seconds' PRECEDING AND CURRENT ROW) AS upper_cnt,
+         SUM(CASE WHEN f.near_lower THEN 1 ELSE 0 END) OVER (PARTITION BY f.station_id,f.device_id,f.metric_id ORDER BY f.ts_bucket RANGE BETWEEN INTERVAL '5 seconds' PRECEDING AND CURRENT ROW) AS lower_cnt,
+         f.min_secs
+  FROM t13x_feat f;
+  CREATE INDEX ON t13x_win(id);
+
+  DROP TABLE IF EXISTS t131_ids;
+  CREATE TEMP TABLE t131_ids ON COMMIT DROP AS
+  SELECT id FROM t13x_win WHERE upper_cnt >= GREATEST(min_secs, 3);
+  CREATE INDEX ON t131_ids(id);
+
+  DROP TABLE IF EXISTS t132_ids;
+  CREATE TEMP TABLE t132_ids ON COMMIT DROP AS
+  SELECT id FROM t13x_win WHERE lower_cnt >= GREATEST(min_secs, 3);
+  CREATE INDEX ON t132_ids(id);
+
+  v_t := clock_timestamp();
+  UPDATE public.fact_measurements u
+  SET quality_codes = CASE
+        WHEN NOT (131 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+          THEN array_append(COALESCE(u.quality_codes, '{}'::int[]), 131)
+          ELSE u.quality_codes
+      END,
+      quality_status = CASE WHEN COALESCE(u.quality_status,0)=0 THEN 131 ELSE u.quality_status END,
+      quality_type='上饱和'
+  FROM t131_ids t
+  WHERE u.id=t.id
+    AND NOT (131 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+    AND (p_codes IS NULL OR 131 = ANY(p_codes));
+  GET DIAGNOSTICS v_rc = ROW_COUNT;
+  INSERT INTO public.quality_profile_log(window_start, window_end, station_id, device_id, stage, duration_ms, rows_affected)
+  VALUES (p_start, p_end, p_station_id, p_device_id, 'update_131', EXTRACT(MILLISECOND FROM (clock_timestamp()-v_t)), v_rc);
+
+  v_t := clock_timestamp();
+  UPDATE public.fact_measurements u
+  SET quality_codes = CASE
+        WHEN NOT (132 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+          THEN array_append(COALESCE(u.quality_codes, '{}'::int[]), 132)
+          ELSE u.quality_codes
+      END,
+      quality_status = CASE WHEN COALESCE(u.quality_status,0)=0 THEN 132 ELSE u.quality_status END,
+      quality_type='下饱和'
+  FROM t132_ids t
+  WHERE u.id=t.id
+    AND NOT (132 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+    AND (p_codes IS NULL OR 132 = ANY(p_codes));
+  GET DIAGNOSTICS v_rc = ROW_COUNT;
+  INSERT INTO public.quality_profile_log(window_start, window_end, station_id, device_id, stage, duration_ms, rows_affected)
+  VALUES (p_start, p_end, p_station_id, p_device_id, 'update_132', EXTRACT(MILLISECOND FROM (clock_timestamp()-v_t)), v_rc);
+
+  -- 6) 121 平台（加速版）
+  DROP TABLE IF EXISTS t121_base;
+  CREATE TEMP TABLE t121_base ON COMMIT DROP AS
+  SELECT f.id, f.station_id, f.device_id, f.metric_id, f.ts_bucket, f.value
+  FROM fwin f
+  JOIN public.dim_metric_config mc ON mc.id=f.metric_id
+  JOIN fwin fr ON fr.station_id=f.station_id AND fr.device_id=f.device_id AND fr.ts_bucket=f.ts_bucket AND fr.metric_id=v_running_id AND fr.value=1
+  WHERE f.qs=0 AND mc.metric_key NOT IN ('device_running','device_phase','pump_kwh','pump_cumulative_flow','main_pipeline_cumulative_flow','pump_power_factor');
+  CREATE INDEX ON t121_base(metric_id, ts_bucket);
+
+  -- 121 段聚合：LAG 分段 + 段统计（以分辨率为段边界阈值）
+  DROP TABLE IF EXISTS t121_seq;
+  CREATE TEMP TABLE t121_seq ON COMMIT DROP AS
+  SELECT b.id, b.station_id, b.device_id, b.metric_id, b.ts_bucket, b.value,
+         LAG(b.value) OVER (PARTITION BY b.station_id, b.device_id, b.metric_id ORDER BY b.ts_bucket) AS prev_v
+  FROM t121_base b;
+  CREATE INDEX ON t121_seq(station_id, device_id, metric_id, ts_bucket);
+
+  DROP TABLE IF EXISTS t121_segflag;
+  CREATE TEMP TABLE t121_segflag ON COMMIT DROP AS
+  SELECT s.*, CASE WHEN s.prev_v IS NULL OR ABS(s.value - s.prev_v) > GREATEST(tm.resolution, 0.0) THEN 1 ELSE 0 END AS is_break
+  FROM t121_seq s
+  LEFT JOIN t_meta tm ON tm.metric_id=s.metric_id;
+  CREATE INDEX ON t121_segflag(station_id, device_id, metric_id, ts_bucket);
+
+  DROP TABLE IF EXISTS t121_segid;
+  CREATE TEMP TABLE t121_segid ON COMMIT DROP AS
+  SELECT sf.*, SUM(is_break) OVER (
+           PARTITION BY sf.station_id, sf.device_id, sf.metric_id
+           ORDER BY sf.ts_bucket ROWS UNBOUNDED PRECEDING
+         ) AS seg_id
+  FROM t121_segflag sf;
+  CREATE INDEX ON t121_segid(station_id, device_id, metric_id, seg_id);
+
+  DROP TABLE IF EXISTS t121_segs;
+  CREATE TEMP TABLE t121_segs ON COMMIT DROP AS
+  SELECT station_id, device_id, metric_id, seg_id,
+         COUNT(*) AS seg_len,
+         STDDEV_SAMP(value) AS sdev,
+         (MAX(value) - MIN(value)) AS span
+  FROM t121_segid
+  GROUP BY station_id, device_id, metric_id, seg_id;
+  CREATE INDEX ON t121_segs(station_id, device_id, metric_id, seg_id);
+
+  DROP TABLE IF EXISTS t121_segs_final;
+  CREATE TEMP TABLE t121_segs_final ON COMMIT DROP AS
+  SELECT s.station_id, s.device_id, s.metric_id, s.seg_id,
+         COALESCE(tp.flatline_secs,5) AS min_secs,
+         COALESCE(tp.flatline_eps,1e-9) AS eps,
+         COALESCE(tp.flatline_delta,0.0) AS delta,
+         COALESCE(tm.resolution,0.0) AS resolution
+  FROM t121_segs s
+  LEFT JOIN t_params tp ON tp.metric_id=s.metric_id
+  LEFT JOIN t_meta   tm ON tm.metric_id=s.metric_id
+  WHERE s.seg_len >= COALESCE(tp.flatline_secs,5)
+    AND s.sdev   <= COALESCE(tp.flatline_eps,1e-9)
+    AND s.span   <= GREATEST(COALESCE(tp.flatline_delta,0.0), 0.5*0.0)
+    AND (CASE WHEN COALESCE(tp.flatline_secs,5)>0 THEN (s.span/GREATEST(tp.flatline_secs,1)) ELSE s.span END) <= 1.0*COALESCE(tm.resolution,0.0);
+  CREATE INDEX ON t121_segs_final(station_id, device_id, metric_id, seg_id);
+  -- 7) 201 高噪声：运行态 + 窗口标准差超阈值（阈值来自 metric_quality_rules.noise_stddev_max）
+  v_t := clock_timestamp();
+  DROP TABLE IF EXISTS t201_base;
+  CREATE TEMP TABLE t201_base ON COMMIT DROP AS
+  SELECT f.id, f.station_id, f.device_id, f.metric_id, f.ts_bucket, f.value
+  FROM fwin f
+  JOIN fwin fr ON fr.station_id=f.station_id AND fr.device_id=f.device_id AND fr.ts_bucket=f.ts_bucket AND fr.metric_id=v_running_id AND fr.value=1
+  JOIN public.dim_metric_config mc ON mc.id=f.metric_id
+  WHERE f.qs=0 AND mc.metric_key NOT IN ('device_running','device_phase','pump_kwh','pump_cumulative_flow','main_pipeline_cumulative_flow','pump_power_factor');
+  CREATE INDEX ON t201_base(station_id, device_id, metric_id, ts_bucket);
+
+  -- 60s 滑窗标准差
+  DROP TABLE IF EXISTS t201_win;
+  CREATE TEMP TABLE t201_win ON COMMIT DROP AS
+  SELECT b.id, b.station_id, b.device_id, b.metric_id, b.ts_bucket,
+         STDDEV_SAMP(b.value) OVER (
+           PARTITION BY b.station_id, b.device_id, b.metric_id
+           ORDER BY b.ts_bucket
+           RANGE BETWEEN INTERVAL '60 seconds' PRECEDING AND CURRENT ROW
+         ) AS sdev_win
+  FROM t201_base b;
+  CREATE INDEX ON t201_win(id);
+
+  -- 参数：按设备优先、其次按站，再次全局
+  DROP TABLE IF EXISTS t201_params;
+  CREATE TEMP TABLE t201_params ON COMMIT DROP AS
+  SELECT w.id,
+         COALESCE(r.noise_stddev_max, NULL) AS noise_std_max
+  FROM t201_win w
+  LEFT JOIN LATERAL (
+    SELECT r.noise_stddev_max
+    FROM public.metric_quality_rules r
+    WHERE r.metric_id=w.metric_id
+      AND (r.device_id = w.device_id OR r.device_id IS NULL)
+      AND (r.station_id = w.station_id OR r.station_id IS NULL)
+    ORDER BY (r.device_id IS NOT NULL) DESC, (r.station_id IS NOT NULL) DESC
+    LIMIT 1
+  ) r ON TRUE;
+  CREATE INDEX ON t201_params(id);
+
+  -- 判定
+  DROP TABLE IF EXISTS t201_final;
+  CREATE TEMP TABLE t201_final ON COMMIT DROP AS
+  SELECT w.id, w.sdev_win, p.noise_std_max
+  FROM t201_win w
+  JOIN t201_params p ON p.id=w.id
+  WHERE w.sdev_win IS NOT NULL AND p.noise_std_max IS NOT NULL AND w.sdev_win > p.noise_std_max;
+  CREATE INDEX ON t201_final(id);
+
+  v_t := clock_timestamp();
+  UPDATE public.fact_measurements u
+  SET quality_codes = CASE
+        WHEN NOT (201 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+          THEN array_append(COALESCE(u.quality_codes, '{}'::int[]), 201)
+          ELSE u.quality_codes
+      END,
+      quality_status = CASE WHEN COALESCE(u.quality_status,0)=0 THEN 201 ELSE u.quality_status END,
+      quality_type='高噪声',
+      quality_meta=jsonb_build_object('sdev',t.sdev_win,'thr',t.noise_std_max,'win','60s')
+  FROM t201_final t
+  WHERE u.id=t.id
+    AND NOT (201 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+    AND (p_codes IS NULL OR 201 = ANY(p_codes));
+  GET DIAGNOSTICS v_rc = ROW_COUNT;
+  INSERT INTO public.quality_profile_log(window_start, window_end, station_id, device_id, stage, duration_ms, rows_affected)
+  VALUES (p_start, p_end, p_station_id, p_device_id, 'update_201', EXTRACT(MILLISECOND FROM (clock_timestamp()-v_t)), v_rc);
+
+  -- 恢复 121 流程
+  -- 通用：presence 缺失派生与连续缺失段（供 202/603 复用）
+  DROP TABLE IF EXISTS t_pr_miss;
+  CREATE TEMP TABLE t_pr_miss ON COMMIT DROP AS
+  SELECT f.station_id, f.device_id, f.metric_id, f.ts_bucket
+  FROM fwin f
+  JOIN public.dim_metric_config mc ON mc.id=f.metric_id
+  LEFT JOIN public.mv_presence_1s_any pr
+    ON pr.station_id=f.station_id AND pr.device_id=f.device_id AND pr.metric_id=f.metric_id AND pr.ts_bucket=f.ts_bucket
+  WHERE f.qs=0
+    AND mc.metric_key NOT IN ('device_running','device_phase')
+    AND (pr.present IS NULL OR pr.present=0);
+  CREATE INDEX ON t_pr_miss(station_id, device_id, metric_id, ts_bucket);
+
+  DROP TABLE IF EXISTS t_miss_spans;
+  CREATE TEMP TABLE t_miss_spans ON COMMIT DROP AS
+  WITH x AS (
+    SELECT station_id, device_id, metric_id, ts_bucket,
+           ts_bucket - (row_number() OVER (PARTITION BY station_id, device_id, metric_id ORDER BY ts_bucket))*interval '1 second' AS grp
+    FROM t_pr_miss
+  )
+  SELECT station_id, device_id, metric_id,
+         MIN(ts_bucket) AS gap_start_ts,
+         MAX(ts_bucket) AS gap_end_ts,
+         EXTRACT(EPOCH FROM (MAX(ts_bucket) - MIN(ts_bucket)))::int + 1 AS gap_len_sec
+  FROM x
+  GROUP BY station_id, device_id, metric_id, grp;
+  CREATE INDEX ON t_miss_spans(station_id, device_id, metric_id);
+
+  -- 8) 202 间歇性中断：基于 presence（mv_presence_1s 或 cagg_presence_per_second 同步而来）
+  v_t := clock_timestamp();
+  -- 复用通用缺失段：直接用 t_miss_spans 生成 202 结果
+  DROP TABLE IF EXISTS t202_final;
+  CREATE TEMP TABLE t202_final ON COMMIT DROP AS
+  SELECT s.station_id, s.device_id, s.metric_id, s.gap_start_ts, s.gap_end_ts, s.gap_len_sec
+  FROM t_miss_spans s
+  WHERE s.gap_len_sec >= COALESCE((
+    SELECT NULLIF((regexp_match(r.remark, '"gap_min_len_sec"\s*:\s*([0-9]+)'))[1],'')::int
+    FROM public.metric_quality_rules r
+    WHERE r.metric_id=s.metric_id
+      AND (r.device_id IS NULL OR r.device_id=s.device_id)
+      AND (r.station_id IS NULL OR r.station_id=s.station_id)
+    ORDER BY (r.device_id IS NOT NULL) DESC, (r.station_id IS NOT NULL) DESC
+    LIMIT 1
+  ), 5);
+  CREATE INDEX ON t202_final(station_id, device_id, metric_id);
+
+  -- 将缺口段映射回原秒级 id 并更新质量码
+  DROP TABLE IF EXISTS t202_ids;
+  CREATE TEMP TABLE t202_ids ON COMMIT DROP AS
+  SELECT f.id, f.station_id, f.device_id, f.metric_id, f.ts_bucket, t.gap_len_sec
+  FROM fwin f
+  JOIN t202_final t
+    ON t.station_id=f.station_id AND t.device_id=f.device_id AND t.metric_id=f.metric_id
+   AND f.ts_bucket BETWEEN t.gap_start_ts AND t.gap_end_ts;
+  CREATE INDEX ON t202_ids(id);
+
+  UPDATE public.fact_measurements u
+  SET quality_codes = CASE
+        WHEN NOT (202 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+          THEN array_append(COALESCE(u.quality_codes, '{}'::int[]), 202)
+          ELSE u.quality_codes
+      END,
+      quality_status = CASE WHEN COALESCE(u.quality_status,0)=0 THEN 202 ELSE u.quality_status END,
+      quality_type='间歇性中断',
+      quality_meta=jsonb_build_object('gap_len_sec',t.gap_len_sec)
+  FROM t202_ids t
+  WHERE u.id=t.id
+    AND NOT (202 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+    AND (p_codes IS NULL OR 202 = ANY(p_codes));
+  GET DIAGNOSTICS v_rc = ROW_COUNT;
+  INSERT INTO public.quality_profile_log(window_start, window_end, station_id, device_id, stage, duration_ms, rows_affected)
+  VALUES (p_start, p_end, p_station_id, p_device_id, 'update_202', EXTRACT(MILLISECOND FROM (clock_timestamp()-v_t)), v_rc);
+  -- 9) 503 稀疏秒缺失：短窗缺秒比例过高（默认 60s 窗，阈值 0.3）
+  -- 仅在选择包含 503 时才执行该段，避免单码执行时的无谓计算
+  IF p_codes IS NULL OR 503 = ANY(p_codes) THEN
+
+    v_t := clock_timestamp();
+
+    -- 9.1 候选键集 + 总秒数（合并优化：减少一个临时表）
+    DROP TABLE IF EXISTS t503_keys_with_total;
+    CREATE TEMP TABLE t503_keys_with_total ON COMMIT DROP AS
+    SELECT f.station_id, f.device_id, f.metric_id, COUNT(*) AS total_secs
+    FROM fwin f
+    JOIN public.dim_metric_config mc ON mc.id=f.metric_id
+    WHERE f.qs=0 AND mc.metric_key NOT IN ('device_running','device_phase')
+      AND (p_station_id IS NULL OR f.station_id=p_station_id)
+      AND (p_device_id  IS NULL OR f.device_id =p_device_id)
+    GROUP BY 1,2,3;
+    CREATE INDEX ON t503_keys_with_total(station_id, device_id, metric_id);
+
+    -- 9.2 窗口内 presence 聚合（仅限候选键）
+    DROP TABLE IF EXISTS t503_pr_agg;
+    CREATE TEMP TABLE t503_pr_agg ON COMMIT DROP AS
+    SELECT p.station_id, p.device_id, p.metric_id, COUNT(*) AS present_total
+    FROM public.mv_presence_1s_any p
+    JOIN t503_keys_with_total k USING (station_id, device_id, metric_id)
+    WHERE p.ts_bucket>=p_start AND p.ts_bucket<p_end AND p.present=1
+    GROUP BY 1,2,3;
+    CREATE INDEX ON t503_pr_agg(station_id, device_id, metric_id);
+
+    -- 9.3 全量满快速通道：若所有键 present_total = total_secs，则本段无需计算，直接记 0
+    SELECT COUNT(*) INTO v_cnt
+    FROM t503_keys_with_total ts
+    LEFT JOIN t503_pr_agg pr USING (station_id, device_id, metric_id)
+    WHERE COALESCE(pr.present_total,0) < ts.total_secs;
+
+    IF v_cnt = 0 THEN
+      v_rc := 0;
+      INSERT INTO public.quality_profile_log(window_start, window_end, station_id, device_id, stage, duration_ms, rows_affected)
+      VALUES (p_start, p_end, p_station_id, p_device_id, 'update_503', EXTRACT(MILLISECOND FROM (clock_timestamp()-v_t)), v_rc);
+
+    ELSE
+      -- 9.5 全量空快速通道：对 present_total=0 的键直接标注（miss_ratio=1.0 ≥ 任意阈值）
+      DROP TABLE IF EXISTS t503_all_absent_keys;
+      CREATE TEMP TABLE t503_all_absent_keys ON COMMIT DROP AS
+      SELECT ts.station_id, ts.device_id, ts.metric_id
+      FROM t503_keys_with_total ts
+      LEFT JOIN t503_pr_agg pr USING (station_id, device_id, metric_id)
+      WHERE COALESCE(pr.present_total,0)=0;
+      CREATE INDEX ON t503_all_absent_keys(station_id, device_id, metric_id);
+
+      -- 先对“全量空”键批量更新，避免进入重计算
+      WITH tgt AS (
+        SELECT f.id, f.station_id, f.device_id, f.metric_id
+        FROM fwin f
+        JOIN t503_all_absent_keys k USING (station_id, device_id, metric_id)
+      )
+      UPDATE public.fact_measurements u
+      SET quality_codes = CASE
+            WHEN NOT (503 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+              THEN array_append(COALESCE(u.quality_codes, '{}'::int[]), 503)
+              ELSE u.quality_codes
+          END,
+          quality_status = CASE WHEN COALESCE(u.quality_status,0)=0 THEN 503 ELSE u.quality_status END,
+          quality_type='稀疏缺秒',
+          quality_meta=jsonb_build_object('missing_ratio',1.0,'win','60s','present_60',0)
+      FROM tgt
+      WHERE u.id=tgt.id AND (p_codes IS NULL OR 503 = ANY(p_codes));
+
+      GET DIAGNOSTICS v_rc = ROW_COUNT;
+
+      -- 9.6 对剩余“部分缺失”的键走累积计数路径（范围裁剪到 keys 且排除全量空键）
+      DROP TABLE IF EXISTS t503_keys_partial;
+      CREATE TEMP TABLE t503_keys_partial ON COMMIT DROP AS
+      SELECT k.station_id, k.device_id, k.metric_id FROM t503_keys_with_total k
+      LEFT JOIN t503_all_absent_keys a USING (station_id, device_id, metric_id)
+      WHERE a.metric_id IS NULL;
+      CREATE INDEX ON t503_keys_partial(station_id, device_id, metric_id);
+
+      -- 优化：使用 ROW_NUMBER() 代替 SUM(1) OVER，性能更优
+      DROP TABLE IF EXISTS t503_cum;
+      CREATE TEMP TABLE t503_cum ON COMMIT DROP AS
+      SELECT p.station_id, p.device_id, p.metric_id, p.ts_bucket,
+             ROW_NUMBER() OVER (PARTITION BY p.station_id, p.device_id, p.metric_id ORDER BY p.ts_bucket) AS cum
+      FROM public.mv_presence_1s_any p
+      JOIN t503_keys_partial k USING (station_id, device_id, metric_id)
+      WHERE p.ts_bucket >= p_start - interval '60 seconds' AND p.ts_bucket <= p_end;
+      CREATE INDEX ON t503_cum(station_id, device_id, metric_id, ts_bucket DESC) INCLUDE (cum);
+      ANALYZE t503_cum;
+
+      -- 优化：合并 t503_feat 和 t503_final，直接计算 miss_ratio，减少一个临时表
+      DROP TABLE IF EXISTS t503_feat;
+      CREATE TEMP TABLE t503_feat ON COMMIT DROP AS
+      SELECT f.id, f.station_id, f.device_id, f.metric_id, f.ts_bucket,
+             (COALESCE(c_end.cum, 0) - COALESCE(c_begin.cum, 0)) AS present_60,
+             (EXTRACT(EPOCH FROM (
+                f.ts_bucket - GREATEST(p_start, f.ts_bucket - interval '60 seconds')
+              ))::int + 1) AS total_60,
+             CASE
+               WHEN (EXTRACT(EPOCH FROM (f.ts_bucket - GREATEST(p_start, f.ts_bucket - interval '60 seconds')))::int + 1) > 0
+               THEN 1.0 - ((COALESCE(c_end.cum, 0) - COALESCE(c_begin.cum, 0))::numeric /
+                          (EXTRACT(EPOCH FROM (f.ts_bucket - GREATEST(p_start, f.ts_bucket - interval '60 seconds')))::int + 1)::numeric)
+               ELSE NULL
+             END AS miss_ratio
+      FROM fwin f
+      JOIN t503_keys_partial k USING (station_id, device_id, metric_id)
+      LEFT JOIN LATERAL (
+        SELECT cum FROM t503_cum c
+        WHERE c.station_id=f.station_id AND c.device_id=f.device_id AND c.metric_id=f.metric_id
+          AND c.ts_bucket <= f.ts_bucket
+        ORDER BY c.ts_bucket DESC LIMIT 1
+      ) c_end ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT cum FROM t503_cum c
+        WHERE c.station_id=f.station_id AND c.device_id=f.device_id AND c.metric_id=f.metric_id
+          AND c.ts_bucket < GREATEST(p_start, f.ts_bucket - interval '60 seconds')
+        ORDER BY c.ts_bucket DESC LIMIT 1
+      ) c_begin ON TRUE
+      WHERE f.qs=0 AND (EXTRACT(EPOCH FROM (f.ts_bucket - GREATEST(p_start, f.ts_bucket - interval '60 seconds')))::int + 1) > 0;
+      CREATE INDEX ON t503_feat(id);
+
+      -- 503 阈值参数化：优先读取 remark.sparse_missing_ratio_thr，默认 0.3
+      WITH upd AS (
+        SELECT u.id, t.miss_ratio,
+               COALESCE(
+                 NULLIF((regexp_match(COALESCE(r.remark,''), '"sparse_missing_ratio_thr"\s*:\s*([0-9.]+)'))[1], '')::double precision,
+                 0.3
+               ) AS ratio_thr
+        FROM t503_feat t
+        JOIN public.fact_measurements u ON u.id=t.id
+        LEFT JOIN public.metric_quality_rules r
+          ON r.metric_id = t.metric_id
+         AND (r.device_id = t.device_id OR r.device_id IS NULL)
+         AND (r.station_id = t.station_id OR r.station_id IS NULL)
+        WHERE NOT (503 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+      )
+      UPDATE public.fact_measurements u
+      SET quality_codes = CASE
+            WHEN NOT (503 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+              THEN array_append(COALESCE(u.quality_codes, '{}'::int[]), 503)
+              ELSE u.quality_codes
+          END,
+          quality_status = CASE WHEN COALESCE(u.quality_status,0)=0 THEN 503 ELSE u.quality_status END,
+          quality_type='稀疏缺秒',
+          quality_meta=jsonb_build_object('missing_ratio',upd.miss_ratio,'win','60s')
+      FROM upd
+      WHERE u.id=upd.id AND upd.miss_ratio IS NOT NULL AND upd.miss_ratio >= upd.ratio_thr
+        AND (p_codes IS NULL OR 503 = ANY(p_codes));
+
+      -- 记总影响行数（含快速通道与部分缺失）
+      GET DIAGNOSTICS v_cnt = ROW_COUNT;
+      v_rc := v_rc + v_cnt;
+      INSERT INTO public.quality_profile_log(window_start, window_end, station_id, device_id, stage, duration_ms, rows_affected)
+      VALUES (p_start, p_end, p_station_id, p_device_id, 'update_503', EXTRACT(MILLISECOND FROM (clock_timestamp()-v_t)), v_rc);
+
+    END IF; -- end of full/partial branches
+
+  END IF; -- 503 稀疏缺秒 代码段收束
+
+  -- 10) 141 量化步长异常：观测最小非零步长显著大于配置分辨率（默认阈值 3x）
+  v_t := clock_timestamp();
+  DROP TABLE IF EXISTS t141_base;
+  CREATE TEMP TABLE t141_base ON COMMIT DROP AS
+  SELECT f.id, f.station_id, f.device_id, f.metric_id, f.ts_bucket, f.value,
+         tm.resolution
+  FROM fwin f
+  JOIN public.dim_metric_config mc ON mc.id=f.metric_id
+  JOIN t_meta tm ON tm.metric_id=f.metric_id
+  WHERE f.qs=0 AND mc.metric_key NOT IN ('device_running','device_phase','pump_kwh','pump_cumulative_flow','main_pipeline_cumulative_flow');
+  CREATE INDEX ON t141_base(station_id, device_id, metric_id, ts_bucket);
+
+  DROP TABLE IF EXISTS t141_delta;
+  CREATE TEMP TABLE t141_delta ON COMMIT DROP AS
+  SELECT b.id, b.station_id, b.device_id, b.metric_id, b.ts_bucket, b.resolution,
+         ABS(b.value - LAG(b.value) OVER (PARTITION BY b.station_id, b.device_id, b.metric_id ORDER BY b.ts_bucket)) AS d,
+         (MAX(b.value) OVER (PARTITION BY b.station_id, b.device_id, b.metric_id ORDER BY b.ts_bucket RANGE BETWEEN INTERVAL '60 seconds' PRECEDING AND CURRENT ROW)
+          - MIN(b.value) OVER (PARTITION BY b.station_id, b.device_id, b.metric_id ORDER BY b.ts_bucket RANGE BETWEEN INTERVAL '60 seconds' PRECEDING AND CURRENT ROW)) AS span_win
+  FROM t141_base b;
+  CREATE INDEX ON t141_delta(id);
+
+  DROP TABLE IF EXISTS t141_win;
+  CREATE TEMP TABLE t141_win ON COMMIT DROP AS
+  SELECT d.id, d.station_id, d.device_id, d.metric_id, d.resolution, d.span_win,
+         MIN(NULLIF(d.d,0)) OVER (
+           PARTITION BY d.station_id, d.device_id, d.metric_id
+           ORDER BY d.ts_bucket
+           RANGE BETWEEN INTERVAL '60 seconds' PRECEDING AND CURRENT ROW
+         ) AS min_step_win
+  FROM t141_delta d;
+  CREATE INDEX ON t141_win(id);
+
+  DROP TABLE IF EXISTS t141_final;
+
+  CREATE TEMP TABLE t141_final ON COMMIT DROP AS
+  SELECT w.id, w.min_step_win, w.resolution, w.span_win
+  FROM t141_win w
+  LEFT JOIN LATERAL (
+    SELECT v.k
+    FROM (
+      SELECT COALESCE(
+               NULLIF((regexp_match(COALESCE(r.remark,''), '"quant_step_multiplier"\s*:\s*([0-9.]+)'))[1], '')::double precision,
+               3.0
+             ) AS k,
+             (r.device_id IS NOT NULL) AS has_dev,
+             (r.station_id IS NOT NULL) AS has_sta,
+             1 AS prio
+      FROM public.metric_quality_rules r
+      WHERE r.metric_id = w.metric_id
+        AND (r.device_id = w.device_id OR r.device_id IS NULL)
+        AND (r.station_id = w.station_id OR r.station_id IS NULL)
+      UNION ALL
+      SELECT 3.0 AS k, FALSE AS has_dev, FALSE AS has_sta, 0 AS prio
+    ) v
+    ORDER BY v.prio DESC, v.has_dev DESC, v.has_sta DESC
+    LIMIT 1
+  ) th ON TRUE
+  WHERE w.min_step_win IS NOT NULL AND w.resolution IS NOT NULL
+    AND w.min_step_win > GREATEST(COALESCE(th.k, 3.0)*w.resolution, 0.01*COALESCE(w.span_win,0));
+  CREATE INDEX ON t141_final(id);
+
+  UPDATE public.fact_measurements u
+  SET quality_codes = CASE
+        WHEN NOT (141 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+          THEN array_append(COALESCE(u.quality_codes, '{}'::int[]), 141)
+          ELSE u.quality_codes
+      END,
+      quality_status = CASE WHEN COALESCE(u.quality_status,0)=0 THEN 141 ELSE u.quality_status END,
+      quality_type='步长异常',
+      quality_meta=jsonb_build_object('step',t.min_step_win,'res',t.resolution,'win','60s')
+  FROM t141_final t
+  WHERE u.id=t.id
+    AND NOT (141 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+    AND (p_codes IS NULL OR 141 = ANY(p_codes));
+  GET DIAGNOSTICS v_rc = ROW_COUNT;
+  INSERT INTO public.quality_profile_log(window_start, window_end, station_id, device_id, stage, duration_ms, rows_affected)
+  VALUES (p_start, p_end, p_station_id, p_device_id, 'update_141', EXTRACT(MILLISECOND FROM (clock_timestamp()-v_t)), v_rc);
+
+
+  -- 恢复 121 续体（无操作占位，上一段已完成 t121_win 构建与索引）
+
+  -- 使用段聚合结果映射最终行集
+  DROP TABLE IF EXISTS t121_final;
+  CREATE TEMP TABLE t121_final ON COMMIT DROP AS
+  SELECT g.id
+  FROM t121_segid g
+  JOIN t121_segs_final s
+    ON s.station_id=g.station_id AND s.device_id=g.device_id AND s.metric_id=g.metric_id AND s.seg_id=g.seg_id;
+  CREATE INDEX ON t121_final(id);
+
+  v_t := clock_timestamp();
+  UPDATE public.fact_measurements u
+  SET quality_codes = CASE
+        WHEN NOT (121 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+          THEN array_append(COALESCE(u.quality_codes, '{}'::int[]), 121)
+          ELSE u.quality_codes
+      END,
+      quality_status = CASE WHEN COALESCE(u.quality_status,0)=0 THEN 121 ELSE u.quality_status END,
+      quality_type='平台期'
+  FROM t121_final t
+  WHERE u.id=t.id
+    AND NOT (121 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+    AND (p_codes IS NULL OR 121 = ANY(p_codes));
+  GET DIAGNOSTICS v_rc = ROW_COUNT;
+  INSERT INTO public.quality_profile_log(window_start, window_end, station_id, device_id, stage, duration_ms, rows_affected)
+  VALUES (p_start, p_end, p_station_id, p_device_id, 'update_121', EXTRACT(MILLISECOND FROM (clock_timestamp()-v_t)), v_rc);
+
+
+  -- 500 系：时间一致性（501/502）
+  -- 501 时间漂移：|ts_raw - ts_bucket| > 阈值（remark.clock_skew_sec，默认 2s）
+  IF p_codes IS NULL OR 501 = ANY(p_codes) THEN
+    v_t := clock_timestamp();
+
+    -- 501 参数快表：一次性解析 remark.clock_skew_sec，优先级 设备 > 站点 > 通用
+    DROP TABLE IF EXISTS t501_rule_params;
+    CREATE TEMP TABLE t501_rule_params ON COMMIT DROP AS
+    SELECT metric_id, station_id, device_id,
+           COALESCE(NULLIF((regexp_match(COALESCE(remark,''), '"clock_skew_sec"\s*:\s*([0-9]+)'))[1], '')::int, 2) AS skew_sec,
+           (CASE WHEN device_id IS NOT NULL THEN 3 WHEN station_id IS NOT NULL THEN 2 ELSE 1 END) AS prio
+    FROM public.metric_quality_rules
+    WHERE remark ~ 'clock_skew_sec';
+    CREATE INDEX ON t501_rule_params(metric_id, station_id, device_id, prio);
+
+    DROP TABLE IF EXISTS t501_ids;
+    CREATE TEMP TABLE t501_ids ON COMMIT DROP AS
+    SELECT f.id,
+           ABS(EXTRACT(EPOCH FROM (fm.ts_raw - fm.ts_bucket)))::int AS skew
+    FROM fwin f
+    JOIN public.fact_measurements fm ON fm.id=f.id
+    LEFT JOIN LATERAL (
+      SELECT p.skew_sec
+      FROM t501_rule_params p
+      WHERE p.metric_id = f.metric_id
+        AND (p.device_id = f.device_id OR p.device_id IS NULL)
+        AND (p.station_id = f.station_id OR p.station_id IS NULL)
+      ORDER BY (p.device_id IS NOT NULL) DESC, (p.station_id IS NOT NULL) DESC, p.prio DESC
+      LIMIT 1
+    ) th ON TRUE
+    WHERE f.qs=0 AND fm.ts_raw IS NOT NULL
+      AND ABS(EXTRACT(EPOCH FROM (fm.ts_raw - fm.ts_bucket))) > COALESCE(th.skew_sec, 2);
+    CREATE INDEX ON t501_ids(id);
+
+    UPDATE public.fact_measurements u
+    SET quality_codes = CASE
+          WHEN NOT (501 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+            THEN array_append(COALESCE(u.quality_codes, '{}'::int[]), 501)
+            ELSE u.quality_codes
+        END,
+        quality_status = CASE WHEN COALESCE(u.quality_status,0)=0 THEN 501 ELSE u.quality_status END,
+        quality_type='时间漂移',
+        quality_meta=jsonb_build_object('skew_sec', t.skew)
+    FROM t501_ids t
+    WHERE u.id=t.id
+      AND NOT (501 = ANY(COALESCE(u.quality_codes, '{}'::int[])));
+
+    GET DIAGNOSTICS v_rc = ROW_COUNT;
+    INSERT INTO public.quality_profile_log(window_start, window_end, station_id, device_id, stage, duration_ms, rows_affected)
+    VALUES (p_start, p_end, p_station_id, p_device_id, 'update_501', EXTRACT(MILLISECOND FROM (clock_timestamp()-v_t)), v_rc);
+  END IF;
+
+  -- 502 同秒重复：同 station/device/metric/ts_bucket 多于 1 行
+  v_t := clock_timestamp();
+  DROP TABLE IF EXISTS t502_dups;
+  CREATE TEMP TABLE t502_dups ON COMMIT DROP AS
+  SELECT station_id, device_id, metric_id, ts_bucket, COUNT(*) AS cnt
+  FROM public.fact_measurements
+  WHERE ts_bucket>=p_start AND ts_bucket<p_end
+    AND (p_station_id IS NULL OR station_id=p_station_id)
+    AND (p_device_id  IS NULL OR device_id=p_device_id)
+  GROUP BY 1,2,3,4
+  HAVING COUNT(*)>1;
+  CREATE INDEX ON t502_dups(station_id, device_id, metric_id, ts_bucket);
+
+  DROP TABLE IF EXISTS t502_ids;
+  CREATE TEMP TABLE t502_ids ON COMMIT DROP AS
+  SELECT f.id, d.cnt
+  FROM public.fact_measurements f
+  JOIN t502_dups d ON d.station_id=f.station_id AND d.device_id=f.device_id AND d.metric_id=f.metric_id AND d.ts_bucket=f.ts_bucket;
+  CREATE INDEX ON t502_ids(id);
+
+  UPDATE public.fact_measurements u
+  SET quality_codes = CASE
+        WHEN NOT (502 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+          THEN array_append(COALESCE(u.quality_codes, '{}'::int[]), 502)
+          ELSE u.quality_codes
+      END,
+      quality_status = CASE WHEN COALESCE(u.quality_status,0)=0 THEN 502 ELSE u.quality_status END,
+      quality_type='重复秒',
+      quality_meta=jsonb_build_object('dup_cnt', t.cnt)
+  FROM t502_ids t
+  WHERE u.id=t.id
+    AND NOT (502 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+    AND (p_codes IS NULL OR 502 = ANY(p_codes));
+  GET DIAGNOSTICS v_rc = ROW_COUNT;
+  INSERT INTO public.quality_profile_log(window_start, window_end, station_id, device_id, stage, duration_ms, rows_affected)
+  VALUES (p_start, p_end, p_station_id, p_device_id, 'update_502', EXTRACT(MILLISECOND FROM (clock_timestamp()-v_t)), v_rc);
+
+  -- 600 系：传感器健康（最小实现）
+  -- 603 断开：基于 presence 的长缺口（remark.disconnect_min_sec，默认 300s）
+  v_t := clock_timestamp();
+  -- 603 断开：使用 t_miss_spans 复用缺失段（阈值 disconnect_min_sec），下方生成 t603_final → t603_ids → 更新
+  --
+
+  DROP TABLE IF EXISTS t603_final;
+  CREATE TEMP TABLE t603_final ON COMMIT DROP AS
+  SELECT s.*
+  FROM t_miss_spans s
+  WHERE s.gap_len_sec >= COALESCE((
+    SELECT NULLIF((regexp_match(COALESCE(r.remark,''), '"disconnect_min_sec"\s*:\s*([0-9]+)'))[1],'')::int
+    FROM public.metric_quality_rules r
+    WHERE r.metric_id=s.metric_id
+      AND (r.device_id IS NULL OR r.device_id=s.device_id)
+      AND (r.station_id IS NULL OR r.station_id=s.station_id)
+    ORDER BY (r.device_id IS NOT NULL) DESC, (r.station_id IS NOT NULL) DESC
+    LIMIT 1
+  ), 300);
+  CREATE INDEX ON t603_final(station_id, device_id, metric_id);
+
+  DROP TABLE IF EXISTS t603_ids;
+  CREATE TEMP TABLE t603_ids ON COMMIT DROP AS
+  SELECT f.id, t.gap_len_sec
+  FROM fwin f
+  JOIN t603_final t ON t.station_id=f.station_id AND t.device_id=f.device_id AND t.metric_id=f.metric_id
+   AND f.ts_bucket BETWEEN t.gap_start_ts AND t.gap_end_ts;
+  CREATE INDEX ON t603_ids(id);
+
+  UPDATE public.fact_measurements u
+  SET quality_codes = CASE
+        WHEN NOT (603 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+          THEN array_append(COALESCE(u.quality_codes, '{}'::int[]), 603)
+          ELSE u.quality_codes
+      END,
+      quality_status = CASE WHEN COALESCE(u.quality_status,0)=0 THEN 603 ELSE u.quality_status END,
+      quality_type='断开',
+      quality_meta=jsonb_build_object('gap_len_sec', t.gap_len_sec)
+  FROM t603_ids t
+  WHERE u.id=t.id
+    AND (p_codes IS NULL OR 603 = ANY(p_codes))
+    AND NOT (603 = ANY(COALESCE(u.quality_codes, '{}'::int[])));
+  GET DIAGNOSTICS v_rc = ROW_COUNT;
+  INSERT INTO public.quality_profile_log(window_start, window_end, station_id, device_id, stage, duration_ms, rows_affected)
+  VALUES (p_start, p_end, p_station_id, p_device_id, 'update_603', EXTRACT(MILLISECOND FROM (clock_timestamp()-v_t)), v_rc);
+
+  -- 601 故障：持续平台/异常（基于 121 候选的连续秒数，remark.fault_min_duration_sec，默认 60s）
+  v_t := clock_timestamp();
+  DROP TABLE IF EXISTS t601_base;
+  CREATE TEMP TABLE t601_base ON COMMIT DROP AS
+  SELECT f.station_id, f.device_id, f.metric_id, f.ts_bucket
+  FROM fwin f
+  JOIN t121_final t ON t.id=f.id;
+  CREATE INDEX ON t601_base(station_id, device_id, metric_id, ts_bucket);
+
+  DROP TABLE IF EXISTS t601_spans;
+  CREATE TEMP TABLE t601_spans ON COMMIT DROP AS
+  WITH x AS (
+    SELECT station_id, device_id, metric_id, ts_bucket,
+           ts_bucket - (row_number() OVER (PARTITION BY station_id, device_id, metric_id ORDER BY ts_bucket))*interval '1 second' AS grp
+    FROM t601_base
+  )
+  SELECT station_id, device_id, metric_id,
+         MIN(ts_bucket) AS s,
+         MAX(ts_bucket) AS e,
+         EXTRACT(EPOCH FROM (MAX(ts_bucket) - MIN(ts_bucket)))::int + 1 AS len_sec
+  FROM x
+  GROUP BY station_id, device_id, metric_id, grp;
+  CREATE INDEX ON t601_spans(station_id, device_id, metric_id);
+
+  DROP TABLE IF EXISTS t601_final;
+  CREATE TEMP TABLE t601_final ON COMMIT DROP AS
+  SELECT * FROM t601_spans s
+  WHERE s.len_sec >= COALESCE((SELECT NULLIF((regexp_match(COALESCE(r.remark,''), '"fault_min_duration_sec"\s*:\s*([0-9]+)'))[1],'')::int FROM public.metric_quality_rules r WHERE r.metric_id=s.metric_id AND (r.device_id IS NULL OR r.device_id=s.device_id) AND (r.station_id IS NULL OR r.station_id=s.station_id) ORDER BY (r.device_id IS NOT NULL) DESC, (r.station_id IS NOT NULL) DESC LIMIT 1), 60);
+
+  DROP TABLE IF EXISTS t601_ids;
+  CREATE TEMP TABLE t601_ids ON COMMIT DROP AS
+  SELECT f.id, s.len_sec
+  FROM fwin f
+  JOIN t601_final s ON s.station_id=f.station_id AND s.device_id=f.device_id AND s.metric_id=f.metric_id
+   AND f.ts_bucket BETWEEN s.s AND s.e;
+  CREATE INDEX ON t601_ids(id);
+
+  UPDATE public.fact_measurements u
+  SET quality_codes = CASE
+        WHEN NOT (601 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+          THEN array_append(COALESCE(u.quality_codes, '{}'::int[]), 601)
+          ELSE u.quality_codes
+      END,
+      quality_status = CASE WHEN COALESCE(u.quality_status,0)=0 THEN 601 ELSE u.quality_status END,
+      quality_type='传感器故障',
+      quality_meta=jsonb_build_object('span_len_sec', t.len_sec)
+  FROM t601_ids t
+  WHERE u.id=t.id
+    AND NOT (601 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+    AND (p_codes IS NULL OR 601 = ANY(p_codes));
+  GET DIAGNOSTICS v_rc = ROW_COUNT;
+  INSERT INTO public.quality_profile_log(window_start, window_end, station_id, device_id, stage, duration_ms, rows_affected)
+  VALUES (p_start, p_end, p_station_id, p_device_id, 'update_601', EXTRACT(MILLISECOND FROM (clock_timestamp()-v_t)), v_rc);
+
+  -- 602 校准偏差：基于自动基线 median/MAD 或 remark.calib_bias_abs / calib_bias_k_mad (默认 3x)
+  -- 增加前置约束：最小存在秒数/最小运行秒数（来自 remark.calib_min_present_secs / calib_min_running_secs；默认0表示不限制）
+  IF p_codes IS NULL OR 602 = ANY(p_codes) THEN
+    v_t := clock_timestamp();
+
+    -- 候选键集：仅包含具备自动基线或显式校准阈值配置的 (station,device,metric)
+    DROP TABLE IF EXISTS t602_keys;
+    CREATE TEMP TABLE t602_keys ON COMMIT DROP AS
+    SELECT DISTINCT f.station_id, f.device_id, f.metric_id
+    FROM fwin f
+    WHERE f.qs=0 AND (
+      EXISTS (
+        SELECT 1 FROM public.metric_rule_auto_baseline bl
+        WHERE bl.metric_id=f.metric_id
+          AND (bl.device_id = f.device_id OR bl.device_id IS NULL)
+          AND (bl.station_id = f.station_id OR bl.station_id IS NULL)
+        LIMIT 1
+      )
+      OR EXISTS (
+        SELECT 1 FROM public.metric_quality_rules r
+        WHERE r.metric_id=f.metric_id
+          AND (r.device_id = f.device_id OR r.device_id IS NULL)
+          AND (r.station_id = f.station_id OR r.station_id IS NULL)
+          AND (COALESCE(r.remark,'') ~ 'calib_bias_abs' OR COALESCE(r.remark,'') ~ 'calib_bias_k_mad')
+        LIMIT 1
+      )
+    );
+    CREATE INDEX ON t602_keys(station_id, device_id, metric_id);
+
+    -- presence 聚合：仅限于候选键集对应的 metric
+    DROP TABLE IF EXISTS t602_pr;
+    CREATE TEMP TABLE t602_pr ON COMMIT DROP AS
+    SELECT p.station_id, p.device_id, p.metric_id, COUNT(*) AS present_secs
+    FROM public.mv_presence_1s_any p
+    JOIN t602_keys k ON k.station_id=p.station_id AND k.device_id=p.device_id AND k.metric_id=p.metric_id
+    WHERE p.ts_bucket>=p_start AND p.ts_bucket<p_end AND p.present=1
+    GROUP BY p.station_id, p.device_id, p.metric_id;
+    CREATE INDEX ON t602_pr(station_id, device_id, metric_id);
+
+    -- running 聚合：仅限于候选设备
+    DROP TABLE IF EXISTS t602_run;
+    CREATE TEMP TABLE t602_run ON COMMIT DROP AS
+    SELECT r.station_id, r.device_id, COUNT(*) AS running_secs
+    FROM public.mv_device_running_1s r
+    JOIN (SELECT DISTINCT station_id, device_id FROM t602_keys) d
+      ON d.station_id=r.station_id AND d.device_id=r.device_id
+    WHERE r.ts_bucket>=p_start AND r.ts_bucket<p_end AND r.running=1
+    GROUP BY r.station_id, r.device_id;
+    CREATE INDEX ON t602_run(station_id, device_id);
+
+    -- 支持表：以候选键集为基，左联 presence/running
+    DROP TABLE IF EXISTS t602_support;
+    CREATE TEMP TABLE t602_support ON COMMIT DROP AS
+    SELECT k.station_id, k.device_id, k.metric_id,
+           COALESCE(pr.present_secs, 0) AS present_secs,
+           COALESCE(rn.running_secs, 0) AS running_secs
+    FROM t602_keys k
+    LEFT JOIN t602_pr  pr ON pr.station_id=k.station_id AND pr.device_id=k.device_id AND pr.metric_id=k.metric_id
+    LEFT JOIN t602_run rn ON rn.station_id=k.station_id AND rn.device_id=k.device_id;
+    CREATE INDEX ON t602_support(station_id, device_id, metric_id);
+
+    -- 602 参数/基线快表：按候选键集一次性挑选最优规则与基线，避免对 fwin 每行做 LATERAL/regex
+    DROP TABLE IF EXISTS t602_rule_pick;
+    CREATE TEMP TABLE t602_rule_pick ON COMMIT DROP AS
+    SELECT k.station_id, k.device_id, k.metric_id, r.remark,
+           ROW_NUMBER() OVER (
+             PARTITION BY k.station_id, k.device_id, k.metric_id
+             ORDER BY (r.device_id IS NOT NULL) DESC, (r.station_id IS NOT NULL) DESC
+           ) AS rn
+    FROM t602_keys k
+    JOIN public.metric_quality_rules r
+      ON r.metric_id=k.metric_id
+     AND (r.device_id=k.device_id OR r.device_id IS NULL)
+     AND (r.station_id=k.station_id OR r.station_id IS NULL);
+    CREATE INDEX ON t602_rule_pick(station_id, device_id, metric_id);
+
+    DROP TABLE IF EXISTS t602_rule_params;
+    CREATE TEMP TABLE t602_rule_params ON COMMIT DROP AS
+    SELECT station_id, device_id, metric_id,
+           COALESCE(NULLIF((regexp_match(COALESCE(remark,''), '"calib_bias_abs"\s*:\s*([0-9.]+)'))[1], '')::double precision, NULL) AS bias_abs,
+           COALESCE(NULLIF((regexp_match(COALESCE(remark,''), '"calib_bias_k_mad"\s*:\s*([0-9.]+)'))[1], '')::double precision, 3.0) AS k_mad,
+           COALESCE(NULLIF((regexp_match(COALESCE(remark,''), '"calib_min_present_secs"\s*:\s*([0-9]+)'))[1], '')::int, 0) AS min_present_secs,
+           COALESCE(NULLIF((regexp_match(COALESCE(remark,''), '"calib_min_running_secs"\s*:\s*([0-9]+)'))[1], '')::int, 0) AS min_running_secs
+    FROM t602_rule_pick
+    WHERE rn=1;
+    CREATE INDEX ON t602_rule_params(station_id, device_id, metric_id);
+
+    DROP TABLE IF EXISTS t602_bl_pick;
+    CREATE TEMP TABLE t602_bl_pick ON COMMIT DROP AS
+    SELECT k.station_id, k.device_id, k.metric_id, bl.median, bl.mad,
+           ROW_NUMBER() OVER (
+             PARTITION BY k.station_id, k.device_id, k.metric_id
+             ORDER BY (bl.device_id IS NOT NULL) DESC, (bl.station_id IS NOT NULL) DESC, bl.computed_at DESC
+           ) AS rn
+    FROM t602_keys k
+    JOIN public.metric_rule_auto_baseline bl
+      ON bl.metric_id=k.metric_id
+     AND (bl.device_id = k.device_id OR bl.device_id IS NULL)
+     AND (bl.station_id = k.station_id OR bl.station_id IS NULL);
+    CREATE INDEX ON t602_bl_pick(station_id, device_id, metric_id);
+
+    DROP TABLE IF EXISTS t602_bl;
+    CREATE TEMP TABLE t602_bl ON COMMIT DROP AS
+    SELECT station_id, device_id, metric_id, median, mad
+    FROM t602_bl_pick
+    WHERE rn=1;
+    CREATE INDEX ON t602_bl(station_id, device_id, metric_id);
+
+    -- 最终参数表：直接 JOIN 快表，避免逐行解析/挑选
+    DROP TABLE IF EXISTS t602_params;
+    CREATE TEMP TABLE t602_params ON COMMIT DROP AS
+    SELECT f.id, f.station_id, f.device_id, f.metric_id, f.value,
+           bl.median, bl.mad,
+           rp.bias_abs, rp.k_mad, rp.min_present_secs, rp.min_running_secs,
+           COALESCE(s.present_secs, 0) AS present_secs,
+           COALESCE(s.running_secs, 0) AS running_secs
+    FROM fwin f
+    JOIN t602_support s ON s.station_id=f.station_id AND s.device_id=f.device_id AND s.metric_id=f.metric_id
+    LEFT JOIN t602_bl bl ON bl.station_id=f.station_id AND bl.device_id=f.device_id AND bl.metric_id=f.metric_id
+    LEFT JOIN t602_rule_params rp ON rp.station_id=f.station_id AND rp.device_id=f.device_id AND rp.metric_id=f.metric_id
+    WHERE f.qs=0 AND f.value IS NOT NULL AND bl.median IS NOT NULL;
+    CREATE INDEX ON t602_params(id);
+
+    DROP TABLE IF EXISTS t602_ids;
+    CREATE TEMP TABLE t602_ids ON COMMIT DROP AS
+    SELECT p.id
+    FROM t602_params p
+    WHERE (p.present_secs >= COALESCE(p.min_present_secs, 0))
+      AND (p.running_secs >= COALESCE(p.min_running_secs, 0))
+      AND (
+        (p.bias_abs IS NOT NULL AND ABS(p.value - p.median) >= p.bias_abs)
+        OR (p.bias_abs IS NULL AND p.mad IS NOT NULL AND ABS(p.value - p.median) >= p.k_mad * p.mad)
+      );
+    CREATE INDEX ON t602_ids(id);
+
+    UPDATE public.fact_measurements u
+    SET quality_codes = CASE
+          WHEN NOT (602 = ANY(COALESCE(u.quality_codes, '{}'::int[])))
+            THEN array_append(COALESCE(u.quality_codes, '{}'::int[]), 602)
+            ELSE u.quality_codes
+        END,
+        quality_status = CASE WHEN COALESCE(u.quality_status,0)=0 THEN 602 ELSE u.quality_status END,
+        quality_type='校准偏差',
+        quality_meta=jsonb_build_object(
+          'median', p.median,
+          'mad', p.mad,
+          'k_mad', p.k_mad,
+          'bias_abs', p.bias_abs,
+          'present_secs', p.present_secs,
+          'running_secs', p.running_secs,
+          'min_present_secs', p.min_present_secs,
+          'min_running_secs', p.min_running_secs
+        )
+    FROM t602_params p
+    JOIN t602_ids t ON t.id=p.id
+    WHERE u.id=t.id AND COALESCE(u.quality_status,0)=0;
+    GET DIAGNOSTICS v_rc = ROW_COUNT;
+    INSERT INTO public.quality_profile_log(window_start, window_end, station_id, device_id, stage, duration_ms, rows_affected)
+    VALUES (p_start, p_end, p_station_id, p_device_id, 'update_602', EXTRACT(MILLISECOND FROM (clock_timestamp()-v_t)), v_rc);
+  END IF;
+
+END;
+$$;
+
+COMMENT ON PROCEDURE public.sp_mark_quality_window_vfast(timestamptz, timestamptz, bigint, bigint, integer[])
+IS '质量标注过程（vfast）：预筛候选+临时表+批量更新；工作内存提升；语义与现版一致，性能优化。';
+
+COMMIT;
+

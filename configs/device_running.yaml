@@ -1,0 +1,14 @@
+# 设备运行状态作业（device_running）默认配置
+# 严格遵守：仅作为默认参数；实际行为以代码内安全默认为准
+
+slice_granularity: week         # week|day：切片粒度（建议 week，匹配事实表周分区）
+max_device_concurrency: 2       # 设备级并发（当前实现串行，预留扩展位）
+update_only_when_changed: true  # 仅值变化更新（ON CONFLICT DO UPDATE ... WHERE value IS DISTINCT FROM EXCLUDED.value）
+force_recompute: false          # 强制重算（预留开关）
+audit_granularity: day          # 追踪层审计聚合粒度（day|week），当前写入 steps.residual_stats 汇总
+
+# 说明：
+# - device_ids：未提供时，默认=全部泵类设备（排除 main_pipeline）且在 device_running_thresholds 表有阈值配置的设备
+# - start/end：未提供时，默认=全量时间窗（按设备在 fact_measurements 中的最早/最晚 ts_bucket）
+# - overlap：跨切片以 grace_hold_secs 秒向前重叠承接状态，避免边界抖动
+

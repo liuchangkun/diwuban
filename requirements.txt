@@ -1,0 +1,53 @@
+# CLI框架
+typer>=0.9.0
+
+# 数据库连接和操作 (项目使用psycopg而非psycopg2)
+psycopg>=3.2.0
+sqlalchemy>=2.0.0
+
+# 调度器
+apscheduler>=3.10.0
+
+# 数据处理
+pandas>=2.0.0
+numpy>=1.24.0
+scipy>=1.10.0
+
+# 可视化（特性曲线绘图）
+matplotlib>=3.7.0
+
+# 机器学习（特性曲线拟合系统）
+scikit-learn>=1.3.0
+xgboost>=2.0.0
+
+# 系统监控
+psutil>=5.9.0
+
+# 配置管理
+pyyaml>=6.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# 日志（已移除）
+
+# 缓存（内存缓存，无需Redis）
+cachetools>=5.3.0
+
+# 时间处理
+python-dateutil>=2.8.0
+pytz>=2023.3
+
+# 环境变量
+python-dotenv>=1.0.0
+
+# 开发工具 (可选)
+# pre-commit>=3.0.0
+# black>=23.0.0
+# ruff>=0.1.0
+# mypy>=1.5.0
+# bandit>=1.7.0
+
+# 测试工具 (可选)
+# pytest>=7.4.0
+# pytest-asyncio>=0.21.0
+# pytest-cov>=4.1.0

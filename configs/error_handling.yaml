@@ -1,0 +1,204 @@
+# 错误处理机制配置
+# 用于配置重试策略、断路器模式、错误分析等错误处理相关参数
+
+# 重试策略配置
+retry:
+  # 默认重试策略
+  default:
+    max_retries: 3                    # 最大重试次数
+    base_delay: 1.0                   # 基础延迟时间（秒）
+    max_delay: 60.0                   # 最大延迟时间（秒）
+    backoff_multiplier: 2.0           # 退避倍数
+    jitter: true                      # 是否启用抖动
+    strategy: "exponential"           # 重试策略：fixed, linear, exponential, fibonacci
+  
+  # 网络相关错误重试策略
+  network_errors:
+    max_retries: 5                    # 网络错误允许更多重试
+    base_delay: 0.5                   # 较短的基础延迟
+    max_delay: 10.0                   # 较短的最大延迟
+    backoff_multiplier: 1.5           # 较小的退避倍数
+    jitter: true
+    strategy: "exponential"
+  
+  # 数据库连接错误重试策略
+  database_connection_errors:
+    max_retries: 5                    # 数据库连接错误允许更多重试
+    base_delay: 1.0                   # 标准基础延迟
+    max_delay: 30.0                   # 中等最大延迟
+    backoff_multiplier: 2.0           # 标准退避倍数
+    jitter: true
+    strategy: "exponential"
+  
+  # 高优先级错误重试策略（需要快速处理）
+  high_priority_errors:
+    max_retries: 2                    # 较少重试次数
+    base_delay: 0.1                   # 很短的基础延迟
+    max_delay: 1.0                    # 很短的最大延迟
+    backoff_multiplier: 1.2           # 很小的退避倍数
+    jitter: false                     # 不使用抖动，确保快速响应
+    strategy: "linear"
+  
+  # 可降级错误重试策略
+  degradable_errors:
+    max_retries: 2                    # 较少重试次数
+    base_delay: 2.0                   # 较长的基础延迟
+    max_delay: 10.0                   # 中等最大延迟
+    backoff_multiplier: 1.5           # 较小的退避倍数
+    jitter: true
+    strategy: "exponential"
+  
+  # 资源耗尽错误重试策略
+  resource_exhausted_errors:
+    max_retries: 3                    # 中等重试次数
+    base_delay: 5.0                   # 较长的基础延迟，等待资源释放
+    max_delay: 60.0                   # 较长的最大延迟
+    backoff_multiplier: 2.0           # 标准退避倍数
+    jitter: true
+    strategy: "exponential"
+
+# 断路器配置
+circuit_breaker:
+  # 默认断路器配置
+  default:
+    failure_threshold: 5              # 失败阈值
+    recovery_timeout: 60.0            # 恢复超时时间（秒）
+    half_open_max_calls: 3            # 半开状态最大调用次数
+    half_open_success_threshold: 2    # 半开状态成功阈值
+  
+  # 数据库操作断路器
+  database_operations:
+    failure_threshold: 5              # 数据库操作失败阈值
+    recovery_timeout: 30.0            # 较短的恢复超时
+    half_open_max_calls: 3
+    half_open_success_threshold: 2
+  
+  # 数据库连接创建断路器
+  database_connection_creation:
+    failure_threshold: 3              # 连接创建失败阈值较低
+    recovery_timeout: 60.0            # 较长的恢复超时
+    half_open_max_calls: 2            # 较少的半开测试调用
+    half_open_success_threshold: 1    # 较低的成功阈值
+  
+  # API调用断路器
+  api_calls:
+    failure_threshold: 3              # API调用失败阈值
+    recovery_timeout: 45.0            # 中等恢复超时
+    half_open_max_calls: 3
+    half_open_success_threshold: 2
+  
+  # 文件操作断路器
+  file_operations:
+    failure_threshold: 5              # 文件操作失败阈值
+    recovery_timeout: 30.0            # 较短的恢复超时
+    half_open_max_calls: 3
+    half_open_success_threshold: 2
+  
+  # 网络操作断路器
+  network_operations:
+    failure_threshold: 3              # 网络操作失败阈值较低
+    recovery_timeout: 60.0            # 较长的恢复超时
+    half_open_max_calls: 2
+    half_open_success_threshold: 1
+
+# 错误分析配置
+error_analysis:
+  # 错误记录配置
+  recording:
+    max_records: 10000                # 最大错误记录数
+    analysis_window: 3600             # 分析时间窗口（秒）
+    cleanup_interval: 300             # 清理间隔（秒）
+    auto_cleanup: true                # 是否自动清理过期记录
+  
+  # 错误模式检测配置
+  pattern_detection:
+    min_frequency: 3                  # 最小频率阈值
+    time_window: 1800                 # 模式检测时间窗口（秒）
+    similarity_threshold: 0.8         # 相似度阈值
+    enable_auto_detection: true       # 是否启用自动模式检测
+  
+  # 错误趋势分析配置
+  trend_analysis:
+    analysis_interval: 300            # 趋势分析间隔（秒）
+    trend_window: 3600                # 趋势分析时间窗口（秒）
+    rate_threshold: 0.1               # 错误率阈值（每分钟）
+    enable_prediction: true           # 是否启用故障预测
+  
+  # 错误报告配置
+  reporting:
+    auto_generate: true               # 是否自动生成报告
+    report_interval: 1800             # 报告生成间隔（秒）
+    max_reports: 100                  # 最大报告数量
+    include_patterns: true            # 是否包含错误模式
+    include_trends: true              # 是否包含趋势分析
+    include_suggestions: true         # 是否包含恢复建议
+
+# 错误监控配置
+monitoring:
+  # 监控装饰器配置
+  decorator:
+    enable_context_capture: true      # 是否捕获上下文信息
+    max_context_size: 1000            # 最大上下文大小（字符）
+    capture_args: true                # 是否捕获函数参数
+    capture_return: false             # 是否捕获返回值（可能包含敏感信息）
+    exclude_sensitive_keys:           # 排除的敏感键名
+      - "password"
+      - "token"
+      - "secret"
+      - "key"
+      - "auth"
+  
+  # 性能监控配置
+  performance:
+    enable_timing: true               # 是否启用执行时间监控
+    slow_threshold: 5.0               # 慢操作阈值（秒）
+    memory_monitoring: false          # 是否启用内存监控（可能影响性能）
+  
+  # 告警配置
+  alerting:
+    enable_alerts: false              # 是否启用告警（需要外部告警系统）
+    error_rate_threshold: 0.05        # 错误率告警阈值
+    consecutive_failures_threshold: 10 # 连续失败告警阈值
+    circuit_breaker_open_alert: true  # 断路器开启时是否告警
+
+# 配置验证规则
+validation:
+  # 重试配置验证
+  retry_validation:
+    max_retries_limit: 10             # 最大重试次数上限
+    max_delay_limit: 300.0            # 最大延迟时间上限（秒）
+    min_base_delay: 0.01              # 最小基础延迟（秒）
+    valid_strategies:                 # 有效的重试策略
+      - "fixed"
+      - "linear"
+      - "exponential"
+      - "fibonacci"
+  
+  # 断路器配置验证
+  circuit_breaker_validation:
+    max_failure_threshold: 20         # 最大失败阈值
+    max_recovery_timeout: 600.0       # 最大恢复超时（秒）
+    min_recovery_timeout: 5.0         # 最小恢复超时（秒）
+    max_half_open_calls: 10           # 最大半开调用次数
+  
+  # 错误分析配置验证
+  analysis_validation:
+    max_records_limit: 100000         # 最大记录数上限
+    max_analysis_window: 86400        # 最大分析窗口（秒，24小时）
+    min_analysis_window: 60           # 最小分析窗口（秒）
+    max_context_size_limit: 10000     # 最大上下文大小上限
+
+# 初始化配置
+initialization:
+  # 启动时配置
+  startup:
+    validate_config: true             # 启动时是否验证配置
+    initialize_components: true       # 是否初始化所有组件
+    fail_on_invalid_config: true      # 配置无效时是否失败
+  
+  # 热更新配置
+  hot_reload:
+    enable_hot_reload: false          # 是否启用配置热更新
+    watch_config_files: false         # 是否监控配置文件变化
+    reload_interval: 60               # 重新加载间隔（秒）
+    backup_on_reload: true            # 重新加载时是否备份当前配置

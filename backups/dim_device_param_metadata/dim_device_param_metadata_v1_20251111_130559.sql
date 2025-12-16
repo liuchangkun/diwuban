@@ -1,0 +1,93 @@
+-- 备份表: dim_device_param_metadata
+-- 时间: 2025-11-11 13:05:59
+-- 行数: 14
+-- MD5: b7df1e53710715ee76a23e5e8cf1dd85
+
+INSERT INTO dim_device_param_metadata (param_key, param_name_cn, param_name_en, category, description, physical_meaning, formula, unit, typical_range, example_value, usage, data_source, code_location, remark, created_at, updated_at) VALUES ('rated_frequency', '额定频率', 'Rated Frequency', '额定运行参数', '设备的额定运行频率，用于计算泵的实际转速', '设备的额定运行频率，反映电网频率标准。在中国为50Hz，在美国为60Hz。用于计算电机的同步转速和实际转速。', 'n = (f / f_rated) × n_rated × (1 - slip)
+其中：n = 转速 (rpm)
+     f = 实际频率 (Hz)
+     f_rated = 额定频率 (Hz)
+     n_rated = 额定转速 (rpm)
+     slip = 电机转差率 (无量纲)', 'Hz', '50（中国）、60（美国）', '50.0', '作为转速计算的参考频率，反映电网频率标准。用于计算电机的同步转速和实际转速。', '设备铭牌', 'app/services/calculation/orchestrator.py', '中国电网标准频率为50Hz', '2025-11-08 19:14:18.351457+08:00', '2025-11-08 19:14:18.351457+08:00') ON CONFLICT (param_key) DO UPDATE SET param_name_cn = EXCLUDED.param_name_cn, param_name_en = EXCLUDED.param_name_en, category = EXCLUDED.category, description = EXCLUDED.description, physical_meaning = EXCLUDED.physical_meaning, formula = EXCLUDED.formula, unit = EXCLUDED.unit, typical_range = EXCLUDED.typical_range, example_value = EXCLUDED.example_value, usage = EXCLUDED.usage, data_source = EXCLUDED.data_source, code_location = EXCLUDED.code_location, remark = EXCLUDED.remark, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at;
+INSERT INTO dim_device_param_metadata (param_key, param_name_cn, param_name_en, category, description, physical_meaning, formula, unit, typical_range, example_value, usage, data_source, code_location, remark, created_at, updated_at) VALUES ('poles_pair', '极对数', 'Poles Pair', '额定运行参数', '电机的极对数，决定电机的同步转速', '电机定子绕组的极对数，决定电机的同步转速。极对数越多，同步转速越低。常见的极对数有2（对应1500rpm@50Hz）、3（对应1000rpm@50Hz）。', 'n_sync = (60 × f) / p
+其中：n_sync = 同步转速 (rpm)
+     f = 频率 (Hz)
+     p = 极对数 (无量纲)', '无量纲', '2（1500rpm）、3（1000rpm）、4（750rpm）', '2', '计算电机的同步转速，用于转速计算和效率分析。', '设备铭牌、技术文档', 'app/services/calculation/orchestrator.py', '极对数 = 磁极数 / 2', '2025-11-08 19:14:18.351457+08:00', '2025-11-08 19:14:18.351457+08:00') ON CONFLICT (param_key) DO UPDATE SET param_name_cn = EXCLUDED.param_name_cn, param_name_en = EXCLUDED.param_name_en, category = EXCLUDED.category, description = EXCLUDED.description, physical_meaning = EXCLUDED.physical_meaning, formula = EXCLUDED.formula, unit = EXCLUDED.unit, typical_range = EXCLUDED.typical_range, example_value = EXCLUDED.example_value, usage = EXCLUDED.usage, data_source = EXCLUDED.data_source, code_location = EXCLUDED.code_location, remark = EXCLUDED.remark, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at;
+INSERT INTO dim_device_param_metadata (param_key, param_name_cn, param_name_en, category, description, physical_meaning, formula, unit, typical_range, example_value, usage, data_source, code_location, remark, created_at, updated_at) VALUES ('rated_efficiency', '额定效率', 'Rated Efficiency', '额定运行参数', '设备在额定工况下的效率', '设备在额定工况（额定流量、额定扬程、额定频率）下的总效率，反映设备将电能转换为水力能的能力。效率越高，能耗越低。', 'eta = P_out / P_in = (rho × g × Q × H) / (P_e × 1000)
+其中：eta = 效率 (无量纲)
+     P_out = 输出功率 (W)
+     P_in = 输入功率 (W)
+     rho = 流体密度 (kg/m³)
+     g = 重力加速度 (m/s²)
+     Q = 流量 (m³/s)
+     H = 扬程 (m)
+     P_e = 电功率 (kW)', '无量纲', '0.60 ~ 0.85', '0.78', '作为效率计算的参考值，用于性能评估和能耗分析。', '设备铭牌、性能测试报告', 'app/services/calculation/calculators/eff_simple_v1.py', '额定效率通常在额定工况点附近最高', '2025-11-08 19:14:18.351457+08:00', '2025-11-08 19:14:18.351457+08:00') ON CONFLICT (param_key) DO UPDATE SET param_name_cn = EXCLUDED.param_name_cn, param_name_en = EXCLUDED.param_name_en, category = EXCLUDED.category, description = EXCLUDED.description, physical_meaning = EXCLUDED.physical_meaning, formula = EXCLUDED.formula, unit = EXCLUDED.unit, typical_range = EXCLUDED.typical_range, example_value = EXCLUDED.example_value, usage = EXCLUDED.usage, data_source = EXCLUDED.data_source, code_location = EXCLUDED.code_location, remark = EXCLUDED.remark, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at;
+INSERT INTO dim_device_param_metadata (param_key, param_name_cn, param_name_en, category, description, physical_meaning, formula, unit, typical_range, example_value, usage, data_source, code_location, remark, created_at, updated_at) VALUES ('rated_flow', '额定流量', 'Rated Flow', '额定运行参数', '设备在额定工况下的流量', '设备在额定工况（额定扬程、额定频率）下的流量，是泵性能曲线上的设计工作点。流量反映泵的输送能力。', 'Q = A × v
+其中：Q = 流量 (m³/s)
+     A = 管道截面积 (m²)
+     v = 流速 (m/s)', 'm³/h', '100 ~ 1000（根据泵型号）', '400.0', '作为流量计算的参考值，用于性能曲线拟合和工况点分析。', '设备铭牌、性能曲线', 'app/services/calculation/orchestrator.py', '实际流量随频率和扬程变化', '2025-11-08 19:14:18.351457+08:00', '2025-11-08 19:14:18.351457+08:00') ON CONFLICT (param_key) DO UPDATE SET param_name_cn = EXCLUDED.param_name_cn, param_name_en = EXCLUDED.param_name_en, category = EXCLUDED.category, description = EXCLUDED.description, physical_meaning = EXCLUDED.physical_meaning, formula = EXCLUDED.formula, unit = EXCLUDED.unit, typical_range = EXCLUDED.typical_range, example_value = EXCLUDED.example_value, usage = EXCLUDED.usage, data_source = EXCLUDED.data_source, code_location = EXCLUDED.code_location, remark = EXCLUDED.remark, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at;
+INSERT INTO dim_device_param_metadata (param_key, param_name_cn, param_name_en, category, description, physical_meaning, formula, unit, typical_range, example_value, usage, data_source, code_location, remark, created_at, updated_at) VALUES ('rated_head', '额定扬程', 'Rated Head', '额定运行参数', '设备在额定工况下的扬程', '设备在额定工况（额定流量、额定频率）下的扬程，反映泵将液体提升的高度。扬程包括实际提升高度和管道阻力损失。', 'H = (P2 - P1) / (rho × g) + (v2² - v1²) / (2 × g) + (z2 - z1)
+其中：H = 扬程 (m)
+     P1, P2 = 进出口压力 (Pa)
+     v1, v2 = 进出口流速 (m/s)
+     z1, z2 = 进出口高度 (m)
+     rho = 流体密度 (kg/m³)
+     g = 重力加速度 (m/s²)', 'm', '20 ~ 100（根据泵型号）', '50.0', '作为扬程计算的参考值，用于性能曲线拟合和工况点分析。', '设备铭牌、性能曲线', 'app/services/calculation/orchestrator.py', '实际扬程随流量和频率变化', '2025-11-08 19:14:18.351457+08:00', '2025-11-08 19:14:18.351457+08:00') ON CONFLICT (param_key) DO UPDATE SET param_name_cn = EXCLUDED.param_name_cn, param_name_en = EXCLUDED.param_name_en, category = EXCLUDED.category, description = EXCLUDED.description, physical_meaning = EXCLUDED.physical_meaning, formula = EXCLUDED.formula, unit = EXCLUDED.unit, typical_range = EXCLUDED.typical_range, example_value = EXCLUDED.example_value, usage = EXCLUDED.usage, data_source = EXCLUDED.data_source, code_location = EXCLUDED.code_location, remark = EXCLUDED.remark, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at;
+INSERT INTO dim_device_param_metadata (param_key, param_name_cn, param_name_en, category, description, physical_meaning, formula, unit, typical_range, example_value, usage, data_source, code_location, remark, created_at, updated_at) VALUES ('rated_power', '额定功率', 'Rated Power', '额定运行参数', '设备的额定电功率', '设备在额定工况下的电功率，反映设备的能耗水平。功率与流量、扬程、效率相关。', 'P = (rho × g × Q × H) / (eta × 1000)
+其中：P = 功率 (kW)
+     rho = 流体密度 (kg/m³)
+     g = 重力加速度 (m/s²)
+     Q = 流量 (m³/s)
+     H = 扬程 (m)
+     eta = 效率 (无量纲)', 'kW', '50 ~ 500（根据泵型号）', '110.0', '作为功率计算的参考值，用于能耗分析和成本计算。', '设备铭牌', 'app/services/calculation/orchestrator.py', '实际功率随工况点变化', '2025-11-08 19:14:18.351457+08:00', '2025-11-08 19:14:18.351457+08:00') ON CONFLICT (param_key) DO UPDATE SET param_name_cn = EXCLUDED.param_name_cn, param_name_en = EXCLUDED.param_name_en, category = EXCLUDED.category, description = EXCLUDED.description, physical_meaning = EXCLUDED.physical_meaning, formula = EXCLUDED.formula, unit = EXCLUDED.unit, typical_range = EXCLUDED.typical_range, example_value = EXCLUDED.example_value, usage = EXCLUDED.usage, data_source = EXCLUDED.data_source, code_location = EXCLUDED.code_location, remark = EXCLUDED.remark, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at;
+INSERT INTO dim_device_param_metadata (param_key, param_name_cn, param_name_en, category, description, physical_meaning, formula, unit, typical_range, example_value, usage, data_source, code_location, remark, created_at, updated_at) VALUES ('eta_motor', '电机效率', 'Motor Efficiency', '效率参数', '电机的效率，反映电能转换为机械能的效率', '电机将电能转换为机械能（轴功率）的效率。电机效率受负载率、转速、温度等因素影响。高效电机的效率通常在90%以上。', 'eta_pump = eta_measured / (eta_motor × eta_vfd)
+其中：eta_pump = 泵效率 (无量纲)
+     eta_measured = 测量效率 (无量纲)
+     eta_motor = 电机效率 (无量纲)
+     eta_vfd = 变频器效率 (无量纲)', '无量纲', '0.85 ~ 0.95', '0.92', '用于效率计算，将电功率转换为轴功率。在效率分解中，将总效率分解为泵效率、电机效率和变频器效率。', '设备铭牌、技术文档', 'app/services/calculation/calculators/eff_simple_v1.py', '电机效率随负载率变化，通常在75%-100%负载时效率最高', '2025-11-08 19:14:18.351457+08:00', '2025-11-08 19:14:18.351457+08:00') ON CONFLICT (param_key) DO UPDATE SET param_name_cn = EXCLUDED.param_name_cn, param_name_en = EXCLUDED.param_name_en, category = EXCLUDED.category, description = EXCLUDED.description, physical_meaning = EXCLUDED.physical_meaning, formula = EXCLUDED.formula, unit = EXCLUDED.unit, typical_range = EXCLUDED.typical_range, example_value = EXCLUDED.example_value, usage = EXCLUDED.usage, data_source = EXCLUDED.data_source, code_location = EXCLUDED.code_location, remark = EXCLUDED.remark, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at;
+INSERT INTO dim_device_param_metadata (param_key, param_name_cn, param_name_en, category, description, physical_meaning, formula, unit, typical_range, example_value, usage, data_source, code_location, remark, created_at, updated_at) VALUES ('eta_vfd', '变频器效率', 'VFD Efficiency', '效率参数', '变频器的效率，反映电能通过变频器的损耗', '变频器（Variable Frequency Drive）将工频交流电转换为可调频率交流电的效率。变频器效率较高，通常在95%以上。软启动器不调频，效率为100%。', 'eta_total = eta_pump × eta_motor × eta_vfd
+其中：eta_total = 总效率 (无量纲)
+     eta_pump = 泵效率 (无量纲)
+     eta_motor = 电机效率 (无量纲)
+     eta_vfd = 变频器效率 (无量纲)', '无量纲', '0.95 ~ 0.98（变频泵）、1.00（软启泵）', '0.97', '用于效率计算，考虑变频器的能量损耗。变频泵需要考虑变频器损耗，软启泵不需要（eta_vfd=1.0）。', '变频器技术文档', 'app/services/calculation/calculators/eff_simple_v1.py', '软启动器不调频，效率为1.0；变频器效率随负载和频率变化', '2025-11-08 19:14:18.351457+08:00', '2025-11-08 19:14:18.351457+08:00') ON CONFLICT (param_key) DO UPDATE SET param_name_cn = EXCLUDED.param_name_cn, param_name_en = EXCLUDED.param_name_en, category = EXCLUDED.category, description = EXCLUDED.description, physical_meaning = EXCLUDED.physical_meaning, formula = EXCLUDED.formula, unit = EXCLUDED.unit, typical_range = EXCLUDED.typical_range, example_value = EXCLUDED.example_value, usage = EXCLUDED.usage, data_source = EXCLUDED.data_source, code_location = EXCLUDED.code_location, remark = EXCLUDED.remark, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at;
+INSERT INTO dim_device_param_metadata (param_key, param_name_cn, param_name_en, category, description, physical_meaning, formula, unit, typical_range, example_value, usage, data_source, code_location, remark, created_at, updated_at) VALUES ('pipe_diameter', '管道直径', 'Pipe Diameter', '管道参数', '与设备连接的管道内径', '管道的内径，影响流速和水力损失。管道直径越大，流速越低，沿程损失越小。管道直径的选择需要平衡投资成本和运行成本。', 'v = Q / A = Q / (π × D² / 4)
+其中：v = 流速 (m/s)
+     Q = 流量 (m³/s)
+     A = 管道截面积 (m²)
+     D = 管道直径 (m)', 'm', '0.2 ~ 1.0', '0.5', '用于流速计算和水力损失计算。流速影响沿程损失和局部损失。', '设计图纸、现场测量', 'app/services/calculation/orchestrator.py', '通常指内径，不是外径', '2025-11-08 19:14:18.351457+08:00', '2025-11-08 19:14:18.351457+08:00') ON CONFLICT (param_key) DO UPDATE SET param_name_cn = EXCLUDED.param_name_cn, param_name_en = EXCLUDED.param_name_en, category = EXCLUDED.category, description = EXCLUDED.description, physical_meaning = EXCLUDED.physical_meaning, formula = EXCLUDED.formula, unit = EXCLUDED.unit, typical_range = EXCLUDED.typical_range, example_value = EXCLUDED.example_value, usage = EXCLUDED.usage, data_source = EXCLUDED.data_source, code_location = EXCLUDED.code_location, remark = EXCLUDED.remark, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at;
+INSERT INTO dim_device_param_metadata (param_key, param_name_cn, param_name_en, category, description, physical_meaning, formula, unit, typical_range, example_value, usage, data_source, code_location, remark, created_at, updated_at) VALUES ('pipe_length', '管道长度', 'Pipe Length', '管道参数', '管道的总长度', '管道的总长度，包括直管段和弯管段的等效长度。管道长度影响沿程损失，长度越长，沿程损失越大。', 'h_f = lambda × (L / D) × (v² / (2 × g))
+其中：h_f = 沿程损失 (m)
+     lambda = 摩擦系数 (无量纲)
+     L = 管道长度 (m)
+     D = 管道直径 (m)
+     v = 流速 (m/s)
+     g = 重力加速度 (m/s²)', 'm', '10 ~ 1000', '100.0', '用于沿程损失计算。沿程损失与管道长度成正比。', '设计图纸、现场测量', 'app/services/calculation/orchestrator.py', '包括直管段和弯管段的等效长度', '2025-11-08 19:14:18.351457+08:00', '2025-11-08 19:14:18.351457+08:00') ON CONFLICT (param_key) DO UPDATE SET param_name_cn = EXCLUDED.param_name_cn, param_name_en = EXCLUDED.param_name_en, category = EXCLUDED.category, description = EXCLUDED.description, physical_meaning = EXCLUDED.physical_meaning, formula = EXCLUDED.formula, unit = EXCLUDED.unit, typical_range = EXCLUDED.typical_range, example_value = EXCLUDED.example_value, usage = EXCLUDED.usage, data_source = EXCLUDED.data_source, code_location = EXCLUDED.code_location, remark = EXCLUDED.remark, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at;
+INSERT INTO dim_device_param_metadata (param_key, param_name_cn, param_name_en, category, description, physical_meaning, formula, unit, typical_range, example_value, usage, data_source, code_location, remark, created_at, updated_at) VALUES ('C_hazen', '海曾-威廉系数', 'Hazen-Williams Coefficient', '管道参数', '管道粗糙度系数，用于海曾-威廉公式计算沿程损失', '海曾-威廉系数（C值）反映管道内壁的光滑程度。C值越大，管道越光滑，沿程损失越小。新管道C值较高（140），旧管道C值较低（100）。', 'h_f = 10.67 × L × Q^1.852 / (C^1.852 × D^4.87)
+其中：h_f = 沿程损失 (m)
+     L = 管道长度 (m)
+     Q = 流量 (m³/s)
+     C = 海曾-威廉系数 (无量纲)
+     D = 管道直径 (m)', '无量纲', '100 ~ 140（新管道140，旧管道100）', '120', '用于海曾-威廉公式计算沿程损失。适用于水在常温下的流动。', '管道材质手册、经验值', 'app/services/calculation/orchestrator.py', '常见材质C值：铸铁管100-130，钢管120-140，塑料管140-150', '2025-11-08 19:14:18.351457+08:00', '2025-11-08 19:14:18.351457+08:00') ON CONFLICT (param_key) DO UPDATE SET param_name_cn = EXCLUDED.param_name_cn, param_name_en = EXCLUDED.param_name_en, category = EXCLUDED.category, description = EXCLUDED.description, physical_meaning = EXCLUDED.physical_meaning, formula = EXCLUDED.formula, unit = EXCLUDED.unit, typical_range = EXCLUDED.typical_range, example_value = EXCLUDED.example_value, usage = EXCLUDED.usage, data_source = EXCLUDED.data_source, code_location = EXCLUDED.code_location, remark = EXCLUDED.remark, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at;
+INSERT INTO dim_device_param_metadata (param_key, param_name_cn, param_name_en, category, description, physical_meaning, formula, unit, typical_range, example_value, usage, data_source, code_location, remark, created_at, updated_at) VALUES ('roughness_rel', '相对粗糙度', 'Relative Roughness', '管道参数', '管道内壁的相对粗糙度，用于达西-魏斯巴赫公式计算沿程损失', '相对粗糙度是绝对粗糙度与管道直径的比值，反映管道内壁的粗糙程度。相对粗糙度越大，摩擦系数越大，沿程损失越大。', 'epsilon_rel = epsilon / D
+其中：epsilon_rel = 相对粗糙度 (无量纲)
+     epsilon = 绝对粗糙度 (m)
+     D = 管道直径 (m)
+
+摩擦系数计算（Colebrook-White公式）：
+1 / sqrt(lambda) = -2 × log10(epsilon_rel / 3.7 + 2.51 / (Re × sqrt(lambda)))
+其中：lambda = 摩擦系数 (无量纲)
+     Re = 雷诺数 (无量纲)', '无量纲', '0.0001 ~ 0.01', '0.001', '用于达西-魏斯巴赫公式计算摩擦系数和沿程损失。适用于各种流体和流动状态。', '管道材质手册、经验值', 'app/services/calculation/orchestrator.py', '常见材质绝对粗糙度：铸铁管0.25mm，钢管0.05mm，塑料管0.0015mm', '2025-11-08 19:14:18.351457+08:00', '2025-11-08 19:14:18.351457+08:00') ON CONFLICT (param_key) DO UPDATE SET param_name_cn = EXCLUDED.param_name_cn, param_name_en = EXCLUDED.param_name_en, category = EXCLUDED.category, description = EXCLUDED.description, physical_meaning = EXCLUDED.physical_meaning, formula = EXCLUDED.formula, unit = EXCLUDED.unit, typical_range = EXCLUDED.typical_range, example_value = EXCLUDED.example_value, usage = EXCLUDED.usage, data_source = EXCLUDED.data_source, code_location = EXCLUDED.code_location, remark = EXCLUDED.remark, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at;
+INSERT INTO dim_device_param_metadata (param_key, param_name_cn, param_name_en, category, description, physical_meaning, formula, unit, typical_range, example_value, usage, data_source, code_location, remark, created_at, updated_at) VALUES ('ambient_temp', '环境温度', 'Ambient Temperature', '环境参数', '环境温度，影响流体密度和粘度', '环境温度影响流体的物理性质（密度、粘度、饱和蒸汽压等），进而影响泵的性能和效率。温度升高，密度降低，粘度降低。', 'rho(T) = rho_0 × (1 - beta × (T - T_0))
+其中：rho(T) = 温度T时的密度 (kg/m³)
+     rho_0 = 参考温度T_0时的密度 (kg/m³)
+     beta = 体积膨胀系数 (1/K)
+     T = 温度 (°C)
+     T_0 = 参考温度 (°C)', '°C', '-10 ~ 40', '20.0', '用于流体物性计算，影响密度、粘度等参数。在精确计算中需要考虑温度影响。', '现场测量、气象数据', 'app/services/calculation/orchestrator.py', '水的密度在4°C时最大（1000 kg/m³）', '2025-11-08 19:14:18.351457+08:00', '2025-11-08 19:14:18.351457+08:00') ON CONFLICT (param_key) DO UPDATE SET param_name_cn = EXCLUDED.param_name_cn, param_name_en = EXCLUDED.param_name_en, category = EXCLUDED.category, description = EXCLUDED.description, physical_meaning = EXCLUDED.physical_meaning, formula = EXCLUDED.formula, unit = EXCLUDED.unit, typical_range = EXCLUDED.typical_range, example_value = EXCLUDED.example_value, usage = EXCLUDED.usage, data_source = EXCLUDED.data_source, code_location = EXCLUDED.code_location, remark = EXCLUDED.remark, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at;
+INSERT INTO dim_device_param_metadata (param_key, param_name_cn, param_name_en, category, description, physical_meaning, formula, unit, typical_range, example_value, usage, data_source, code_location, remark, created_at, updated_at) VALUES ('ambient_pressure', '环境压力', 'Ambient Pressure', '环境参数', '环境大气压力，影响汽蚀余量计算', '环境大气压力影响泵的汽蚀余量（NPSH）计算。大气压力随海拔高度变化，海拔越高，大气压力越低，汽蚀风险越大。', 'NPSH_a = (P_atm / (rho × g)) + h_s - h_f - (P_v / (rho × g))
+其中：NPSH_a = 有效汽蚀余量 (m)
+     P_atm = 大气压力 (Pa)
+     rho = 流体密度 (kg/m³)
+     g = 重力加速度 (m/s²)
+     h_s = 吸入液面高度 (m)
+     h_f = 吸入管路损失 (m)
+     P_v = 饱和蒸汽压 (Pa)', 'kPa', '80 ~ 105（随海拔变化）', '101.325', '用于汽蚀余量计算，评估泵的汽蚀风险。海平面标准大气压为101.325 kPa。', '现场测量、气象数据', 'app/services/calculation/orchestrator.py', '海拔每升高1000m，大气压降低约12 kPa', '2025-11-08 19:14:18.351457+08:00', '2025-11-08 19:14:18.351457+08:00') ON CONFLICT (param_key) DO UPDATE SET param_name_cn = EXCLUDED.param_name_cn, param_name_en = EXCLUDED.param_name_en, category = EXCLUDED.category, description = EXCLUDED.description, physical_meaning = EXCLUDED.physical_meaning, formula = EXCLUDED.formula, unit = EXCLUDED.unit, typical_range = EXCLUDED.typical_range, example_value = EXCLUDED.example_value, usage = EXCLUDED.usage, data_source = EXCLUDED.data_source, code_location = EXCLUDED.code_location, remark = EXCLUDED.remark, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at;

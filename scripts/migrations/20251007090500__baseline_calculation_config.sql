@@ -1,0 +1,84 @@
+-- ============================================
+-- 迁移脚本：计算配置基线（calculation_* 与 metric_calculation_order 等）
+-- 日期：2025-10-07 09:05:00
+-- 说明：仅作为迁移文件基线，不在本工具中执行。实际执行需在受控环境进行。
+-- 合规：中文注释；命名规范；IF NOT EXISTS 幂等保护；COMMENT 中文。
+-- ============================================
+
+-- 注意：本文件仅作为“迁移脚本文本”，不由本工具执行DDL。
+
+-- 建议DDL（供执行时参考）：
+-- BEGIN;
+-- -- 计算方法注册表（如不存在则创建）
+-- CREATE TABLE IF NOT EXISTS public.calculation_method_registry (
+--   method_id TEXT PRIMARY KEY,
+--   metric_key TEXT NOT NULL,
+--   method_name TEXT NOT NULL,
+--   method_code TEXT NOT NULL,
+--   priority INT NOT NULL,
+--   dependencies TEXT[] NOT NULL,
+--   conditions JSONB NOT NULL,
+--   formula_ref TEXT NULL,
+--   accuracy_level TEXT NOT NULL,
+--   is_enabled BOOLEAN NOT NULL,
+--   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+--   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+-- );
+-- COMMENT ON TABLE public.calculation_method_registry IS '缺失指标计算的方法注册表';
+-- COMMENT ON COLUMN public.calculation_method_registry.method_id IS '方法ID（主键）';
+-- COMMENT ON COLUMN public.calculation_method_registry.metric_key IS '指标键';
+-- COMMENT ON COLUMN public.calculation_method_registry.method_code IS '方法短代码（便于日志/审计）';
+-- COMMENT ON COLUMN public.calculation_method_registry.priority IS '优先级（数值越小越优先）';
+-- COMMENT ON COLUMN public.calculation_method_registry.dependencies IS '依赖指标列表';
+-- COMMENT ON COLUMN public.calculation_method_registry.conditions IS '适用条件（JSON）';
+-- COMMENT ON COLUMN public.calculation_method_registry.accuracy_level IS '精度等级';
+-- COMMENT ON COLUMN public.calculation_method_registry.is_enabled IS '是否启用';
+
+-- -- 计算参数表（示例，字段按现网为准）
+-- CREATE TABLE IF NOT EXISTS public.calculation_parameters (
+--   id BIGSERIAL PRIMARY KEY,
+--   station_id BIGINT NULL,
+--   device_id BIGINT NULL,
+--   metric_key TEXT NOT NULL,
+--   method_id TEXT NOT NULL,
+--   param_name TEXT NOT NULL,
+--   param_value NUMERIC NOT NULL,
+--   param_type TEXT NOT NULL,
+--   is_optimizable BOOLEAN NOT NULL,
+--   optimization_history JSONB NULL,
+--   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+--   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+--   updated_by TEXT NOT NULL
+-- );
+-- COMMENT ON TABLE public.calculation_parameters IS '缺失指标计算的参数配置';
+
+-- -- 校验配置表（示例）
+-- CREATE TABLE IF NOT EXISTS public.calculation_validation_config (
+--   id BIGSERIAL PRIMARY KEY,
+--   station_id BIGINT NULL,
+--   device_id BIGINT NULL,
+--   metric_key TEXT NOT NULL,
+--   validator_type TEXT NOT NULL,
+--   params JSONB NULL,
+--   is_enabled BOOLEAN NULL,
+--   priority INT NULL,
+--   created_at TIMESTAMPTZ NULL,
+--   updated_at TIMESTAMPTZ NULL
+-- );
+-- COMMENT ON TABLE public.calculation_validation_config IS '缺失指标结果校验配置';
+
+-- -- 计算顺序缓存表（示例）
+-- CREATE TABLE IF NOT EXISTS public.metric_calculation_order (
+--   metric_key TEXT NOT NULL,
+--   depends_on TEXT[] NOT NULL,
+--   priority INT NOT NULL,
+--   order_index INT NOT NULL,
+--   is_circular BOOLEAN NOT NULL,
+--   circular_group TEXT NULL,
+--   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+--   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+--   updated_by TEXT NOT NULL
+-- );
+-- COMMENT ON TABLE public.metric_calculation_order IS '指标计算顺序与循环组标注';
+-- COMMIT;
+

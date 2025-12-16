@@ -1,0 +1,35 @@
+# 计算配置（示例）——仅用于运行时选择设备/指标与性能参数
+# 约束：输入过滤仅依赖 sp_mark_quality_window 与 fact_measurements.quality_status==0；
+#       其余限制（运行/相位/presence）由“方法选择器”规则控制。
+
+run:
+  run_id_prefix: "calc"
+  time_window:            # 任务时间窗（ISO8601）
+    start: "2025-09-01T00:00:00Z"
+    end:   "2025-09-01T01:00:00Z"
+  chunk_seconds: 60       # 批处理步长（按秒）
+  max_retries: 1
+  concurrency: 4          # 并发度（谨慎提升，避免数据库瓶颈）
+
+scope:
+  stations: []            # 为空=全部；或列出站点ID
+  devices:  []            # 为空=全部；或列出设备ID
+  metrics:  ["pump_head","pump_efficiency","pump_flow_rate"]
+
+selector:
+  honor_rules: true       # 严格遵循数据库规则表
+  allow_fallback: true    # 当首选方法不可用时，尝试次优方法
+
+validation:
+  physics_enabled: true
+  curve_enabled:   true
+  drop_on_fail:    true   # 双层验证未通过即丢弃（不入库）
+
+writer:
+  upsert: true
+  source_hint_prefix: "calc:"
+
+logging:
+  level: INFO
+  trace_payload: false
+

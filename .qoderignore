@@ -1,0 +1,43 @@
+# Python 虚拟环境
+venv/
+.venv/
+env/
+
+# 数据目录 (用户要求)
+data/
+
+# 项目文档目录 (用户要求)
+ProjectDocs/
+
+# Python 字节码缓存
+__pycache__/
+**/__pycache__/
+
+# Python 编译文件
+*.pyc
+
+# 操作系统和IDE文件
+.DS_Store
+Thumbs.db
+.idea/
+
+# 测试和工具缓存
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.cache/
+.ipynb_checkpoints/
+
+# 覆盖率报告
+.coverage
+.coverage.*
+htmlcov/
+
+# 环境和构建产物
+.env
+*.log
+logs/
+dist/
+build/
+*.egg-info/

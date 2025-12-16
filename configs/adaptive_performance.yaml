@@ -1,0 +1,38 @@
+# =====================================================
+# 自适应性能配置
+# =====================================================
+# 用途：配置自适应时间窗口和批量大小的参数
+# 作者：System
+# 创建时间：2025-10-05
+# =====================================================
+
+# 自适应性能总开关
+adaptive_performance:
+  enabled: true
+  
+  # 时间窗口配置
+  time_window:
+    enabled: true
+    initial_minutes: 60        # 初始窗口大小（分钟）
+    min_minutes: 15            # 最小窗口大小（分钟）
+    max_minutes: 240           # 最大窗口大小（分钟）
+    target_duration_ms: 5000   # 目标处理时间（毫秒）
+    adjustment_factor: 0.2     # 调整因子（0-1）
+    smoothing_alpha: 0.3       # EMA平滑系数（0-1）
+  
+  # 批量大小配置
+  batch_size:
+    enabled: true
+    initial_size: 10000        # 初始批量大小（条）
+    min_size: 1000             # 最小批量大小（条）
+    max_size: 50000            # 最大批量大小（条）
+    memory_limit_mb: 1000      # 内存限制（MB）
+    target_throughput: 10000   # 目标吞吐量（条/秒）
+  
+  # 监控配置
+  monitoring:
+    record_to_db: true         # 是否记录到数据库
+    log_adjustments: true      # 是否记录调整日志
+    save_interval: 10          # 保存间隔（每N个批次保存一次）
+    history_size: 20           # 保留的历史记录数量
+

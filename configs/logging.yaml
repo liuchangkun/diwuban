@@ -1,0 +1,289 @@
+# 日志系统配置（MVP）
+logging: # 日志系统根配置
+  timezone: "Asia/Shanghai" # 日志时间戳时区
+  time_format: "%Y-%m-%d %H:%M:%S.%f+08" # 时间格式（含微秒，时区固定+08）
+  level: "INFO" # 根 logger 级别（影响默认阈值）
+  format: "pipe" # 输出格式：pipe|json|keyvalue（当前实现 pipe 管道分隔）
+  localize: true # 是否将 extra_json 的键中文化
+  sql_slow_ms: 1000 # 慢SQL阈值（毫秒；>=该值标记为慢SQL）
+  sql:
+    explain_on_slow: true # 慢SQL时尝试采集 EXPLAIN 摘要（仅 SELECT）
+    explain_timeout_ms: 200 # EXPLAIN 最长等待时间
+    explain_max_length: 2000 # EXPLAIN 文本最大长度（超出截断）
+  capture: # 采集策略（自动参数/返回值脱敏与截断）
+    params: true # 是否采集函数入参（方案A自动采集）
+    return: true # 是否采集函数返回值
+    max_field_length: 2000 # 字符串最大长度；超出则截断并追加...
+    mask_keys: [password, token, id_card] # 需要脱敏的键（不区分大小写）
+  activity: # 过程日志增强
+    step_slow_ms: 200 # 步骤慢阈值（>0 则启用）
+    capture_result_summary: true # 对返回结果做摘要（shape/len/统计/哈希）
+    summary_max_length: 1000 # 摘要文本最大长度
+  jobs:
+    retry_log: # 作业重试日志控制
+      enabled: true
+      include_policy: true # 是否输出策略细节（backoff/jitter 等）
+      threshold_ms: 50 # 超过该值才输出详细重试日志
+  dependencies:
+    http_out:
+      enabled: true # 是否记录出站HTTP日志
+      mask_headers: [authorization, cookie]
+  cache:
+    enabled: true # 是否记录缓存日志
+    slow_ms: 20 # 缓存操作慢阈值（仅在慢或未命中时输出）
+  database:
+    tx:
+      enabled: true # 是否记录事务边界（BEGIN/COMMIT/ROLLBACK）
+    pool_log:
+      enabled: true # 是否记录连接池关键事件
+      acquire_slow_ms: 200 # 获取连接慢阈值
+      create_slow_ms: 200 # 创建连接慢阈值
+      health_check_slow_ms: 100 # 健康检查慢阈值
+      include_thread: true
+      include_stack: false
+  async:
+    enabled: true
+    queue_size: 100000
+    batch_size: 200
+    flush_interval_ms: 100
+    backpressure: "drop_debug" # block|drop_debug|drop_oldest
+    force_sync_levels: ["CRITICAL"]
+  hot_reload:
+    enabled: true
+    backend: "watchfiles" # none|watchfiles
+  outputs:
+    - name: "console" # 输出名称（可自定义多个 console/file 输出）
+      type: "console" # 输出类型：console=控制台，file=文件
+      enabled: true # 是否启用该输出
+      level: "DEBUG" # 该输出拦截的最小日志级别
+      color: false # 控制台彩色是否启用（为避免重定向ANSI与UTF-16问题，默认关闭）
+      colors: # 级别→颜色映射（值可用颜色名或ANSI码；优先使用此映射，否则用内置默认）
+        DEBUG: grey # 灰（或使用 "\u001b[90m"）
+        INFO: green # 绿
+        WARNING: yellow # 黄
+        ERROR: red # 红
+        CRITICAL: bright_red # 亮红
+    - name: "app_file"
+      type: "file"
+      enabled: true
+      level: "INFO"
+      path: "logs/app.log"
+      rotate:
+        type: "size"
+        max_bytes: 104857600
+        backup_count: 50
+        compress: false
+    - name: "error_file"
+      type: "file"
+      enabled: true
+      level: "ERROR"
+      path: "logs/error.log"
+      rotate:
+        type: "size"
+        max_bytes: 10485760
+        backup_count: 50
+    - name: "sql_file"
+      type: "file"
+      enabled: true
+      level: "INFO"
+      path: "logs/sql.log"
+      rotate:
+        type: "size"
+        max_bytes: 104857600
+        backup_count: 50
+      route:
+        only_loggers: ["sql"]
+    - name: "anomaly_file"
+      type: "file"
+      enabled: true
+      level: "INFO"
+      path: "logs/anomaly_diagnosis.log"
+      rotate:
+        type: "size"
+        max_bytes: 104857600
+        backup_count: 50
+        compress: false
+      route:
+        only_loggers: ["anomaly", "db.func", "db.view"]  # 移除 sql，避免污染异常诊断文件
+    - name: "db_pool_file"
+      type: "file"
+      enabled: true
+      level: "INFO"
+      path: "logs/db_pool.log"
+      rotate:
+        type: "size"
+        max_bytes: 104857600
+        backup_count: 50
+      route:
+        only_loggers: ["db.pool"]
+  fields:
+    include:
+      - timestamp
+      - pid
+      - processName
+      - threadId
+      - 线程名
+      - filename
+      - module
+      - funcName
+      - lineno
+      - level
+      - message
+      - extra_json
+    # 中英文字段映射配置（完全替代代码内硬编码）
+    localize_map:
+      type: "类型"
+      event: "事件"
+      params: "参数"
+      duration_ms: "耗时ms"
+      resource_delta: "资源变化"
+      return: "返回值"
+      sql: "SQL语句"
+      rows: "行数"
+      error: "错误信息"
+      action: "操作"
+      status: "状态"
+      detail: "详情"
+      request_id: "请求ID"
+      trace_id: "追踪ID"
+      user_id: "用户ID"
+      tenant: "租户"
+      slow: "慢SQL"
+      result: "结果"
+      threadName: "线程名"
+      window: "窗口"
+      start: "开始"
+      end: "结束"
+      device_id: "设备ID"
+      run_id: "运行ID"
+      dedup_ratio: "去重比例"
+      sql_cost_ms: "SQL耗时ms"
+      rows_merged: "合并行数"
+      rows_deduped: "去重行数"
+      rows_input: "输入行数"
+      affected_rows: "影响行数"
+      mapping: "映射关系"
+      use_staging_time_range: "使用临时时间范围"
+      window_start: "窗口开始时间"
+      window_end: "窗口结束时间"
+      stage: "处理阶段"
+      phase: "阶段"
+      stations_count: "站点数量"
+      devices_count: "设备数量"
+      metrics_count: "指标数量"
+      granularity: "时间粒度"
+      step_seconds: "步长秒数"
+      parallel_enabled: "并行处理启用状态"
+      max_workers: "最大工作线程数"
+      table: "数据表"
+      index_name: "索引名称"
+      blocks_total: "总块数"
+      blocks_done: "已完成块数"
+      progress_pct: "完成百分比"
+      stats: "统计"
+      flags: "标志"
+      codes: "质量码"
+      diag_level: "诊断级别"
+      pool_id: "连接池ID"
+      use_count: "使用次数"
+      wait_ms: "等待ms"
+      total: "总连接"
+      idle: "空闲连接"
+      active: "活动连接"
+      age_ms: "连接年龄ms"
+      idle_ms: "空闲时长ms"
+      duration: "耗时"
+      dsn_preview: "连接串预览"
+      # 调度器相关字段
+      enabled: "已启用"
+      initial_hours: "初始小时数"
+      range: "范围"
+      target_rows_per_task: "目标行数每任务"
+      target_duration_seconds: "目标执行时长秒"
+      metric_key: "指标键"
+      device_count: "设备数量"
+      device_ids: "设备ID列表"
+      total_hours: "总小时数"
+      adaptive_chunk_hours: "自适应分片小时数"
+      time_range: "时间范围"
+      priority: "优先级"
+      station_id: "泵站ID"
+      task_id: "任务ID"
+      start_time: "开始时间"
+      end_time: "结束时间"
+      method_id: "方法ID"
+      from_cache: "来自缓存"
+      param_sources: "参数来源"
+      cache_size: "缓存大小"
+      final_params: "最终参数"
+      device_params_override: "设备参数覆盖"
+      station_params_override: "泵站参数覆盖"
+      global_params: "全局参数"
+      total_params: "参数总数"
+      original_rows: "原始行数"
+      error_message: "错误信息"
+      duration_seconds: "执行时长秒"
+      results_count: "结果数量"
+      success: "成功"
+      avg_time_per_task_seconds: "平均任务时长秒"
+      estimated_remaining_seconds: "预计剩余时长秒"
+      elapsed_time_seconds: "已用时长秒"
+      task_duration_seconds: "任务时长秒"
+      input_rows: "输入行数"
+      filter_ratio: "过滤比例"
+      output_rows: "输出行数"
+      raw_rows: "原始行数"
+      耗时ms: "耗时ms"
+      total_tasks: "总任务数"
+      success_count: "成功任务数"
+      failure_count: "失败任务数"
+      success_rate: "成功率"
+      total_points: "总记录数"
+      total_duration_seconds: "总执行时长秒"
+      avg_duration_per_task_seconds: "平均任务时长秒"
+      estimated_tasks: "预估任务数"
+      time_chunk_hours: "时间分片小时数"
+      estimated_rows_per_chunk: "预估每分片行数"
+      optimal_hours: "最优小时数"
+      time_chunks: "时间分片数"
+      tasks_per_device: "每设备任务数"
+      sample_task_ids: "示例任务ID"
+      adaptive_enabled: "自适应已启用"
+      valid_count: "有效数量"
+      invalid_count: "无效数量"
+      validation_pass_rate: "验证通过率"
+      written_count: "写入数量"
+      total_records: "总记录数"
+      written_records: "已写入记录数"
+      metric_keys: "指标键列表"
+      value_min: "最小值"
+      value_max: "最大值"
+      value_mean: "平均值"
+      value_std: "标准差"
+      quality_code_distribution: "质量码分布"
+      batch_size: "批次大小"
+      total_batches: "总批次数"
+      total_duration_seconds: "总执行时长秒"
+      avg_batch_duration_ms: "平均批次时长ms"
+      throughput_rows_per_sec: "吞吐量行每秒"
+      batch_idx: "批次序号"
+      影响行数: "影响行数"
+      throughput_rows_per_sec: "吞吐量行每秒"
+      pump_outlet_pressure_written: "pump_outlet_pressure写入数"
+      pump_head_written: "pump_head写入数"
+      total_written: "总写入数"
+  deps:
+    psutil: "auto"
+    colorlog: "auto"
+    concurrent_log_handler: "auto"
+    orjson: "auto"
+  palette: # 颜色名称→ANSI 映射（PipeFormatter 不再硬编码）
+    grey: "\u001b[90m"
+    gray: "\u001b[90m"
+    green: "\u001b[32m"
+    yellow: "\u001b[33m"
+    red: "\u001b[31m"
+    bright_red: "\u001b[91m"
+    blue: "\u001b[34m"
+    cyan: "\u001b[36m"
+    magenta: "\u001b[35m"

@@ -1,0 +1,51 @@
+﻿# 合并配置（merge.yaml）
+# 说明：run_all 为一键流程的开关与参数；每个子项均有中文注释
+run_all:
+  # 异常诊断输出级别：off | brief | full
+  anomaly_diagnosis:
+    level: off # 临时禁用诊断模式以提升性能
+  # 缺失指标计算配置：用于 orchestrator 的缺失指标批量计算（enable_calculation=true 时生效）
+  # 说明：
+  #   - 计算指标由 Scheduler.METRIC_ORDER 定义，无需在配置文件中指定
+  #   - 自适应分片由 Scheduler 内部管理，无需配置
+  #   - 计算结果总是写入数据库（fact_measurements），无需开关控制
+  calculation_cfg:
+    max_workers: 4 # 并行工作线程上限（控制 ThreadPoolExecutor 的线程数）
+  create_staging: true # 创建并清空 staging 结构
+  device_running: false # 计算设备运行状态（mv_device_running_1s）
+  device_running_cfg:
+    audit_granularity: day # 审计聚合粒度（日/周/月）
+    force_recompute: false # 是否强制重算（忽略缓存/既有结果）
+    max_device_concurrency: 2 # 并行设备数上限
+    slice: week # 时间切片粒度
+    update_only_when_changed: true # 仅在结果发生变化时才更新
+  enable_calculation: false # 启用缺失指标计算（在 merge-fact 之后执行）
+  ingest_copy: true # 从 CSV 批量导入至 staging
+  merge_fact: false # 合并至 fact_measurements（时间对齐）
+  prepare_dim: true # 阶段1：重建维度表（在 merge-fact 前执行）
+  prepare_dim_stage2: false # 阶段2：生成规则表（在 merge-fact 后执行）
+  skip_shadow_rules: true # 是否跳过影子规则生成（生产环境可设为true以提升50%性能；影响：无法进行影子表对比验证；跳过函数：run_auto_baseline_b, compute_metric_quality_rules_shadow, run_running_thresholds_b）
+  reset_db: false
+  reset_db_schemas:
+    - public
+    - monitoring
+  reset_logs: true # 运行前清理日志目录
+
+# 分段执行控制 - 针对20亿行数据优化
+# 优化说明：增大批量大小以减少事务开销，同时增加work_mem避免磁盘排序
+segmented: # 合并阶段分片执行
+  enabled: true
+  granularity: 2h # 改为2小时，进一步减少事务开销（每段约46万行）
+  parallel: # 方案A：按时间段并行（不同时间段写入不同chunk，避免锁竞争）
+    enabled: true # 启用按时间段并行处理
+    max_workers: 4 # 最佳并行线程数（测试确认4个线程效果最佳）
+# 时区设置
+tz:
+  allow_missing_tz: true # 允许缺失时区配置
+  default_station_tz: Asia/Shanghai # 默认站点时区
+  missing_tz_policy: default # 缺失时区策略：default=使用默认
+# 窗口参数（当 --no-use-staging-time-range 时使用）
+window:
+  end: null # 结束时间（ISO8601）
+  size: 10m # 默认窗口大小
+  start: null # 起始时间（ISO8601）

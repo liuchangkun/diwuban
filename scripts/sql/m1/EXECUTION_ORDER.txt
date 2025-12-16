@@ -1,0 +1,12 @@
+# 执行顺序（M1 只读与函数）
+# 说明：按需执行；已在库中的对象跳过即可
+
+1) scripts/sql/m1/009_device_running_thresholds.sql
+2) scripts/sql/m1/012_device_running_thresholds_comments.sql
+3) scripts/sql/m1/011_fn_running_state_1s.sql
+4) scripts/sql/m1/013_fn_startstop_windows_rewrite.sql
+5) scripts/sql/m1/TEST_GUIDE.sql  （仅测试脚本）
+# 模板（手工运行）：
+#   scripts/templates/windows_from_seconds.sql
+#   scripts/templates/events_from_seconds.sql
+
